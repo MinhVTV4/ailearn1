@@ -6,7 +6,7 @@
     <title>AI Học Tập Tương Tác</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Phong cách cuộn tùy chỉnh */
+        /* Custom scrollbar styles */
         :root {
             --scrollbar-track-bg: #f1f1f1;
             --scrollbar-thumb-bg: #888;
@@ -18,9 +18,9 @@
             --scrollbar-thumb-hover-bg: #a0aec0;
         }
         body {
-            overflow: hidden; /* Ngăn cuộn toàn bộ trang */
+            overflow: hidden; /* Prevent overall page scrolling */
         }
-        /* Style cho thanh cuộn của chat và canvas */
+        /* Styles for chat and canvas scrollbars */
         #chat-container::-webkit-scrollbar, #canvas-container::-webkit-scrollbar {
             width: 6px;
         }
@@ -35,7 +35,7 @@
             background: var(--scrollbar-thumb-hover-bg);
         }
 
-        /* Phong cách hiển thị Markdown */
+        /* Markdown display styles */
         .message-content pre { background-color: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; font-family: 'Courier New', Courier, monospace; }
         .dark .message-content pre { background-color: #0f172a; }
         .message-content code:not(pre > code) { background-color: #e2e8f0; color: #1e293b; padding: 0.2em 0.4em; margin: 0; font-size: 85%; border-radius: 3px; }
@@ -54,31 +54,31 @@
         .message-content blockquote { border-left: 4px solid #d1d5db; padding-left: 1rem; margin: 1rem 0; color: #4b5563; font-style: italic; }
         .dark .message-content blockquote { border-left-color: #4b5563; color: #9ca3af; }
         
-        /* Hiệu ứng nhấp nháy cho con trỏ AI */
+        /* Blinking cursor effect for AI */
         .blinking-cursor { display: inline-block; width: 8px; height: 1.2em; background-color: #333; animation: blink 1s step-end infinite; vertical-align: text-bottom; }
         .dark .blinking-cursor { background-color: #ccc; }
         @keyframes blink { from, to { background-color: transparent; } 50% { background-color: inherit; } }
 
-        /* Animation cho nút ghi âm */
+        /* Recording button animation */
         #record-btn.recording { animation: pulse-red 1s infinite; background-color: #ef4444; color: white; }
         @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); transform: scale(1); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); transform: scale(1.05); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); transform: scale(1); } }
 
-        /* Style cho vùng nhập liệu */
+        /* Input area styling */
         .p-4 > #input-area-wrapper { box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); border-radius: 9999px; padding: 4px; background-color: white; transition: box-shadow 0.2s ease-in-out; }
         .p-4 > #input-area-wrapper:focus-within { box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08); }
         .dark .p-4 > #input-area-wrapper { background-color: #1f2937; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); }
         .dark .p-4 > #input-area-wrapper:focus-within { box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); }
         
-        /* Animation quay cho loading */
+        /* Spinning animation for loading */
         @keyframes spin { to { transform: rotate(360deg); } }
         .animate-spin { animation: spin 1s linear infinite; }
         
-        /* Phong cách thông báo Toast */
+        /* Toast notification style */
         .toast { transition: all 0.4s ease-in-out; opacity: 0; transform: translateX(100%); }
         .toast.show { opacity: 1; transform: translateX(0); }
         .toast.hide { opacity: 0; transform: translateX(120%); }
         
-        /* Nút cuộn lên đầu trang */
+        /* Scroll to top button */
         #scrollToTopBtn {
             display: none; position: absolute; bottom: 20px; right: 20px; z-index: 99; border: none; outline: none;
             background-color: #3b82f6; color: white; cursor: pointer; padding: 10px 15px; border-radius: 50%; font-size: 18px;
@@ -88,167 +88,60 @@
         #scrollToTopBtn.show { opacity: 1; display: block; }
         .dark #scrollToTopBtn { background-color: #60a5fa; }
         .dark #scrollToTopBtn:hover { background-color: #3b82f6; }
-
-        /* Style cho Modal */
-        .modal {
-            display: none; /* Hidden by default */
-            position: fixed; /* Stay in place */
-            z-index: 101; /* Sit on top */
-            left: 0;
-            top: 0;
-            width: 100%; /* Full width */
-            height: 100%; /* Full height */
-            overflow: auto; /* Enable scroll if needed */
-            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
-            align-items: center;
-            justify-content: center;
-        }
-        .modal-content {
-            background-color: #fefefe;
-            margin: auto;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            width: 90%;
-            max-width: 500px;
-            position: relative;
-        }
-        .dark .modal-content {
-            background-color: #2d3748;
-            color: #e2e8f0;
-        }
-        .close-button {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .close-button:hover,
-        .close-button:focus {
-            color: black;
-            text-decoration: none;
-            cursor: pointer;
-        }
-        .dark .close-button {
-            color: #ccc;
-        }
-        .dark .close-button:hover,
-        .dark .close-button:focus {
-            color: white;
-        }
-
-        /* Canvas Loading Overlay */
-        #canvas-loading-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(255, 255, 255, 0.8); /* Light overlay */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 50; /* Below modal, above canvas */
-            color: #333;
-            font-weight: 600;
-            transition: opacity 0.3s ease-in-out;
-            opacity: 0;
-            pointer-events: none; /* Allow clicks to pass through when hidden */
-        }
-        .dark #canvas-loading-overlay {
-            background-color: rgba(30, 41, 59, 0.8); /* Dark overlay */
-            color: #e2e8f0;
-        }
-        #canvas-loading-overlay.show {
-            opacity: 1;
-            pointer-events: auto; /* Block clicks when visible */
-        }
-        #canvas-loading-overlay svg {
-            width: 48px;
-            height: 48px;
-            margin-bottom: 1rem;
-            color: #3b82f6; /* Blue spinner */
-        }
-        .dark #canvas-loading-overlay svg {
-            color: #60a5fa; /* Light blue spinner */
-        }
-
-        /* Node Tooltip */
-        #node-tooltip {
-            position: absolute;
-            background-color: rgba(31, 41, 55, 0.95); /* Tailwind gray-800 with opacity */
-            color: white;
-            padding: 0.75rem;
-            border-radius: 0.375rem; /* rounded-md */
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* shadow-md */
-            max-width: 300px;
-            z-index: 60; /* Higher than canvas overlay */
-            pointer-events: none; /* Do not block mouse events on canvas */
-            opacity: 0;
-            transition: opacity 0.2s ease-in-out;
-            word-wrap: break-word; /* Ensure long descriptions wrap */
-            font-size: 0.875rem; /* text-sm */
-            line-height: 1.5;
-        }
-        #node-tooltip.show {
-            opacity: 1;
-        }
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 font-sans h-screen flex">
 
-    <!-- Container chính của ứng dụng -->
+    <!-- Main application container -->
     <div id="app-container" class="flex flex-1 overflow-hidden">
 
-        <!-- Phần Box Chat (Bên trái) -->
+        <!-- Chat Box Section (Left) -->
         <div id="chat-view-container" class="flex flex-col h-full bg-gray-50 dark:bg-slate-900 w-full lg:w-1/3 flex-shrink-0 border-r border-gray-200 dark:border-slate-700">
             <header id="main-header" class="flex-shrink-0 flex justify-between items-center p-3 sm:p-4 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
                 <div class="flex items-center gap-3">
-                    <span class="text-2xl">📚</span> <!-- Biểu tượng cho chế độ học tập -->
+                    <span class="text-2xl">📚</span> <!-- Icon for learning mode -->
                     <span class="text-lg font-bold text-gray-800 dark:text-gray-100">AI Học Tập</span>
                 </div>
                 <div class="flex items-center gap-1 sm:gap-2">
-                    <!-- Nút chuyển đổi chế độ Sáng/Tối -->
+                    <!-- Theme Toggle Button -->
                     <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Chuyển chế độ Sáng/Tối">
                         <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
                         <svg id="theme-toggle-light-icon" class="hidden w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 14.95a1 1 0 010-1.414l.707-.707a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414 0zM3 11a1 1 0 100-2H2a1 1 0 100 2h1z" clip-rule="evenodd"></path></svg>
                     </button>
-                    <!-- Nút Xóa Canvas -->
+                    <!-- Clear Canvas Button -->
                     <button id="clear-canvas-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Xóa Canvas">
                         <svg class="w-6 h-6 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.67-.114 1.022-.165m-1.022.165L5.41 19.673a2.25 2.25 0 002.244 2.077h7.212a2.25 2.25 0 002.244-2.077L19.25 5.79m0 0h-.008v.008H19.25z" /></svg>
                     </button>
-                    <!-- Nút Kích hoạt Sắp xếp Lực -->
+                    <!-- Activate Force Layout Button -->
                     <button id="activate-force-layout-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Sắp xếp sơ đồ tự động">
                         <svg class="w-6 h-6 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.898 20.572L16.5 21.75l-.398-1.178a3.375 3.375 0 00-2.455-2.456L12.75 18l1.178-.398a3.375 3.375 0 002.455-2.456L16.5 14.25l.398 1.178a3.375 3.375 0 002.456 2.456L20.25 18l-1.178.398a3.375 3.375 0 00-2.456 2.456z" /></svg>
                     </button>
                 </div>
             </header>
 
-            <!-- Khu vực hiển thị tin nhắn chat -->
+            <!-- Chat message display area -->
             <div id="chat-container" class="flex-1 px-4 pt-4 space-y-4 overflow-y-auto relative">
                 <div id="notification-area" class="hidden sticky bottom-2 w-full flex justify-center">
                     <div class="bg-blue-100 dark:bg-slate-700 text-blue-800 dark:text-blue-200 text-xs font-semibold px-4 py-2 rounded-full shadow-lg">
                         Đang tối ưu hóa...
                     </div>
                 </div>
-                <!-- Nút cuộn lên đầu trang -->
+                <!-- Scroll to top button -->
                 <button id="scrollToTopBtn" title="Cuộn lên đầu">
                     <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l7.5-7.5 7.5 7.5m-15 6l7.5-7.5 7.5 7.5" /></svg>
                 </button>
             </div>
 
-            <!-- Vùng nhập liệu chat -->
+            <!-- Chat input area -->
             <div class="p-4 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700">
                 <div id="input-area-wrapper" class="rounded-full">
                     <div id="input-area" class="flex items-center gap-3 bg-gray-100 dark:bg-slate-700 rounded-full p-2">
                         <textarea id="prompt-input" rows="1" placeholder="Nhập câu hỏi hoặc yêu cầu học tập..." class="flex-1 bg-transparent px-3 py-2 resize-none focus:outline-none dark:text-gray-200 dark:placeholder-gray-400"></textarea>
-                        <!-- Nút ghi âm -->
+                        <!-- Record button -->
                         <button id="record-btn" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors" title="Ghi âm">
                             <svg class="w-6 h-6 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
                         </button>
-                        <!-- Nút gửi -->
+                        <!-- Send button -->
                         <button id="send-btn" class="w-10 h-10 flex items-center justify-center bg-blue-600 rounded-full text-white hover:bg-blue-700 transition-colors disabled:bg-blue-300 dark:disabled:bg-blue-800 disabled:cursor-not-allowed" title="Gửi">
                             <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2 .01 7z"/></svg>
                         </button>
@@ -257,85 +150,33 @@
             </div>
         </div>
 
-        <!-- Phần Canvas (Bên phải) -->
+        <!-- Canvas Section (Right) -->
         <div id="canvas-container" class="flex-1 h-full bg-white dark:bg-gray-800 overflow-auto relative">
             <div id="learning-canvas" class="w-full h-full">
-                <!-- Nội dung canvas sẽ được render tại đây bởi Konva.js -->
+                <!-- Canvas content will be rendered here by Konva.js -->
                 <div id="canvas-placeholder" class="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-600 text-center p-4">
                     <p class="max-w-md">Chào mừng bạn đến với AI Học Tập! <br> Hãy nhập câu hỏi hoặc yêu cầu một chủ đề (ví dụ: "giải thích HTML", "cấu trúc dữ liệu", "khái niệm Vật lý lượng tử") để bắt đầu bài học được trực quan hóa tại đây.</p>
                 </div>
-
-                <!-- Canvas Loading Overlay -->
-                <div id="canvas-loading-overlay" class="hidden">
-                    <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004 16.087V18a2 2 0 100 4h18a2 2 0 100-4v-1.913A8.001 8.001 0 0018.418 5H18a2 2 0 100-4h-1.582m0 16.087A6.001 6.001 0 0118.418 5"></path>
-                    </svg>
-                    <p id="canvas-loading-text">Đang tải sơ đồ...</p>
-                </div>
             </div>
-
-            <!-- Node Tooltip -->
-            <div id="node-tooltip" class="absolute hidden"></div>
         </div>
     </div>
 
-    <!-- Container cho thông báo Toast -->
+    <!-- Toast notification container -->
     <div id="toast-container" class="fixed top-5 right-5 z-[100] space-y-2"></div>
 
-    <!-- Term Explanation Modal -->
-    <div id="term-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-button">&times;</span>
-            <h3 id="modal-term-title" class="text-xl font-bold mb-4"></h3>
-            <p id="modal-term-explanation" class="mb-4 text-gray-700 dark:text-gray-300">
-                AI sẽ giải thích thuật ngữ này tại đây...
-            </p>
-            <button id="ask-ai-more-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-                Hỏi AI thêm chi tiết
-            </button>
-        </div>
-    </div>
-
-    <!-- Node Edit Modal -->
-    <div id="node-edit-modal" class="modal">
-        <div class="modal-content dark:bg-slate-700">
-            <span class="close-button">&times;</span>
-            <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">Chỉnh sửa Node</h3>
-            <div class="mb-4">
-                <label for="modal-edit-text" class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Văn bản (ngắn gọn):</label>
-                <input type="text" id="modal-edit-text" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:bg-slate-800 dark:text-gray-200 leading-tight focus:outline-none focus:shadow-outline">
-            </div>
-            <div class="mb-6">
-                <label for="modal-edit-description" class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Mô tả/Ghi chú (chi tiết):</label>
-                <textarea id="modal-edit-description" rows="5" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:bg-slate-800 dark:text-gray-200 leading-tight focus:outline-none focus:shadow-outline resize-y"></textarea>
-            </div>
-            <div class="flex justify-end gap-2">
-                <button id="modal-save-node-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-                    Lưu thay đổi
-                </button>
-                <button id="modal-cancel-node-btn" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 transition-colors dark:bg-gray-600 dark:text-gray-100 dark:hover:bg-gray-500">
-                    Hủy
-                </button>
-            </div>
-        </div>
-    </div>
-
-
-    <!-- Các thẻ script được chuyển xuống cuối body -->
+    <!-- Script tags moved to the end of body -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@2.3.6/dist/purify.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/konva@8.x.x/konva.min.js"></script>
-    <script src="https://d3js.org/d3.v7.min.js"></script> <!-- Thêm D3.js -->
+    <script src="https://d3js.org/d3.v7.min.js"></script> <!-- Add D3.js -->
     
     <script type="module">
-        // Import các module Firebase từ CDN
+        // Import Firebase modules from CDN
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
         import { getAI, getGenerativeModel } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-ai.js";
         
-        // Khởi tạo Firebase
-        // NOTE: Trong môi trường thực tế, API Key này cần được bảo mật và không nên nhúng trực tiếp vào mã nguồn client.
-        // Có thể sử dụng biến môi trường hoặc một API Gateway/Cloud Function để gọi Gemini API.
+        // Initialize Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyDDp2ugpgSbqtkQMFLHSNsL0cFMxYBdyng",
             authDomain: "ailearn-e8cc0.firebaseapp.com",
@@ -350,40 +191,13 @@
         const ai = getAI(app);
         const model = getGenerativeModel(ai, { model: "gemini-2.5-flash" }); // Main AI model
 
-        // GLOBAL CONSTANTS and CONFIGURATION
-        const CONSTANTS = {
-            NODE_PADDING: 20, // Internal padding for Konva nodes
-            MIN_NODE_WIDTH: 120,
-            MIN_NODE_HEIGHT: 60,
-            GRID_SIZE: 50, // Distance between grid lines on canvas
-            CANVAS_ZOOM_SCALE_FACTOR: 1.1, // Zoom increment factor
-            D3_LINK_DISTANCE: 220, // Ideal distance between linked nodes
-            D3_CHARGE_STRENGTH: -800, // Repulsion force between nodes
-            D3_COLLIDE_PADDING: 20, // Padding for collision detection
-            D3_COLLIDE_ITERATIONS: 3, // Iterations for collision force
-            D3_SIMULATION_ALPHA_TARGET_DRAG: 0.3, // Alpha target when dragging a node
-            D3_SIMULATION_INITIAL_ALPHA: 1, // Initial alpha for simulation restart
-            D3_SIMULATION_STOP_TIMEOUT: 3000, // Time in ms to run simulation initially
-            TOAST_DISPLAY_TIME: 4000, // Time in ms for toast messages to display
-            CHAT_SCROLL_THRESHOLD: 0.5 // Percentage of chat height to scroll before showing "scroll to top" button
-        };
-
         // Global state variables
         let localHistory = []; // Stores the full conversation history (text-only for AI)
         let isRecording = false; // Speech recording state
         let activeSpeech = null; // Tracks current speech synthesis utterance
-        let editingNode = null; // Stores the D3 node currently being edited
-        let currentLessonData = null; // Stores the latest lesson data from AI for canvas rendering
-
-        // Canvas state management object
-        const canvasState = {
-            stage: null,
-            layer: null,
-            gridLayer: null,
-            d3Simulation: null,
-            konvaNodesMap: new Map(), // Maps D3 node IDs to {konvaGroup, konvaRect, text, description}
-            konvaLinks: [] // Stores {konvaLine, konvaLabel} for all links
-        };
+        let d3Simulation = null; // D3 force simulation instance
+        let currentKonvaNodes = []; // Store references to Konva groups (nodes)
+        let currentKonvaLinks = []; // Store references to Konva arrows (links)
 
         // Cached DOM elements
         const appContainer = document.getElementById('app-container');
@@ -405,27 +219,10 @@
         const learningCanvas = document.getElementById('learning-canvas');
         const canvasPlaceholder = document.getElementById('canvas-placeholder');
         const clearCanvasBtn = document.getElementById('clear-canvas-btn');
-        const activateForceLayoutBtn = document.getElementById('activate-force-layout-btn');
-        const canvasLoadingOverlay = document.getElementById('canvas-loading-overlay'); 
-        const canvasLoadingText = document.getElementById('canvas-loading-text');     
+        const activateForceLayoutBtn = document.getElementById('activate-force-layout-btn'); // New button
 
-        // Term modal elements
-        const termModal = document.getElementById('term-modal');
-        const closeModalBtn = termModal.querySelector('.close-button');
-        const modalTermTitle = document.getElementById('modal-term-title');
-        const modalTermExplanation = document.getElementById('modal-term-explanation');
-        const askAiMoreBtn = document.getElementById('ask-ai-more-btn');
-
-        // Node Edit Modal elements
-        const nodeEditModal = document.getElementById('node-edit-modal');
-        const closeNodeEditModalBtn = nodeEditModal.querySelector('.close-button');
-        const modalEditTextInput = document.getElementById('modal-edit-text');
-        const modalEditDescriptionInput = document.getElementById('modal-edit-description');
-        const modalSaveNodeBtn = document.getElementById('modal-save-node-btn');
-        const modalCancelNodeBtn = document.getElementById('modal-cancel-node-btn');
-
-        // Node Tooltip element
-        const nodeTooltip = document.getElementById('node-tooltip');
+        let stage, layer; // Konva Stage and Layer objects
+        let gridLayer; // Optional: Separate layer for grid
 
         // System prompt for AI to generate learning content and canvas data
         const LEARNING_SYSTEM_PROMPT = `
@@ -435,38 +232,24 @@
         2.  **Giải thích Chatbox:** Cung cấp giải thích chi tiết, rõ ràng cho từng phần trong chatbox, sử dụng Markdown (tiêu đề, danh sách, in đậm, code block).
         3.  **Dữ liệu Canvas:** **QUAN TRỌNG:** Đồng thời, tạo ra một đối tượng JSON DỮ LIỆU CẦU TRÚC để tôi có thể vẽ trên Canvas. JSON này phải tuân thủ định dạng sau.
             **Hãy đảm bảo các node được phân bổ một cách có tổ chức, tránh chồng chéo tối đa, và thể hiện rõ ràng dòng chảy thông tin hoặc cấu trúc phân cấp (ví dụ: các node tổng quan ở trên, các node chi tiết ở dưới).**
-            **Sử dụng các tọa độ X, Y ban đầu để phân tán các node đều khắp canvas (tọa độ này sẽ được D3 force simulation điều chỉnh để tối ưu hóa).**
+            **Sử dụng các tọa độ X, Y ban đầu để phân tán các node đều khắp canvas (giả định kích thước canvas là 800x600 để định vị sơ bộ).**
             **Node đầu tiên trong mảng 'nodes' phải là node chủ đề chính hoặc node khởi đầu. Đánh dấu node chủ đề chính bằng "isMainTopic": true.**
             **Mỗi nhãn đường nối ("text" trong "connections") PHẢI ngắn gọn, chỉ 1-3 từ.**
-
-            **Bạn CÓ THỂ tạo các loại sơ đồ khác nhau. Đặt trường "diagramType" ở cấp cao nhất của JSON để chỉ định loại sơ đồ:**
-            * \`"diagramType": "mindmap"\`: (Mặc định) Sơ đồ tư duy truyền thống.
-                * Node \`type\`: "concept", "idea", "detail", "example", "question", "summary".
-            * \`"diagramType": "flowchart"\`: Sơ đồ khối cho quy trình hoặc thuật toán.
-                * Node \`type\`: "start", "end", "process", "decision", "input/output".
-                * Connection \`connectionType\`: "default", "dashed" (cho luồng không chính).
-            * \`"diagramType": "tree"\`: Sơ đồ cây cho cấu trúc phân cấp.
-                * Node \`type\`: "root", "parent", "child", "leaf".
-            * \`"diagramType": "relationship"\`: Sơ đồ quan hệ cho các mối liên hệ giữa các đối tượng.
-                * Node \`type\`: "entity", "attribute", "relationship".
-                * Connection \`connectionType\`: "default", "bidirectional".
-
             \`\`\`json
             {
               "type": "lesson_data",
-              "diagramType": "mindmap", // NEW: Thêm trường này và các giá trị trên.
               "title": "Tên Chủ Đề Chính",
               "nodes": [
                 {
                   "id": "node1",
-                  "type": "concept", 
+                  "type": "concept", // hoặc "step", "example", "summary", "question"
                   "text": "Nội dung ngắn gọn của node",
                   "description": "Mô tả chi tiết hơn (nếu cần, có thể để trống)",
-                  "x": 100, 
-                  "y": 100, 
-                  "color": "#FFDDC1", 
-                  "image": "url_to_image_if_any", 
-                  "isMainTopic": true 
+                  "x": 100, // Tọa độ X trên canvas
+                  "y": 100, // Tọa độ Y trên canvas
+                  "color": "#FFDDC1", // Màu nền cho node (hex color)
+                  "image": "url_to_image_if_any", // URL hình ảnh (tùy chọn)
+                  "isMainTopic": true // Đánh dấu node chủ đề chính
                 },
                 {
                   "id": "node2",
@@ -481,10 +264,7 @@
               "connections": [
                 {
                   "from": "node1",
-                  "to": "node2",
-                  "text": "Mối quan hệ", 
-                  "color": "#333333",
-                  "connectionType": "default" // NEW: "default", "dashed", "bidirectional"
+                  "to": "node2"
                 }
               ]
             }
@@ -503,7 +283,6 @@
             {
               "type": "lesson_data",
               "title": "Javascript Cơ bản",
-              "diagramType": "mindmap",
               "nodes": [
                 { "id": "intro", "type": "concept", "text": "Javascript là gì?", "description": "Ngôn ngữ lập trình cho web động.", "x": 100, "y": 100, "color": "#FFC0CB", "isMainTopic": true },
                 { "id": "vars", "type": "concept", "text": "Biến & Kiểu dữ liệu", "description": "var, let, const", "x": 300, "y": 100, "color": "#ADD8E6" },
@@ -512,18 +291,18 @@
               ],
               "connections": [
                 { "from": "intro", "to": "vars" },
-                { "from": "vars", "to": "var_exp", "text": "Ví dụ" },
-                { "from": "vars", "to": "let_exp", "text": "Ví dụ" }
+                { "from": "vars", "to": "var_exp" },
+                { "from": "vars", "to": "let_exp" }
               ]
             }
             \`\`\`
         `;
 
-        // --- HÀM TIỆN ÍCH ---
+        // --- UTILITY FUNCTIONS ---
         /**
-         * Hiển thị thông báo toast cho người dùng.
-         * @param {string} message - Nội dung tin nhắn.
-         * @param {'info'|'success'|'error'} type - Loại thông báo (quyết định màu sắc và biểu tượng).
+         * Displays a toast notification to the user.
+         * @param {string} message - The message content.
+         * @param {'info'|'success'|'error'} type - The type of notification (determines color and icon).
          */
         function showToast(message, type = 'info') {
             const toastContainer = document.getElementById('toast-container');
@@ -573,7 +352,7 @@
             };
 
             toast.addEventListener('click', hideToast);
-            setTimeout(hideToast, CONSTANTS.TOAST_DISPLAY_TIME);
+            setTimeout(hideToast, 4000);
         }
         
         /**
@@ -624,7 +403,7 @@
             // Initialize Konva Stage and Layer after user is authenticated (anonymous or otherwise)
             initCanvas();
             // Display welcome message in chatbox
-            addMessage('ai', 'Chào mừng bạn đến với AI Học Tập! Hãy nhập câu hỏi hoặc yêu cầu một chủ đề (ví dụ: "giải thích HTML", "cấu trúc dữ liệu", "khái niệm Vật lý lượng tử") để bắt đầu bài học được trực quan hóa tại đây.');
+            addMessage('ai', 'Welcome to AI Learning! Please type a question or request a topic (e.g., "explain HTML", "data structures", "quantum physics concepts") to start a visualized lesson here.');
         });
 
         // --- THEME TOGGLE ---
@@ -642,21 +421,8 @@
             document.documentElement.classList.toggle('dark');
             localStorage.setItem('color-theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
             updateThemeIcon();
-            // Redraw grid when theme changes to update color
-            if (canvasState.gridLayer) {
-                drawGrid();
-            }
         });
-        // Initial theme setup on load
-        document.addEventListener('DOMContentLoaded', () => {
-            if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
-            updateThemeIcon(); 
-        });
-
+        updateThemeIcon(); 
 
         // --- CHAT LOGIC ---
         /**
@@ -673,7 +439,7 @@
             const copyBtn = document.createElement('button');
             copyBtn.className = 'copy-btn p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-full transition-colors';
             copyBtn.innerHTML = `<svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" /></svg>`;
-            copyBtn.title = 'Sao chép nội dung';
+            copyBtn.title = 'Copy content';
             copyBtn.dataset.text = rawText; 
             actionsContainer.appendChild(copyBtn);
             
@@ -681,7 +447,7 @@
             const speakBtn = document.createElement('button');
             speakBtn.className = 'speak-btn p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-full transition-colors';
             speakBtn.innerHTML = '🔊';
-            speakBtn.title = 'Đọc văn bản';
+            speakBtn.title = 'Read text aloud';
             speakBtn.dataset.text = rawText; 
             speakBtn.dataset.state = 'idle'; 
             actionsContainer.appendChild(speakBtn);
@@ -741,40 +507,25 @@
         
         /**
          * Sends a message to the AI model, displays the response, and renders on canvas.
-         * @param {string} promptText - The text prompt from the user.
-         * @param {boolean} [isTermExplanation=false] - True if this is a request to explain a term.
          */
-        async function sendMessage(promptText, isTermExplanation = false) {
+        async function sendMessage() {
+            const promptText = promptInput.value.trim();
             if (!promptText) return;
 
-            if (!isTermExplanation) { // Only clear input for regular messages
-                promptInput.value = '';
-                adjustInputHeight();
-                sendBtn.disabled = true;
-            } else {
-                // For term explanation, close modal and show thinking state
-                termModal.style.display = 'none';
-                modalTermExplanation.textContent = 'AI sẽ giải thích thuật ngữ này tại đây...'; // Reset modal
-            }
+            promptInput.value = '';
+            adjustInputHeight();
+            sendBtn.disabled = true;
 
             // Hide canvas placeholder when starting chat
             if (canvasPlaceholder) {
                 canvasPlaceholder.classList.add('hidden');
             }
 
-            if (!isTermExplanation) {
-                addMessage('user', promptText);
-                localHistory.push({ role: 'user', parts: [{ text: promptText }] });
-                // Show canvas loading overlay for new main topic requests
-                canvasLoadingOverlay.classList.add('show');
-                canvasLoadingText.textContent = 'Đang tải sơ đồ...';
-            } else {
-                // For term explanation, no need to show canvas loading, as it's a chat-only response
-                // Unless the explanation itself triggers a canvas update, which is not the case here
-            }
+            addMessage('user', promptText);
+            localHistory.push({ role: 'user', parts: [{ text: promptText }] });
 
             const { messageWrapper, contentElem, statusElem, actionsContainer } = addMessage('ai', '<span class="blinking-cursor"></span>');
-            if (statusElem) statusElem.textContent = 'Đang nghĩ...';
+            if (statusElem) statusElem.textContent = 'Thinking...';
 
             try {
                 // Prepare chat history to send to the model (text-only, without JSON)
@@ -796,7 +547,7 @@
 
                 for await (const chunk of result.stream) {
                     if (isFirstChunk) {
-                        if (statusElem) statusElem.textContent = 'Đang viết...';
+                        if (statusElem) statusElem.textContent = 'Writing...';
                         isFirstChunk = false;
                     }
                     fullResponseText += chunk.text();
@@ -809,11 +560,7 @@
                             // Only update jsonResponse if parsed successfully and it's new data
                             if (JSON.stringify(tempJson) !== JSON.stringify(jsonResponse)) {
                                 jsonResponse = tempJson;
-                                currentLessonData = jsonResponse; // Store the latest lesson data
-                                if (!isTermExplanation) { // Only render on canvas for main lesson data
-                                    renderContentOnCanvas(currentLessonData); // Pass updated lessonData
-                                    canvasLoadingText.textContent = 'Đang tạo sơ đồ...'; // Update text
-                                }
+                                renderContentOnCanvas(jsonResponse); // Render on canvas immediately
                             }
                         } catch (e) {
                             // console.warn("Partial JSON, waiting for full response:", e);
@@ -842,19 +589,15 @@
 
             } catch (error) {
                 console.error("Error during sendMessage:", error);
-                contentElem.innerHTML = `**Lỗi:** ${error.message}`;
+                contentElem.innerHTML = `**Error:** ${error.message}`;
                 // Remove the last message (if any) to avoid corrupted history
                 if (localHistory.length > 0) {
                     localHistory.pop();
                 }
-                showToast(`Lỗi gửi tin nhắn: ${error.message}`, 'error');
+                showToast(`Message send error: ${error.message}`, 'error');
 
             } finally {
                 sendBtn.disabled = false; // Re-enable send button
-                // Hide canvas loading overlay if it's still visible
-                if (canvasLoadingOverlay.classList.contains('show')) {
-                    canvasLoadingOverlay.classList.remove('show');
-                }
             }
         }
 
@@ -875,20 +618,20 @@
             recognition.onstart = () => { 
                 isRecording = true; 
                 recordBtn.classList.add('recording'); 
-                promptInput.placeholder = 'Đang nghe...'; 
+                promptInput.placeholder = 'Listening...'; 
             };
             recognition.onend = () => { 
                 isRecording = false; 
                 recordBtn.classList.remove('recording'); 
-                promptInput.placeholder = 'Nhập câu hỏi hoặc yêu cầu học tập...'; 
+                promptInput.placeholder = 'Enter your question...'; 
             };
             recognition.onresult = (event) => { 
                 promptInput.value = event.results[event.results.length - 1][0].transcript.trim(); 
                 adjustInputHeight(); 
-                sendMessage(promptInput.value); 
+                sendMessage(); 
             };
             recognition.onerror = (event) => { 
-                showToast(`Lỗi ghi âm: ${event.error}`, 'error'); 
+                showToast(`Recording error: ${event.error}`, 'error'); 
                 console.error("Speech Recognition error:", event.error);
             };
             recordBtn.addEventListener('click', () => { 
@@ -903,7 +646,7 @@
             if (activeSpeech && activeSpeech.button) {
                 activeSpeech.button.innerHTML = '🔊';
                 activeSpeech.button.dataset.state = 'idle';
-                activeSpeech.button.title = 'Đọc văn bản';
+                activeSpeech.button.title = 'Read text aloud';
             }
         }
 
@@ -911,82 +654,86 @@
 
         /** Initializes the Konva.js stage and layer. */
         function initCanvas() {
-            canvasState.stage = new Konva.Stage({
+            stage = new Konva.Stage({
                 container: 'learning-canvas',
                 width: canvasContainer.offsetWidth,
                 height: canvasContainer.offsetHeight,
             });
-            canvasState.layer = new Konva.Layer();
-            canvasState.stage.add(canvasState.layer);
+            layer = new Konva.Layer();
+            stage.add(layer);
 
             // Add a separate layer for grid to avoid redrawing with nodes
-            canvasState.gridLayer = new Konva.Layer();
-            canvasState.stage.add(canvasState.gridLayer);
+            gridLayer = new Konva.Layer();
+            stage.add(gridLayer);
             drawGrid(); // Draw grid initially
 
             // Handle responsive canvas on window resize
             window.addEventListener('resize', () => {
-                canvasState.stage.width(canvasContainer.offsetWidth);
-                canvasState.stage.height(canvasContainer.offsetHeight);
+                stage.width(canvasContainer.offsetWidth);
+                stage.height(canvasContainer.offsetHeight);
                 drawGrid(); // Redraw grid on resize
-                if (canvasState.d3Simulation) {
+                if (d3Simulation) {
                     // Re-center force layout if active
-                    canvasState.d3Simulation.force("center", d3.forceCenter(canvasState.stage.width() / 2, canvasState.stage.height() / 2));
-                    canvasState.d3Simulation.alpha(CONSTANTS.D3_SIMULATION_ALPHA_TARGET_DRAG).restart(); // Restart simulation for new center
+                    d3Simulation.force("center", d3.forceCenter(stage.width() / 2, stage.height() / 2));
+                    d3Simulation.alpha(0.3).restart(); // Restart simulation for new center
                 }
-                canvasState.layer.batchDraw();
-                canvasState.gridLayer.batchDraw();
+                layer.batchDraw();
+                gridLayer.batchDraw();
             });
 
             // Implement zoom and pan
-            canvasState.stage.on('wheel', (e) => {
+            const scaleBy = 1.1;
+            stage.on('wheel', (e) => {
                 e.evt.preventDefault();
-                const oldScale = canvasState.stage.scaleX();
-                const pointer = canvasState.stage.getPointerPosition();
+                const oldScale = stage.scaleX();
+                const pointer = stage.getPointerPosition();
 
                 const mousePointTo = {
-                    x: (pointer.x - canvasState.stage.x()) / oldScale,
-                    y: (pointer.y - canvasState.stage.y()) / oldScale,
+                    x: (pointer.x - stage.x()) / oldScale,
+                    y: (pointer.y - stage.y()) / oldScale,
                 };
 
-                const newScale = e.evt.deltaY < 0 ? oldScale * CONSTANTS.CANVAS_ZOOM_SCALE_FACTOR : oldScale / CONSTANTS.CANVAS_ZOOM_SCALE_FACTOR;
+                const newScale = e.evt.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy;
 
-                canvasState.stage.scale({ x: newScale, y: newScale });
+                stage.scale({ x: newScale, y: newScale });
 
                 const newPos = {
                     x: pointer.x - mousePointTo.x * newScale,
                     y: pointer.y - mousePointTo.y * newScale,
                 };
-                canvasState.stage.position(newPos);
-                canvasState.stage.draw();
+                stage.position(newPos);
+                stage.draw();
             });
 
-            canvasState.stage.draggable(true); // Enable dragging for pan
+            stage.draggable(true); // Enable dragging for pan
         }
 
         /** Draws a grid on the canvas. */
         function drawGrid() {
-            canvasState.gridLayer.destroyChildren(); // Clear existing grid
+            gridLayer.destroyChildren(); // Clear existing grid
+            const gridSize = 50; // Distance between grid lines
+            const stageWidth = stage.width();
+            const stageHeight = stage.height();
             const strokeColor = document.documentElement.classList.contains('dark') ? '#4a5568' : '#e2e8f0'; // Tailwind gray-700 / gray-200
 
             // Draw vertical lines
-            for (let i = 0; i * CONSTANTS.GRID_SIZE < canvasState.stage.width(); i++) {
-                canvasState.gridLayer.add(new Konva.Line({
-                    points: [i * CONSTANTS.GRID_SIZE, 0, i * CONSTANTS.GRID_SIZE, canvasState.stage.height()],
+            for (let i = 0; i * gridSize < stageWidth; i++) {
+                gridLayer.add(new Konva.Line({
+                    points: [i * gridSize, 0, i * gridSize, stageHeight],
                     stroke: strokeColor,
                     strokeWidth: 0.5,
                 }));
             }
 
             // Draw horizontal lines
-            for (let i = 0; i * CONSTANTS.GRID_SIZE < canvasState.stage.height(); i++) {
-                canvasState.gridLayer.add(new Konva.Line({
-                    points: [0, i * CONSTANTS.GRID_SIZE, canvasState.stage.width(), i * CONSTANTS.GRID_SIZE],
+            for (let i = 0; i * gridSize < stageHeight; i++) {
+                gridLayer.add(new Konva.Line({
+                    points: [0, i * gridSize, stageWidth, i * gridSize],
                     stroke: strokeColor,
                     strokeWidth: 0.5,
                 }));
             }
-            canvasState.gridLayer.batchDraw();
+            gridLayer.batchDraw();
         }
 
 
@@ -1062,204 +809,193 @@
             };
         }
 
-        /**
-         * Creates a Konva Group representing a node with a rectangle and text.
-         * @param {object} nodeData - The node data from the JSON.
-         * @param {object} lessonData - The overall lesson data (to get diagramType).
-         * @returns {object} An object containing the Konva Group and D3 node data.
-         */
-        function createKonvaNodeGroup(nodeData, lessonData) {
-            const group = new Konva.Group({
-                x: nodeData.x,
-                y: nodeData.y,
-                draggable: true, 
-                // Add these listeners for editing and tooltip
-                onDblclick: () => showNodeEditModal(d3Node), // Double-click to edit
-                onMouseover: (evt) => showNodeTooltip(d3Node, evt.evt.clientX, evt.evt.clientY),
-                onMouseout: () => hideNodeTooltip()
-            });
-
-            const textKonva = new Konva.Text({
-                text: nodeData.text,
-                fontSize: 16,
-                fontFamily: 'Inter, Arial, sans-serif',
-                fill: '#333',
-                align: 'center',
-                verticalAlign: 'middle',
-                padding: CONSTANTS.NODE_PADDING / 2, 
-                wrap: 'word',
-            });
-            
-            // Calculate actual text size to adjust rectangle size
-            const textMetrics = textKonva.measureSize(nodeData.text);
-            let rectWidth = Math.max(CONSTANTS.MIN_NODE_WIDTH, textMetrics.width + CONSTANTS.NODE_PADDING); 
-            let rectHeight = Math.max(CONSTANTS.MIN_NODE_HEIGHT, textMetrics.height + CONSTANTS.NODE_PADDING); 
-
-            let rectKonva = new Konva.Rect({
-                width: rectWidth,
-                height: rectHeight,
-                fill: nodeData.color || '#E0E0E0',
-                cornerRadius: 10, // Default rounded corners
-                shadowBlur: 5,
-                shadowOpacity: 0.2,
-                stroke: '#AAAAAA',
-                strokeWidth: 1,
-            });
-
-            // Apply specific styling based on diagramType and node type
-            if (lessonData && lessonData.diagramType) {
-                if (lessonData.diagramType === "flowchart") {
-                    if (nodeData.type === "start" || nodeData.type === "end") {
-                        rectKonva.cornerRadius(Math.min(rectWidth, rectHeight) / 2); // Pill shape
-                        rectKonva.fill(nodeData.color || '#D1F7C4'); // Light green for start/end
-                    } else if (nodeData.type === "decision") {
-                        rectKonva.fill(nodeData.color || '#FFDDDD'); // Light red for decision
-                        rectKonva.strokeWidth(2);
-                        // For a true diamond, Konva.Shape would be needed
-                        // For simplicity, we just style a rectangle differently.
-                    } else if (nodeData.type === "process" || nodeData.type === "input/output") { // Group input/output with process for simplicity
-                        rectKonva.cornerRadius(5); // Slightly less rounded for process
-                        rectKonva.fill(nodeData.color || '#C1FFDD'); // Light blue for process/input/output
-                    }
-                } else if (lessonData.diagramType === "tree") {
-                    if (nodeData.type === "root") {
-                        rectKonva.cornerRadius(Math.min(rectWidth, rectHeight) / 2); // Make root node circular
-                        rectKonva.fill(nodeData.color || '#FFC0CB'); // Pink for root
-                    } else if (nodeData.type === "leaf") {
-                        rectKonva.cornerRadius(5); // Slight roundness
-                        rectKonva.fill(nodeData.color || '#E0FFFF'); // Light cyan for leaves
-                    } else { // Parent/Child nodes
-                        rectKonva.cornerRadius(10); // Default for parent/child
-                        rectKonva.fill(nodeData.color || '#ADD8E6'); // Light blue for other tree nodes
-                    }
-                } else if (lessonData.diagramType === "relationship") {
-                    if (nodeData.type === "entity") {
-                        rectKonva.cornerRadius(10); // Standard rect
-                        rectKonva.fill(nodeData.color || '#D3D3D3'); // Light gray
-                    } else if (nodeData.type === "attribute") {
-                        rectKonva.cornerRadius(Math.min(rectWidth, rectHeight) / 2); // Circular attributes
-                        rectKonva.fill(nodeData.color || '#FFEFD5'); // Light orange
-                    } else if (nodeData.type === "relationship") { // Common for ERD relationships (diamond)
-                        rectKonva.fill(nodeData.color || '#FAEBD7'); // Antique white
-                        rectKonva.strokeWidth(2);
-                        // True diamond shape is harder with dynamic text.
-                    }
-                }
-            }
-
-            // Position text inside the rectangle to center it
-            textKonva.position({
-                x: (rectKonva.width() - textMetrics.width) / 2 - CONSTANTS.NODE_PADDING/2, 
-                y: (rectKonva.height() - textMetrics.height) / 2 - CONSTANTS.NODE_PADDING/2,
-            });
-
-            group.add(rectKonva);
-            group.add(textKonva);
-            
-            // Enhanced D3 node data to include text and description for editing
-            const d3Node = { 
-                id: nodeData.id, 
-                isMainTopic: nodeData.isMainTopic || false,
-                text: nodeData.text, // Store the short text
-                description: nodeData.description || "", // Store the detailed description
-                konvaGroup: group, 
-                konvaRect: rectKonva,
-                konvaText: textKonva // Reference to the Konva Text object
-            };
-
-            return { konvaGroup: group, konvaRect: rectKonva, d3NodeData: d3Node };
-        }
 
         /**
-         * Creates a Konva Arrow representing a connection between nodes.
-         * @param {object} sourceD3Node - The D3 node object for the source.
-         * @param {object} targetD3Node - The D3 node object for the target.
-         * @param {object} connectionData - The connection data from the JSON.
-         * @returns {object} An object containing the Konva Arrow and Konva Label (if any).
+         * Renders content on the Konva canvas based on the parsed JSON data, and sets up D3 force simulation.
+         * @param {object} lessonData - The JSON object containing nodes and connections.
          */
-        function createKonvaArrow(sourceD3Node, targetD3Node, connectionData) {
-            // Main arrow from source to target
-            const line = new Konva.Arrow({
-                points: [sourceD3Node.konvaGroup.x(), sourceD3Node.konvaGroup.y(), targetD3Node.konvaGroup.x(), targetD3Node.konvaGroup.y()],
-                stroke: connectionData.color || '#000000',
-                strokeWidth: 2,
-                pointerLength: 10,
-                pointerWidth: 10,
-                id: `link-${sourceD3Node.id}-${targetD3Node.id}` // Add ID for easier management
-            });
-
-            let secondLine = null; // For bidirectional arrow
-
-            if (connectionData.connectionType === "dashed") {
-                line.dash([10, 5]); // Dash pattern: 10px line, 5px gap
-            } else if (connectionData.connectionType === "bidirectional") {
-                // Create a second arrow going the opposite direction for bidirectional effect
-                secondLine = new Konva.Arrow({
-                    points: [targetD3Node.konvaGroup.x(), targetD3Node.konvaGroup.y(), sourceD3Node.konvaGroup.x(), sourceD3Node.konvaGroup.y()],
-                    stroke: connectionData.color || '#000000',
-                    strokeWidth: 2,
-                    pointerLength: 10,
-                    pointerWidth: 10,
-                    id: `link-${targetD3Node.id}-${sourceD3Node.id}-rev` // Unique ID for reverse arrow
-                });
-                if (connectionData.color) { // Ensure both arrows have the same color
-                    secondLine.stroke(connectionData.color);
-                }
-                secondLine.strokeWidth(line.strokeWidth()); // Keep thickness consistent
+        function renderContentOnCanvas(lessonData) {
+            if (!stage || !layer) {
+                console.error("Konva stage or layer not initialized.");
+                return;
             }
 
-            let labelGroup = null;
-            if (connectionData.text) {
-                const labelText = new Konva.Text({
-                    text: connectionData.text,
-                    fontSize: 12,
-                    fill: connectionData.color || '#555',
-                    fontFamily: 'Inter, Arial, sans-serif',
-                    padding: 3,
-                });
-
-                const labelMetrics = labelText.measureSize(connectionData.text);
-                const labelRect = new Konva.Rect({
-                    width: labelMetrics.width + 6,
-                    height: labelMetrics.height + 6,
-                    fill: '#FFFFFF',
-                    opacity: 0.8,
-                    cornerRadius: 5,
-                });
-
-                labelGroup = new Konva.Group();
-                labelGroup.add(labelRect);
-                labelGroup.add(labelText);
-            }
-            // Return both lines if bidirectional, otherwise just the main one.
-            return { konvaLine: line, konvaLabel: labelGroup, konvaSecondLine: secondLine };
-        }
-
-        /**
-         * Sets up the D3 force simulation with provided nodes and links.
-         * @param {Array<object>} d3Nodes - Array of D3 nodes.
-         * @param {Array<object>} d3Links - Array of D3 links.
-         */
-        function setupD3Simulation(d3Nodes, d3Links, lessonData) {
             // Stop any active D3 simulation
-            if (canvasState.d3Simulation) {
-                canvasState.d3Simulation.stop();
+            if (d3Simulation) {
+                d3Simulation.stop();
             }
 
-            canvasState.d3Simulation = d3.forceSimulation(d3Nodes)
-                .force("link", d3.forceLink(d3Links).id(d => d.id).distance(CONSTANTS.D3_LINK_DISTANCE).strength(0.9))
-                .force("charge", d3.forceManyBody().strength(CONSTANTS.D3_CHARGE_STRENGTH).theta(0.8))
-                .force("center", d3.forceCenter(canvasState.stage.width() / 2, canvasState.stage.height() / 2))
-                .force("x", d3.forceX(canvasState.stage.width() / 2).strength(0.3))
-                // Adjusted strength of forceY to be less aggressive, allowing D3 to manage better.
-                .force("y", d3.forceY(canvasState.stage.height() / 2).strength(0.1)) 
-                .force("collide", d3.forceCollide().radius(d => Math.max(d.konvaRect.width(), d.konvaRect.height()) / 2 + CONSTANTS.D3_COLLIDE_PADDING).iterations(CONSTANTS.D3_COLLIDE_ITERATIONS))
-                .on("tick", () => updateKonvaElements(d3Nodes, d3Links));
+            layer.destroyChildren(); // Clear existing elements on canvas
+            canvasPlaceholder.classList.add('hidden'); // Hide placeholder when content is present
+
+            const PADDING = 20; // Internal padding for nodes
+
+            const d3Nodes = []; // Nodes for D3 simulation
+            const d3Links = []; // Links for D3 simulation
+
+            currentKonvaNodes = []; // Reset stored Konva nodes
+            currentKonvaLinks = []; // Reset stored Konva links
+
+            // 1. Create Konva Nodes and D3 Nodes
+            lessonData.nodes.forEach(nodeData => {
+                const group = new Konva.Group({
+                    x: nodeData.x,
+                    y: nodeData.y,
+                    draggable: true, 
+                });
+
+                const text = new Konva.Text({
+                    text: nodeData.text,
+                    fontSize: 16,
+                    fontFamily: 'Inter, Arial, sans-serif',
+                    fill: '#333',
+                    align: 'center',
+                    verticalAlign: 'middle',
+                    padding: PADDING / 2, 
+                    wrap: 'word',
+                });
+                
+                // Calculate actual text size to adjust rectangle size
+                const textMetrics = text.measureSize(nodeData.text);
+                const rectWidth = Math.max(120, textMetrics.width + PADDING); 
+                const rectHeight = Math.max(60, textMetrics.height + PADDING); 
+
+                const rect = new Konva.Rect({
+                    width: rectWidth,
+                    height: rectHeight,
+                    fill: nodeData.color || '#E0E0E0',
+                    cornerRadius: 10,
+                    shadowBlur: 5,
+                    shadowOpacity: 0.2,
+                    stroke: '#AAAAAA',
+                    strokeWidth: 1,
+                });
+
+                // Apply special styling for the main topic node
+                if (nodeData.isMainTopic) {
+                    rect.stroke("#FF0000"); // Red border for main topic
+                    rect.strokeWidth(3);
+                }
+
+                // Position text inside the rectangle to center it
+                text.position({
+                    x: (rect.width() - textMetrics.width) / 2 - PADDING/2, 
+                    y: (rect.height() - textMetrics.height) / 2 - PADDING/2,
+                });
+
+                group.add(rect);
+                group.add(text);
+                layer.add(group);
+
+                // Store Konva group and add to D3 nodes
+                const d3Node = { 
+                    id: nodeData.id, 
+                    konvaGroup: group,
+                    konvaRect: rect, // Store reference to rect for getRectIntersectionPoint
+                    isMainTopic: nodeData.isMainTopic || false // Pass main topic flag to D3 node
+                };
+                d3Nodes.push(d3Node);
+                currentKonvaNodes.push(d3Node); // Store for later access (e.g., force layout activation)
+
+                // Add click event for description
+                if (nodeData.description) {
+                    group.on('click', () => {
+                        showToast(`Description: ${nodeData.description}`, 'info');
+                    });
+                }
+            });
+
+            // Map d3Nodes for easier link creation
+            const nodeMap = new Map(d3Nodes.map(d => [d.id, d]));
+
+            // 2. Create Konva Connections and D3 Links
+            lessonData.connections.forEach(conn => {
+                const sourceD3Node = nodeMap.get(conn.from);
+                const targetD3Node = nodeMap.get(conn.to);
+
+                if (sourceD3Node && targetD3Node) {
+                    // Initial points (will be updated by D3 force)
+                    const line = new Konva.Arrow({
+                        points: [sourceD3Node.konvaGroup.x(), sourceD3Node.konvaGroup.y(), targetD3Node.konvaGroup.x(), targetD3Node.konvaGroup.y()],
+                        stroke: conn.color || '#000000',
+                        strokeWidth: 2,
+                        pointerLength: 10,
+                        pointerWidth: 10,
+                    });
+                    layer.add(line);
+
+                    // Removed label creation logic here
+                    let label = null; 
+
+                    d3Links.push({ 
+                        source: sourceD3Node, 
+                        target: targetD3Node, 
+                        konvaLine: line, 
+                        konvaLabel: label 
+                    });
+                    currentKonvaLinks.push({ konvaLine: line, konvaLabel: label }); // Store for later access
+                }
+            });
+
+            layer.batchDraw(); 
+            centerMindMap(); // Center after initial drawing
+
+            // 3. Setup D3 Force Simulation
+            d3Simulation = d3.forceSimulation(d3Nodes)
+                .force("link", d3.forceLink(d3Links).id(d => d.id).distance(220).strength(0.9)) // Increase distance and stronger attraction
+                .force("charge", d3.forceManyBody().strength(-800).theta(0.8)) // Increase repulsion between nodes
+                .force("center", d3.forceCenter(stage.width() / 2, stage.height() / 2)) // Force towards center
+                .force("x", d3.forceX(stage.width() / 2).strength(0.3)) // Stronger horizontal centering
+                .force("y", d3.forceY(d => { // Strong force to arrange vertically based on initial order
+                    const nodeIndex = lessonData.nodes.findIndex(n => n.id === d.id);
+                    return stage.height() * (0.1 + (nodeIndex / Math.max(1, lessonData.nodes.length -1)) * 0.8);
+                }).strength(1.5)) // Very strong vertical force for clear top-down flow
+                // Add collision force for rectangular nodes. radius must be greater than half the diagonal
+                .force("collide", d3.forceCollide().radius(d => Math.max(d.konvaRect.width(), d.konvaRect.height()) / 2 + 20).iterations(3)) // Increase padding and iterations
+                .on("tick", () => { // Update Konva positions on each simulation tick
+                    // Update node positions
+                    d3Nodes.forEach(d => {
+                        // Keep nodes within bounds
+                        d.x = Math.max(d.konvaRect.width()/2, Math.min(stage.width() - d.konvaRect.width()/2, d.x));
+                        d.y = Math.max(d.konvaRect.height()/2, Math.min(stage.height() - d.konvaRect.height()/2, d.y));
+
+                        d.konvaGroup.position({ x: d.x - d.konvaRect.width()/2, y: d.y - d.konvaRect.height()/2 });
+                    });
+
+                    // Update link positions
+                    d3Links.forEach(link => {
+                        const sourceRect = link.source.konvaRect;
+                        const targetRect = link.target.konvaRect;
+
+                        const p1 = {
+                            x: link.source.x,
+                            y: link.source.y,
+                        };
+                        const p2 = {
+                            x: link.target.x,
+                            y: link.target.y,
+                        };
+
+                        const startIntersection = getRectIntersectionPoint(p1, p2, {
+                            x: link.source.konvaGroup.x(), y: link.source.konvaGroup.y(),
+                            width: sourceRect.width(), height: sourceRect.height()
+                        });
+                        const endIntersection = getRectIntersectionPoint(p2, p1, {
+                            x: link.target.konvaGroup.x(), y: link.target.konvaGroup.y(),
+                            width: targetRect.width(), height: targetRect.height()
+                        });
+
+                        link.konvaLine.points([startIntersection.x, startIntersection.y, endIntersection.x, endIntersection.y]);
+
+                        // Removed label position update logic here
+                    });
+                    layer.batchDraw();
+                });
 
             // Pause simulation when a node is dragged
             d3Nodes.forEach(d => {
                 d.konvaGroup.on('dragstart', () => {
-                    canvasState.d3Simulation.alphaTarget(CONSTANTS.D3_SIMULATION_ALPHA_TARGET_DRAG).restart();
+                    d3Simulation.alphaTarget(0.3).restart();
                     d.fx = d.x;
                     d.fy = d.y;
                 });
@@ -1270,161 +1006,32 @@
                 d.konvaGroup.on('dragend', () => {
                     d.fx = null;
                     d.fy = null;
-                    canvasState.d3Simulation.alphaTarget(0); // Stop simulation after drag ends
+                    d3Simulation.alphaTarget(0); // Stop simulation after drag ends
                 });
             });
-
-            // Show "Đang sắp xếp..." on canvas overlay when simulation starts
-            canvasLoadingText.textContent = 'Đang sắp xếp sơ đồ...'; 
-
-            canvasState.d3Simulation.alpha(CONSTANTS.D3_SIMULATION_INITIAL_ALPHA).restart(); // Start simulation with higher alpha for initial settling
-            // Let the simulation run for a set duration to stabilize, then hide loading overlay
+            d3Simulation.alpha(1).restart(); // Start simulation with higher alpha for initial settling
+            // Increase initial run time for the diagram to stabilize longer
             setTimeout(() => {
-                canvasState.d3Simulation.alphaTarget(0); // Stop simulation after stability
-                canvasLoadingOverlay.classList.remove('show'); // Hide canvas loading overlay
-            }, CONSTANTS.D3_SIMULATION_STOP_TIMEOUT);
+                d3Simulation.alphaTarget(0); // Stop simulation after a longer while for stability
+            }, 3000); // Run for 3 seconds
+
         }
 
-        /**
-         * Updates the positions of Konva nodes and links based on D3 simulation results.
-         * This function is called on each "tick" of the D3 simulation.
-         * @param {Array<object>} d3Nodes - Array of D3 nodes with updated positions.
-         * @param {Array<object>} d3Links - Array of D3 links with updated source/target positions.
-         */
-        function updateKonvaElements(d3Nodes, d3Links) {
-            // Update node positions
-            d3Nodes.forEach(d => {
-                // Keep nodes within bounds
-                d.x = Math.max(d.konvaRect.width()/2, Math.min(canvasState.stage.width() - d.konvaRect.width()/2, d.x));
-                d.y = Math.max(d.konvaRect.height()/2, Math.min(canvasState.stage.height() - d.konvaRect.height()/2, d.y));
-
-                d.konvaGroup.position({ x: d.x - d.konvaRect.width()/2, y: d.y - d.konvaRect.height()/2 });
-            });
-
-            // Update link positions
-            d3Links.forEach(link => {
-                const sourceRect = link.source.konvaRect;
-                const targetRect = link.target.konvaRect;
-
-                const p1 = {
-                    x: link.source.x,
-                    y: link.source.y,
-                };
-                const p2 = {
-                    x: link.target.x,
-                    y: link.target.y,
-                };
-
-                // Calculate intersection points with node rectangles for cleaner links
-                const startIntersection = getRectIntersectionPoint(p1, p2, {
-                    x: link.source.konvaGroup.x(), y: link.source.konvaGroup.y(),
-                    width: sourceRect.width(), height: sourceRect.height()
-                });
-                const endIntersection = getRectIntersectionPoint(p2, p1, {
-                    x: link.target.konvaGroup.x(), y: link.target.konvaGroup.y(),
-                    width: targetRect.width(), height: targetRect.height()
-                });
-
-                link.konvaLine.points([startIntersection.x, startIntersection.y, endIntersection.x, endIntersection.y]);
-                
-                if (link.konvaSecondLine) { // Update the second line if it exists (for bidirectional)
-                    link.konvaSecondLine.points([endIntersection.x, endIntersection.y, startIntersection.x, startIntersection.y]);
-                }
-
-                // Update label position if it exists
-                if (link.konvaLabel) {
-                    const labelGroup = link.konvaLabel;
-                    const labelText = labelGroup.children[1]; 
-                    const labelRect = labelGroup.children[0]; 
-
-                    labelGroup.x((startIntersection.x + endIntersection.x) / 2 - labelRect.width() / 2);
-                    labelGroup.y((startIntersection.y + endIntersection.y) / 2 - labelRect.height() / 2);
-                    
-                    // Calculate and apply rotation for the label group
-                    const angleRad = Math.atan2(endIntersection.y - startIntersection.y, endIntersection.x - startIntersection.x);
-                    labelGroup.rotation(angleRad * 180 / Math.PI);
-
-                    // Ensure text and background are correctly positioned within the group after rotation
-                    labelText.x(0);
-                    labelText.y(0);
-                    labelRect.x(0);
-                    labelRect.y(0);
-                }
-            });
-            canvasState.layer.batchDraw();
-        }
-
-        /**
-         * Renders content on the Konva canvas based on the parsed JSON data, and sets up D3 force simulation.
-         * @param {object} lessonData - The JSON object containing nodes and connections.
-         */
-        function renderContentOnCanvas(lessonData) {
-            if (!canvasState.stage || !canvasState.layer) {
-                console.error("Konva stage or layer not initialized.");
-                return;
-            }
-
-            // Clear existing elements on canvas and reset state
-            canvasState.layer.destroyChildren(); 
-            canvasPlaceholder.classList.add('hidden'); 
-            canvasState.konvaNodesMap.clear();
-            canvasState.konvaLinks = [];
-
-            const d3Nodes = []; // Nodes for D3 simulation
-            const d3Links = []; // Links for D3 simulation
-
-            // 1. Create Konva Nodes and prepare D3 Nodes
-            lessonData.nodes.forEach(nodeData => {
-                const { konvaGroup, konvaRect, d3NodeData } = createKonvaNodeGroup(nodeData, lessonData); // Pass lessonData here
-                
-                // Attach Konva elements to the D3 node data
-                const d3Node = { ...d3NodeData, konvaGroup, konvaRect }; 
-                d3Nodes.push(d3Node);
-                canvasState.konvaNodesMap.set(d3Node.id, d3Node); // Store D3 node with Konva references
-
-                canvasState.layer.add(konvaGroup);
-            });
-
-            // 2. Create Konva Connections and prepare D3 Links
-            lessonData.connections.forEach(conn => {
-                const sourceD3Node = canvasState.konvaNodesMap.get(conn.from);
-                const targetD3Node = canvasState.konvaNodesMap.get(conn.to);
-
-                if (sourceD3Node && targetD3Node) {
-                    const { konvaLine, konvaLabel, konvaSecondLine } = createKonvaArrow(sourceD3Node, targetD3Node, conn);
-                    canvasState.layer.add(konvaLine);
-                    if (konvaSecondLine) { // Add the second line for bidirectional
-                        canvasState.layer.add(konvaSecondLine);
-                    }
-                    if (konvaLabel) {
-                        canvasState.layer.add(konvaLabel);
-                    }
-
-                    d3Links.push({ 
-                        source: sourceD3Node, 
-                        target: targetD3Node, 
-                        konvaLine: konvaLine, 
-                        konvaLabel: konvaLabel,
-                        konvaSecondLine: konvaSecondLine // Store the second line reference
-                    });
-                    canvasState.konvaLinks.push({ konvaLine: konvaLine, konvaLabel: konvaLabel, konvaSecondLine: konvaSecondLine });
-                }
-            });
-
-            canvasState.layer.batchDraw(); 
-            centerMindMap(); // Center after initial drawing
-
-            // 3. Setup D3 Force Simulation
-            setupD3Simulation(d3Nodes, d3Links, lessonData);
+        // Helper to get center of node (updated to receive group and rect)
+        function getNodeCenter(nodeGroup, nodeRect) {
+            return {
+                x: nodeGroup.x() + nodeRect.width() / 2,
+                y: nodeGroup.y() + nodeRect.height() / 2
+            };
         }
 
         // Function to center the entire mind map on the canvas
         function centerMindMap() {
-            if (!canvasState.stage || !canvasState.layer || canvasState.layer.children.length === 0) return;
+            if (!stage || !layer || layer.children.length === 0) return;
 
             let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
 
-            canvasState.layer.children.forEach(child => {
+            layer.children.forEach(child => {
                 const bbox = child.getClientRect();
                 minX = Math.min(minX, bbox.x);
                 minY = Math.min(minY, bbox.y);
@@ -1435,8 +1042,8 @@
             const contentWidth = maxX - minX;
             const contentHeight = maxY - minY;
 
-            const stageCenterX = canvasState.stage.width() / 2;
-            const stageCenterY = canvasState.stage.height() / 2;
+            const stageCenterX = stage.width() / 2;
+            const stageCenterY = stage.height() / 2;
 
             const currentMapCenterX = minX + contentWidth / 2;
             const currentMapCenterY = minY + contentHeight / 2;
@@ -1445,154 +1052,84 @@
             const offsetY = stageCenterY - currentMapCenterY;
 
             // Move layer to center content
-            canvasState.layer.x(canvasState.layer.x() + offsetX);
-            canvasState.layer.y(canvasState.layer.y() + offsetY);
+            layer.x(layer.x() + offsetX);
+            layer.y(layer.y() + offsetY);
 
-            canvasState.layer.batchDraw();
+            layer.batchDraw();
         }
 
         // --- GLOBAL EVENT LISTENERS ---
-        document.addEventListener('DOMContentLoaded', () => {
-            // Event listeners for chat input and send button
-            sendBtn.addEventListener('click', () => sendMessage(promptInput.value));
-            promptInput.addEventListener('keydown', e => { 
-                if (e.key === 'Enter' && !e.shiftKey) { 
-                    e.preventDefault(); 
-                    sendMessage(promptInput.value); 
-                } 
-            });
-            promptInput.addEventListener('input', adjustInputHeight);
-
-
-            // Click handler for chat container to handle dynamic links/buttons
-            chatContainer.addEventListener('click', async (e) => {
-                const link = e.target.closest('a');
-                const button = e.target.closest('button');
-
-                if (link) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (link.classList.contains('term-link')) {
-                        const term = link.dataset.term;
-                        const messageContentElement = link.closest('.message-content');
-                        const context = messageContentElement ? messageContentElement.dataset.rawText : '';
-                        showTermModal(term, context);
-                    }
-                } else if (button) {
-                     if (button.classList.contains('copy-btn')) {
-                        e.preventDefault(); e.stopPropagation();
-                        copyToClipboard(button.dataset.text);
-                     } else if (button.classList.contains('speak-btn')) {
-                        e.preventDefault(); e.stopPropagation();
-                        
-                        // Always reset the previously active speech button before starting a new one
-                        resetActiveSpeechButton(); 
-
-                        if (speechSynthesis.speaking || speechSynthesis.paused) {
-                            if (activeSpeech && activeSpeech.button === button) {
-                                const currentState = button.dataset.state;
-                                if (currentState === 'paused') {
-                                    speechSynthesis.resume();
-                                    button.innerHTML = '⏸️'; button.dataset.state = 'playing'; button.title = 'Tạm dừng';
-                                    return;
-                                }
-                                if (currentState === 'playing') {
-                                    speechSynthesis.pause();
-                                    button.innerHTML = '▶️'; button.dataset.state = 'Tiếp tục';
-                                    return;
-                                }
-                            }
-                            // If a different utterance is speaking, cancel it before starting a new one
-                            speechSynthesis.cancel(); 
-                        }
-
-                        const utterance = new SpeechSynthesisUtterance(button.dataset.text);
-                        utterance.lang = 'vi-VN'; 
-                        utterance.onstart = () => {
-                            activeSpeech = { utterance, button: button }; 
-                            button.innerHTML = '⏸️'; button.dataset.state = 'playing'; button.title = 'Tạm dừng';
-                        };
-                        utterance.onend = () => { resetActiveSpeechButton(); activeSpeech = null; };
-                        utterance.onerror = (event) => { 
-                            console.error("SpeechSynthesisUtterance error:", event);
-                            showToast(`Lỗi đọc: ${event.error}`, 'error');
-                            resetActiveSpeechButton(); 
-                            activeSpeech = null; 
-                        };
-                        speechSynthesis.speak(utterance);
-                     }
-                }
-            });
-            
-            // --- SCROLL TO TOP BUTTON LOGIC ---
-            if (chatContainer) {
-                chatContainer.addEventListener("scroll", toggleScrollToTopButton);
-            }
-            if (scrollToTopBtn) { 
-                scrollToTopBtn.addEventListener("click", scrollToTop);
-            }
-            // Assign event to Clear Canvas button
-            if (clearCanvasBtn) {
-                clearCanvasBtn.addEventListener('click', () => {
-                    if (canvasState.layer) {
-                        canvasState.layer.destroyChildren();
-                        canvasState.layer.batchDraw();
-                        canvasPlaceholder.classList.remove('hidden'); // Show placeholder again
-                        if (canvasState.d3Simulation) { // Stop simulation if active
-                            canvasState.d3Simulation.stop();
-                        }
-                        canvasState.konvaNodesMap.clear();
-                        canvasState.konvaLinks = [];
-                    }
-                    // Ensure canvas loading overlay is hidden when clearing canvas
-                    canvasLoadingOverlay.classList.remove('show');
-                });
-            }
-            // Assign event to Activate Force Layout button
-            if (activateForceLayoutBtn) {
-                activateForceLayoutBtn.addEventListener('click', () => {
-                    if (canvasState.d3Simulation) {
-                        canvasState.d3Simulation.alpha(CONSTANTS.D3_SIMULATION_INITIAL_ALPHA).restart(); // Restart simulation from scratch
-                        canvasLoadingOverlay.classList.add('show');
-                        canvasLoadingText.textContent = 'Sơ đồ đang được sắp xếp...';
-                        // Run for a fixed time then stop
-                        setTimeout(() => {
-                            canvasState.d3Simulation.alphaTarget(0);
-                            canvasLoadingOverlay.classList.remove('show'); // Hide overlay after sorting
-                        }, CONSTANTS.D3_SIMULATION_STOP_TIMEOUT);
-                    } else {
-                        showToast('Không có sơ đồ để sắp xếp. Hãy tạo một bài học trước.', 'info');
-                    }
-                });
-            }
-
-            // Event listeners for Node Edit Modal buttons (already here, just ensuring they are in DOMContentLoaded)
-            modalSaveNodeBtn.addEventListener('click', saveNodeChanges);
-            modalCancelNodeBtn.addEventListener('click', cancelNodeChanges);
-            closeNodeEditModalBtn.addEventListener('click', cancelNodeChanges);
-
-            // Close modal when clicking outside
-            window.addEventListener('click', (event) => {
-                if (event.target == nodeEditModal) {
-                    cancelNodeChanges();
-                }
-                if (event.target == termModal) { // This was already here, ensuring it's in DOMContentLoaded
-                    termModal.style.display = 'none';
-                }
-            });
-
-            // Close term modal (already here, just ensuring it's in DOMContentLoaded)
-            closeModalBtn.addEventListener('click', () => {
-                termModal.style.display = 'none';
-            });
+        sendBtn.addEventListener('click', sendMessage);
+        promptInput.addEventListener('keydown', e => { 
+            if (e.key === 'Enter' && !e.shiftKey) { 
+                e.preventDefault(); 
+                sendMessage(); 
+            } 
         });
+        promptInput.addEventListener('input', adjustInputHeight);
 
+        // Click handler for chat container to handle dynamic links/buttons
+        chatContainer.addEventListener('click', async (e) => {
+            const link = e.target.closest('a');
+            const button = e.target.closest('button');
 
+            if (link) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (link.classList.contains('term-link')) {
+                    const term = link.dataset.term;
+                    const messageContentElement = link.closest('.message-content');
+                    const context = messageContentElement ? messageContentElement.dataset.rawText : '';
+                    showToast(`Explain term: "${term}" (context: "${context.substring(0, 50)}...")`, 'info');
+                }
+            } else if (button) {
+                 if (button.classList.contains('copy-btn')) {
+                    e.preventDefault(); e.stopPropagation();
+                    copyToClipboard(button.dataset.text);
+                 } else if (button.classList.contains('speak-btn')) {
+                    e.preventDefault(); e.stopPropagation();
+                    if (speechSynthesis.speaking || speechSynthesis.paused) {
+                        if (activeSpeech && activeSpeech.button === button) {
+                            const currentState = button.dataset.state;
+                            if (currentState === 'paused') {
+                                speechSynthesis.resume();
+                                button.innerHTML = '⏸️'; button.dataset.state = 'playing'; button.title = 'Pause';
+                                return;
+                            }
+                            if (currentState === 'playing') {
+                                speechSynthesis.pause();
+                                button.innerHTML = '▶️'; button.dataset.state = 'Resume';
+                                return;
+                            }
+                        }
+                        speechSynthesis.cancel(); 
+                    }
+
+                    const utterance = new SpeechSynthesisUtterance(button.dataset.text);
+                    utterance.lang = 'vi-VN'; 
+                    utterance.onstart = () => {
+                        resetActiveSpeechButton(); 
+                        activeSpeech = { utterance, button: button }; 
+                        button.innerHTML = '⏸️'; button.dataset.state = 'playing'; button.title = 'Pause';
+                    };
+                    utterance.onend = () => { resetActiveSpeechButton(); activeSpeech = null; };
+                    utterance.onerror = (event) => { 
+                        console.error("SpeechSynthesisUtterance error:", event);
+                        showToast(`Speech error: ${event.error}`, 'error');
+                        resetActiveSpeechButton(); 
+                        activeSpeech = null; 
+                    };
+                    speechSynthesis.speak(utterance);
+                 }
+            }
+        });
+        
+        // --- SCROLL TO TOP BUTTON LOGIC ---
         /** Function to show/hide the scroll to top button. */
         function toggleScrollToTopButton() {
             if (!scrollToTopBtn || !chatContainer) return; 
 
-            if (chatContainer.scrollTop > chatContainer.clientHeight * CONSTANTS.CHAT_SCROLL_THRESHOLD) { 
+            if (chatContainer.scrollTop > chatContainer.clientHeight * 0.5) { 
                 scrollToTopBtn.classList.add('show');
             } else {
                 scrollToTopBtn.classList.remove('show');
@@ -1608,111 +1145,40 @@
                 });
             }
         }
-
-        // --- TERM MODAL LOGIC ---
-        /**
-         * Displays the term explanation modal.
-         * @param {string} term - The term to explain.
-         * @param {string} context - The context where the term appeared.
-         */
-        function showTermModal(term, context) {
-            modalTermTitle.textContent = `Giải thích: "${term}"`;
-            modalTermExplanation.textContent = `Bạn muốn tôi giải thích rõ hơn về "${term}"?`; // Placeholder for now
-            termModal.style.display = 'flex'; // Use flex to center the modal
-
-            // Event listener for "Ask AI for more details" button inside modal
-            // Ensure this listener is only added once or remove previous before adding
-            askAiMoreBtn.onclick = () => {
-                const query = `Giải thích chi tiết về "${term}" trong ngữ cảnh "${context.substring(0, 200)}..."`;
-                sendMessage(query, true); // Send as a term explanation query
-            };
-        }
-
-
-        // --- NODE EDIT MODAL LOGIC ---
-        /**
-         * Displays the node editing modal.
-         * @param {object} nodeD3Data - The D3 node object to edit.
-         */
-        function showNodeEditModal(nodeD3Data) {
-            editingNode = nodeD3Data;
-            modalEditTextInput.value = editingNode.text;
-            modalEditDescriptionInput.value = editingNode.description;
-            nodeEditModal.style.display = 'flex'; // Use flex to center the modal
-        }
-
-        /** Saves changes from the node edit modal back to the Konva node and D3 data. */
-        function saveNodeChanges() {
-            if (!editingNode) return;
-
-            const newText = modalEditTextInput.value.trim();
-            const newDescription = modalEditDescriptionInput.value.trim();
-
-            if (newText === "") {
-                showToast("Văn bản node không được để trống.", "error");
-                return;
-            }
-
-            // Update D3 node data
-            editingNode.text = newText;
-            editingNode.description = newDescription;
-
-            // Update Konva Text and Rect
-            const konvaText = editingNode.konvaText;
-            const konvaRect = editingNode.konvaRect;
-
-            konvaText.text(newText);
-            
-            // Recalculate dimensions for the rectangle based on new text
-            const textMetrics = konvaText.measureSize(newText);
-            const newRectWidth = Math.max(CONSTANTS.MIN_NODE_WIDTH, textMetrics.width + CONSTANTS.NODE_PADDING); 
-            const newRectHeight = Math.max(CONSTANTS.MIN_NODE_HEIGHT, textMetrics.height + CONSTANTS.NODE_PADDING); 
-
-            konvaRect.width(newRectWidth);
-            konvaRect.height(newRectHeight);
-
-            // Re-position text within the potentially resized rectangle
-            konvaText.position({
-                x: (newRectWidth - textMetrics.width) / 2 - CONSTANTS.NODE_PADDING/2, 
-                y: (newRectHeight - textMetrics.height) / 2 - CONSTANTS.NODE_PADDING/2,
-            });
-
-            canvasState.layer.batchDraw(); // Redraw the layer to reflect changes
-            showToast("Đã lưu thay đổi cho node.", "success");
-            nodeEditModal.style.display = 'none'; // Hide the modal
-            editingNode = null; // Clear editing node
-        }
-
-        /** Cancels node editing and hides the modal. */
-        function cancelNodeChanges() {
-            nodeEditModal.style.display = 'none';
-            editingNode = null;
-        }
-
-
-        // --- NODE TOOLTIP LOGIC ---
-        /**
-         * Displays the node tooltip.
-         * @param {object} nodeD3Data - The D3 node object whose description is to be shown.
-         * @param {number} clientX - Mouse X coordinate on screen.
-         * @param {number} clientY - Mouse Y coordinate on screen.
-         */
-        function showNodeTooltip(nodeD3Data, clientX, clientY) {
-            if (!nodeD3Data.description || nodeD3Data.description.trim() === "") {
-                nodeTooltip.classList.remove('show');
-                return;
-            }
-            nodeTooltip.innerHTML = nodeD3Data.description;
-            nodeTooltip.style.left = `${clientX + 15}px`; // Offset from mouse pointer
-            nodeTooltip.style.top = `${clientY + 15}px`;  // Offset from mouse pointer
-            nodeTooltip.classList.add('show');
-        }
-
-        /** Hides the node tooltip. */
-        function hideNodeTooltip() {
-            nodeTooltip.classList.remove('show');
-        }
         
+        document.addEventListener('DOMContentLoaded', () => {
+            if (chatContainer) {
+                chatContainer.addEventListener("scroll", toggleScrollToTopButton);
+            }
+            if (scrollToTopBtn) { 
+                scrollToTopBtn.addEventListener("click", scrollToTop);
+            }
+            // Assign event to Clear Canvas button
+            if (clearCanvasBtn) {
+                clearCanvasBtn.addEventListener('click', () => {
+                    if (layer) {
+                        layer.destroyChildren();
+                        layer.batchDraw();
+                        canvasPlaceholder.classList.remove('hidden'); // Show placeholder again
+                        if (d3Simulation) { // Stop simulation if active
+                            d3Simulation.stop();
+                        }
+                    }
+                });
+            }
+            // Assign event to Activate Force Layout button
+            if (activateForceLayoutBtn) {
+                activateForceLayoutBtn.addEventListener('click', () => {
+                    if (d3Simulation) {
+                        d3Simulation.alpha(1).restart(); // Restart simulation from scratch
+                        showToast('Sơ đồ đang được sắp xếp...', 'info');
+                    } else {
+                        showToast('Không có sơ đồ để sắp xếp. Hãy tạo một bài học trước.', 'info');
+                    }
+                });
+            }
+        });
+
     </script>
 </body>
 </html>
