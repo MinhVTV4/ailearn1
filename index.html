@@ -137,6 +137,43 @@
         .dark .close-button:focus {
             color: white;
         }
+
+        /* Canvas Loading Overlay */
+        #canvas-loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8); /* Light overlay */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 50; /* Below modal, above canvas */
+            color: #333;
+            font-weight: 600;
+            transition: opacity 0.3s ease-in-out;
+            opacity: 0;
+            pointer-events: none; /* Allow clicks to pass through when hidden */
+        }
+        .dark #canvas-loading-overlay {
+            background-color: rgba(30, 41, 59, 0.8); /* Dark overlay */
+            color: #e2e8f0;
+        }
+        #canvas-loading-overlay.show {
+            opacity: 1;
+            pointer-events: auto; /* Block clicks when visible */
+        }
+        #canvas-loading-overlay svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 1rem;
+            color: #3b82f6; /* Blue spinner */
+        }
+        .dark #canvas-loading-overlay svg {
+            color: #60a5fa; /* Light blue spinner */
+        }
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 font-sans h-screen flex">
@@ -205,6 +242,14 @@
                 <!-- Nội dung canvas sẽ được render tại đây bởi Konva.js -->
                 <div id="canvas-placeholder" class="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-600 text-center p-4">
                     <p class="max-w-md">Chào mừng bạn đến với AI Học Tập! <br> Hãy nhập câu hỏi hoặc yêu cầu một chủ đề (ví dụ: "giải thích HTML", "cấu trúc dữ liệu", "khái niệm Vật lý lượng tử") để bắt đầu bài học được trực quan hóa tại đây.</p>
+                </div>
+
+                <!-- Canvas Loading Overlay -->
+                <div id="canvas-loading-overlay" class="hidden">
+                    <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004 16.087V18a2 2 0 100 4h18a2 2 0 100-4v-1.913A8.001 8.001 0 0018.418 5H18a2 2 0 100-4h-1.582m0 16.087A6.001 6.001 0 0118.418 5"></path>
+                    </svg>
+                    <p id="canvas-loading-text">Đang tải sơ đồ...</p>
                 </div>
             </div>
         </div>
@@ -310,6 +355,8 @@
         const canvasPlaceholder = document.getElementById('canvas-placeholder');
         const clearCanvasBtn = document.getElementById('clear-canvas-btn');
         const activateForceLayoutBtn = document.getElementById('activate-force-layout-btn');
+        const canvasLoadingOverlay = document.getElementById('canvas-loading-overlay'); // New element
+        const canvasLoadingText = document.getElementById('canvas-loading-text');     // New element
 
         // Term modal elements
         const termModal = document.getElementById('term-modal');
@@ -499,7 +546,7 @@
             // Initialize Konva Stage and Layer after user is authenticated (anonymous or otherwise)
             initCanvas();
             // Display welcome message in chatbox
-            addMessage('ai', 'Welcome to AI Learning! Please type a question or request a topic (e.g., "explain HTML", "data structures", "quantum physics concepts") to start a visualized lesson here.');
+            addMessage('ai', 'Chào mừng bạn đến với AI Học Tập! Hãy nhập câu hỏi hoặc yêu cầu một chủ đề (ví dụ: "giải thích HTML", "cấu trúc dữ liệu", "khái niệm Vật lý lượng tử") để bắt đầu bài học được trực quan hóa tại đây.');
         });
 
         // --- THEME TOGGLE ---
@@ -539,7 +586,7 @@
             const copyBtn = document.createElement('button');
             copyBtn.className = 'copy-btn p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-full transition-colors';
             copyBtn.innerHTML = `<svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" /></svg>`;
-            copyBtn.title = 'Copy content';
+            copyBtn.title = 'Sao chép nội dung';
             copyBtn.dataset.text = rawText; 
             actionsContainer.appendChild(copyBtn);
             
@@ -547,7 +594,7 @@
             const speakBtn = document.createElement('button');
             speakBtn.className = 'speak-btn p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-full transition-colors';
             speakBtn.innerHTML = '🔊';
-            speakBtn.title = 'Read text aloud';
+            speakBtn.title = 'Đọc văn bản';
             speakBtn.dataset.text = rawText; 
             speakBtn.dataset.state = 'idle'; 
             actionsContainer.appendChild(speakBtn);
@@ -631,10 +678,16 @@
             if (!isTermExplanation) {
                 addMessage('user', promptText);
                 localHistory.push({ role: 'user', parts: [{ text: promptText }] });
+                // Show canvas loading overlay for new main topic requests
+                canvasLoadingOverlay.classList.add('show');
+                canvasLoadingText.textContent = 'Đang tải sơ đồ...';
+            } else {
+                // For term explanation, no need to show canvas loading, as it's a chat-only response
+                // Unless the explanation itself triggers a canvas update, which is not the case here
             }
 
             const { messageWrapper, contentElem, statusElem, actionsContainer } = addMessage('ai', '<span class="blinking-cursor"></span>');
-            if (statusElem) statusElem.textContent = 'Thinking...';
+            if (statusElem) statusElem.textContent = 'Đang nghĩ...';
 
             try {
                 // Prepare chat history to send to the model (text-only, without JSON)
@@ -656,7 +709,7 @@
 
                 for await (const chunk of result.stream) {
                     if (isFirstChunk) {
-                        if (statusElem) statusElem.textContent = 'Writing...';
+                        if (statusElem) statusElem.textContent = 'Đang viết...';
                         isFirstChunk = false;
                     }
                     fullResponseText += chunk.text();
@@ -669,7 +722,10 @@
                             // Only update jsonResponse if parsed successfully and it's new data
                             if (JSON.stringify(tempJson) !== JSON.stringify(jsonResponse)) {
                                 jsonResponse = tempJson;
-                                renderContentOnCanvas(jsonResponse); // Render on canvas immediately
+                                if (!isTermExplanation) { // Only render on canvas for main lesson data
+                                    renderContentOnCanvas(jsonResponse); // Render on canvas immediately
+                                    canvasLoadingText.textContent = 'Đang tạo sơ đồ...'; // Update text
+                                }
                             }
                         } catch (e) {
                             // console.warn("Partial JSON, waiting for full response:", e);
@@ -698,15 +754,19 @@
 
             } catch (error) {
                 console.error("Error during sendMessage:", error);
-                contentElem.innerHTML = `**Error:** ${error.message}`;
+                contentElem.innerHTML = `**Lỗi:** ${error.message}`;
                 // Remove the last message (if any) to avoid corrupted history
                 if (localHistory.length > 0) {
                     localHistory.pop();
                 }
-                showToast(`Message send error: ${error.message}`, 'error');
+                showToast(`Lỗi gửi tin nhắn: ${error.message}`, 'error');
 
             } finally {
                 sendBtn.disabled = false; // Re-enable send button
+                // Hide canvas loading overlay if it's still visible
+                if (canvasLoadingOverlay.classList.contains('show')) {
+                    canvasLoadingOverlay.classList.remove('show');
+                }
             }
         }
 
@@ -727,7 +787,7 @@
             recognition.onstart = () => { 
                 isRecording = true; 
                 recordBtn.classList.add('recording'); 
-                promptInput.placeholder = 'Listening...'; 
+                promptInput.placeholder = 'Đang nghe...'; 
             };
             recognition.onend = () => { 
                 isRecording = false; 
@@ -740,7 +800,7 @@
                 sendMessage(promptInput.value); 
             };
             recognition.onerror = (event) => { 
-                showToast(`Recording error: ${event.error}`, 'error'); 
+                showToast(`Lỗi ghi âm: ${event.error}`, 'error'); 
                 console.error("Speech Recognition error:", event.error);
             };
             recordBtn.addEventListener('click', () => { 
@@ -755,7 +815,7 @@
             if (activeSpeech && activeSpeech.button) {
                 activeSpeech.button.innerHTML = '🔊';
                 activeSpeech.button.dataset.state = 'idle';
-                activeSpeech.button.title = 'Read text aloud';
+                activeSpeech.button.title = 'Đọc văn bản';
             }
         }
 
@@ -1063,10 +1123,15 @@
                     canvasState.d3Simulation.alphaTarget(0); // Stop simulation after drag ends
                 });
             });
+
+            // Show "Đang sắp xếp..." on canvas overlay when simulation starts
+            canvasLoadingText.textContent = 'Đang sắp xếp sơ đồ...'; 
+
             canvasState.d3Simulation.alpha(CONSTANTS.D3_SIMULATION_INITIAL_ALPHA).restart(); // Start simulation with higher alpha for initial settling
-            // Let the simulation run for a set duration to stabilize
+            // Let the simulation run for a set duration to stabilize, then hide loading overlay
             setTimeout(() => {
                 canvasState.d3Simulation.alphaTarget(0); // Stop simulation after stability
+                canvasLoadingOverlay.classList.remove('show'); // Hide canvas loading overlay
             }, CONSTANTS.D3_SIMULATION_STOP_TIMEOUT);
         }
 
@@ -1263,12 +1328,12 @@
                             const currentState = button.dataset.state;
                             if (currentState === 'paused') {
                                 speechSynthesis.resume();
-                                button.innerHTML = '⏸️'; button.dataset.state = 'playing'; button.title = 'Pause';
+                                button.innerHTML = '⏸️'; button.dataset.state = 'playing'; button.title = 'Tạm dừng';
                                 return;
                             }
                             if (currentState === 'playing') {
                                 speechSynthesis.pause();
-                                button.innerHTML = '▶️'; button.dataset.state = 'Resume';
+                                button.innerHTML = '▶️'; button.dataset.state = 'Tiếp tục';
                                 return;
                             }
                         }
@@ -1280,12 +1345,12 @@
                     utterance.onstart = () => {
                         resetActiveSpeechButton(); 
                         activeSpeech = { utterance, button: button }; 
-                        button.innerHTML = '⏸️'; button.dataset.state = 'playing'; button.title = 'Pause';
+                        button.innerHTML = '⏸️'; button.dataset.state = 'playing'; button.title = 'Tạm dừng';
                     };
                     utterance.onend = () => { resetActiveSpeechButton(); activeSpeech = null; };
                     utterance.onerror = (event) => { 
                         console.error("SpeechSynthesisUtterance error:", event);
-                        showToast(`Speech error: ${event.error}`, 'error');
+                        showToast(`Lỗi đọc: ${event.error}`, 'error');
                         resetActiveSpeechButton(); 
                         activeSpeech = null; 
                     };
@@ -1367,6 +1432,8 @@
                         canvasState.konvaNodesMap.clear();
                         canvasState.konvaLinks = [];
                     }
+                    // Ensure canvas loading overlay is hidden when clearing canvas
+                    canvasLoadingOverlay.classList.remove('show');
                 });
             }
             // Assign event to Activate Force Layout button
@@ -1374,10 +1441,12 @@
                 activateForceLayoutBtn.addEventListener('click', () => {
                     if (canvasState.d3Simulation) {
                         canvasState.d3Simulation.alpha(CONSTANTS.D3_SIMULATION_INITIAL_ALPHA).restart(); // Restart simulation from scratch
-                        showToast('Sơ đồ đang được sắp xếp...', 'info');
+                        canvasLoadingOverlay.classList.add('show');
+                        canvasLoadingText.textContent = 'Sơ đồ đang được sắp xếp...';
                         // Run for a fixed time then stop
                         setTimeout(() => {
                             canvasState.d3Simulation.alphaTarget(0);
+                            canvasLoadingOverlay.classList.remove('show'); // Hide overlay after sorting
                         }, CONSTANTS.D3_SIMULATION_STOP_TIMEOUT);
                     } else {
                         showToast('Không có sơ đồ để sắp xếp. Hãy tạo một bài học trước.', 'info');
