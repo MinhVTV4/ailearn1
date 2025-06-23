@@ -126,8 +126,8 @@
                     <button id="clear-canvas-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Xóa Canvas">
                         <svg class="w-6 h-6 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.67-.114 1.022-.165m-1.022.165L5.41 19.673a2.25 2.25 0 002.244 2.077h7.212a2.25 2.25 0 002.244-2.077L19.25 5.79m0 0h-.008v.008H19.25z" /></svg>
                     </button>
-                    <!-- Nút Kích hoạt Sắp xếp Lực -->
-                    <button id="activate-force-layout-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Sắp xếp sơ đồ tự động">
+                    <!-- Nút Kích hoạt Sắp xếp Lực (Không còn chức năng sau khi loại bỏ D3.js) -->
+                    <button id="activate-force-layout-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Sắp xếp sơ đồ tự động (Chức năng này không còn hoạt động)">
                         <svg class="w-6 h-6 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.898 20.572L16.5 21.75l-.398-1.178a3.375 3.375 0 00-2.455-2.456L12.75 18l1.178-.398a3.375 3.375 0 002.455-2.456L16.5 14.25l.398 1.178a3.375 3.375 0 002.456 2.456L20.25 18l-1.178.398a3.375 3.375 0 00-2.456 2.456z" /></svg>
                     </button>
                 </div>
@@ -190,7 +190,7 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@2.3.6/dist/purify.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/konva@8.x.x/konva.min.js"></script>
-    <script src="https://d3js.org/d3.v7.min.js"></script> <!-- Thêm D3.js -->
+    <!-- Removed D3.js: <script src="https://d3js.org/d3.v7.min.js"></script> -->
     
     <script type="module">
         // Import các module Firebase từ CDN
@@ -217,9 +217,9 @@
         let localHistory = []; // Stores the full conversation history (text-only for AI)
         let isRecording = false; // Speech recording state
         let activeSpeech = null; // Tracks current speech synthesis utterance
-        let d3Simulation = null; // D3 force simulation instance
-        let currentKonvaNodes = []; // Store references to Konva groups (nodes)
-        let currentKonvaLinks = []; // Store references to Konva arrows (links)
+        // Removed D3.js related variables: let d3Simulation = null;
+        let konvaNodesData = []; // Stores Konva node groups and their original data
+        let konvaLinksData = []; // Stores Konva link arrows and references to source/target nodes
         let clickedNodeData = null; // Stores data of the node that was right-clicked
 
         // Cached DOM elements
@@ -242,7 +242,7 @@
         const learningCanvas = document.getElementById('learning-canvas');
         const canvasPlaceholder = document.getElementById('canvas-placeholder');
         const clearCanvasBtn = document.getElementById('clear-canvas-btn');
-        const activateForceLayoutBtn = document.getElementById('activate-force-layout-btn'); // New button
+        const activateForceLayoutBtn = document.getElementById('activate-force-layout-btn'); // This button's function is now deprecated
         const nodeContextMenu = document.getElementById('node-context-menu'); // Custom context menu
         const expandTopicBtn = document.getElementById('expand-topic-btn'); // "Expand Topic" button in context menu
 
@@ -675,7 +675,7 @@
             }
         }
 
-        // --- LOGIC CANVAS (Konva.js với Tích hợp D3-Force) ---
+        // --- LOGIC CANVAS (Konva.js Only) ---
 
         /** Khởi tạo Konva.js stage và layer. */
         function initCanvas() {
@@ -697,11 +697,6 @@
                 stage.width(canvasContainer.offsetWidth);
                 stage.height(canvasContainer.offsetHeight);
                 drawGrid(); // Vẽ lại lưới khi thay đổi kích thước
-                if (d3Simulation) {
-                    // Căn lại bố cục lực nếu đang hoạt động
-                    d3Simulation.force("center", d3.forceCenter(stage.width() / 2, stage.height() / 2));
-                    d3Simulation.alpha(0.3).restart(); // Khởi động lại mô phỏng cho tâm mới
-                }
                 layer.batchDraw();
                 gridLayer.batchDraw();
             });
@@ -767,7 +762,6 @@
             }
             gridLayer.batchDraw();
         }
-
 
         /**
          * Hàm trợ giúp để tính toán điểm giao nhau của một đường thẳng với một hình chữ nhật.
@@ -842,57 +836,43 @@
         }
 
         /**
-         * Hàm để tính toán các cấp độ bằng BFS
-         * @param {Array<Object>} nodes - Mảng dữ liệu node từ lessonData.
-         * @param {Array<Object>} connections - Mảng dữ liệu kết nối từ lessonData.
-         * @param {string} mainTopicId - ID của node chủ đề chính.
-         * @returns {Map<string, number>} Một map trong đó các khóa là ID node và giá trị là cấp độ của chúng.
+         * Cập nhật vị trí của tất cả các đường nối (mũi tên) được kết nối với một node cụ thể.
+         * @param {Konva.Group} movedNodeGroup - Nhóm Konva của node vừa di chuyển.
          */
-        function calculateNodeLevels(nodes, connections, mainTopicId) {
-            const levels = new Map();
-            const adjList = new Map();
-            nodes.forEach(node => {
-                adjList.set(node.id, []);
-                levels.set(node.id, -1); // Khởi tạo tất cả các cấp độ là -1 (chưa ghé thăm)
-            });
+        function updateLinksForNode(movedNodeGroup) {
+            konvaLinksData.forEach(linkData => {
+                const sourceNodeGroup = linkData.sourceNodeGroup;
+                const targetNodeGroup = linkData.targetNodeGroup;
+                const konvaLine = linkData.konvaLine;
+                const sourceNodeRect = sourceNodeGroup.children[0]; // Konva.Rect is the first child
+                const targetNodeRect = targetNodeGroup.children[0]; // Konva.Rect is the first child
 
-            connections.forEach(conn => {
-                adjList.get(conn.from).push(conn.to);
-                // Giả định các kết nối đại diện cho cha -> con để tính toán cấp độ phân cấp.
-            });
+                // Only update if this link is connected to the moved node
+                if (sourceNodeGroup === movedNodeGroup || targetNodeGroup === movedNodeGroup) {
+                    const p1 = {
+                        x: sourceNodeGroup.x() + sourceNodeRect.width() / 2,
+                        y: sourceNodeGroup.y() + sourceNodeRect.height() / 2,
+                    };
+                    const p2 = {
+                        x: targetNodeGroup.x() + targetNodeRect.width() / 2,
+                        y: targetNodeGroup.y() + targetNodeRect.height() / 2,
+                    };
 
-            const queue = [];
-            if (mainTopicId) {
-                queue.push(mainTopicId);
-                levels.set(mainTopicId, 0);
-            } else {
-                // Fallback nếu không có chủ đề chính được đánh dấu rõ ràng, chọn cái đầu tiên
-                if (nodes.length > 0) {
-                    const firstNodeId = nodes[0].id;
-                    queue.push(firstNodeId);
-                    levels.set(firstNodeId, 0);
-                    console.warn("Không tìm thấy chủ đề chính. Sử dụng node đầu tiên làm điểm bắt đầu để tính toán cấp độ.");
-                } else {
-                    return levels; // Không có node để xử lý
+                    const startIntersection = getRectIntersectionPoint(p1, p2, {
+                        x: sourceNodeGroup.x(), y: sourceNodeGroup.y(),
+                        width: sourceNodeRect.width(), height: sourceNodeRect.height()
+                    });
+                    const endIntersection = getRectIntersectionPoint(p2, p1, {
+                        x: targetNodeGroup.x(), y: targetNodeGroup.y(),
+                        width: targetNodeRect.width(), height: targetNodeRect.height()
+                    });
+
+                    konvaLine.points([startIntersection.x, startIntersection.y, endIntersection.x, endIntersection.y]);
                 }
-            }
-
-            let head = 0;
-            while (head < queue.length) {
-                const currentId = queue[head++];
-                const currentLevel = levels.get(currentId);
-
-                adjList.get(currentId).forEach(neighborId => {
-                    // Chỉ cập nhật nếu hàng xóm chưa được ghé thăm hoặc tìm thấy đường dẫn ngắn hơn (cấp độ thấp hơn)
-                    // Đối với các cấp độ giống cây, đảm bảo nó chưa được ghé thăm hoặc một đường dẫn thông qua một cha khác
-                    if (levels.get(neighborId) === -1) { 
-                        levels.set(neighborId, currentLevel + 1);
-                        queue.push(neighborId);
-                    }
-                });
-            }
-            return levels;
+            });
+            layer.batchDraw();
         }
+
 
         /**
          * Hiển thị menu ngữ cảnh tùy chỉnh tại vị trí được chỉ định.
@@ -908,12 +888,12 @@
         /** Ẩn menu ngữ cảnh tùy chỉnh. */
         function hideNodeContextMenu() {
             nodeContextMenu.classList.add('hidden');
-            clickedNodeData = null; // Clear stored node data
+            clickedNodeData = null; // Xóa dữ liệu node đã lưu
         }
 
 
         /**
-         * Render nội dung trên canvas Konva dựa trên dữ liệu JSON đã phân tích cú pháp và thiết lập mô phỏng lực D3.
+         * Render nội dung trên canvas Konva dựa trên dữ liệu JSON đã phân tích cú pháp.
          * @param {object} lessonData - Đối tượng JSON chứa các node và kết nối.
          */
         function renderContentOnCanvas(lessonData) {
@@ -922,28 +902,18 @@
                 return;
             }
 
-            // Dừng mọi mô phỏng D3 đang hoạt động
-            if (d3Simulation) {
-                d3Simulation.stop();
-            }
-
             layer.destroyChildren(); // Xóa các phần tử hiện có trên canvas
             canvasPlaceholder.classList.add('hidden'); // Ẩn placeholder khi có nội dung
 
+            konvaNodesData = []; // Reset node data
+            konvaLinksData = []; // Reset link data
+
             const PADDING = 20; // Padding nội bộ cho các node
 
-            const d3Nodes = []; // Các node cho mô phỏng D3
-            const d3Links = []; // Các liên kết cho mô phỏng D3
+            // Tạo bản đồ các node để dễ dàng tìm kiếm khi tạo liên kết
+            const nodesMap = new Map();
 
-            currentKonvaNodes = []; // Đặt lại các node Konva đã lưu trữ
-            currentKonvaLinks = []; // Đặt lại các liên kết Konva đã lưu trữ
-
-            // 1. Tính toán cấp độ Node (cho bố cục phân cấp)
-            let mainTopicNode = lessonData.nodes.find(node => node.isMainTopic);
-            let mainTopicId = mainTopicNode ? mainTopicNode.id : (lessonData.nodes.length > 0 ? lessonData.nodes[0].id : null);
-            const nodeLevels = calculateNodeLevels(lessonData.nodes, lessonData.connections, mainTopicId);
-
-            // 2. Tạo Node Konva và Node D3
+            // 1. Tạo Node Konva và lưu trữ dữ liệu
             lessonData.nodes.forEach(nodeData => {
                 const group = new Konva.Group({
                     x: nodeData.x,
@@ -994,16 +964,9 @@
                 group.add(text);
                 layer.add(group);
 
-                // Lưu nhóm Konva và thêm vào các node D3
-                const d3Node = { 
-                    id: nodeData.id, 
-                    konvaGroup: group,
-                    konvaRect: rect, // Lưu tham chiếu đến rect cho getRectIntersectionPoint
-                    isMainTopic: nodeData.isMainTopic || false,
-                    level: nodeLevels.get(nodeData.id) !== -1 ? nodeLevels.get(nodeData.id) : 0 // Gán cấp độ đã tính toán, mặc định là 0
-                };
-                d3Nodes.push(d3Node);
-                currentKonvaNodes.push(d3Node); // Lưu trữ để truy cập sau này (ví dụ: kích hoạt bố cục lực)
+                // Store Konva group and original node data
+                konvaNodesData.push({ konvaGroup: group, nodeData: nodeData });
+                nodesMap.set(nodeData.id, { konvaGroup: group, konvaRect: rect, nodeData: nodeData });
 
                 // Thêm sự kiện click để hiển thị mô tả
                 group.on('click', () => {
@@ -1020,20 +983,32 @@
                     clickedNodeData = nodeData; // Lưu dữ liệu của node được click
                     showNodeContextMenu(e.evt.clientX, e.evt.clientY);
                 });
+
+                // Thêm sự kiện kéo thả cho node
+                group.on('dragmove', (e) => {
+                    // Cập nhật vị trí các liên kết khi node di chuyển
+                    updateLinksForNode(group);
+                });
+                group.on('dragend', (e) => {
+                    // Đảm bảo các liên kết được cập nhật lần cuối sau khi kéo xong
+                    updateLinksForNode(group);
+                });
             });
 
-            // Map d3Nodes để tạo liên kết dễ dàng hơn
-            const nodeMap = new Map(d3Nodes.map(d => [d.id, d]));
-
-            // 3. Tạo Kết nối Konva và Liên kết D3
+            // 2. Tạo Kết nối Konva
             lessonData.connections.forEach(conn => {
-                const sourceD3Node = nodeMap.get(conn.from);
-                const targetD3Node = nodeMap.get(conn.to);
+                const sourceNode = nodesMap.get(conn.from);
+                const targetNode = nodesMap.get(conn.to);
 
-                if (sourceD3Node && targetD3Node) {
-                    // Các điểm ban đầu (sẽ được cập nhật bởi lực D3)
+                if (sourceNode && targetNode) {
+                    // Initial points (will be updated by updateLinksForNode)
                     const line = new Konva.Arrow({
-                        points: [sourceD3Node.konvaGroup.x(), sourceD3Node.konvaGroup.y(), targetD3Node.konvaGroup.x(), targetD3Node.konvaGroup.y()],
+                        points: [
+                            sourceNode.konvaGroup.x() + sourceNode.konvaRect.width() / 2, 
+                            sourceNode.konvaGroup.y() + sourceNode.konvaRect.height() / 2, 
+                            targetNode.konvaGroup.x() + targetNode.konvaRect.width() / 2, 
+                            targetNode.konvaGroup.y() + targetNode.konvaRect.height() / 2
+                        ],
                         stroke: conn.color || '#000000',
                         strokeWidth: 2,
                         pointerLength: 10,
@@ -1041,105 +1016,25 @@
                     });
                     layer.add(line);
 
-                    // Các nhãn đã bị loại bỏ một cách có chủ ý theo yêu cầu trước đây của người dùng.
-                    let label = null; 
-
-                    d3Links.push({ 
-                        source: sourceD3Node, 
-                        target: targetD3Node, 
+                    // Lưu thông tin liên kết để cập nhật sau này
+                    konvaLinksData.push({ 
                         konvaLine: line, 
-                        konvaLabel: label 
+                        sourceNodeGroup: sourceNode.konvaGroup,
+                        sourceNodeRect: sourceNode.konvaRect, // Store rect for intersection calculation
+                        targetNodeGroup: targetNode.konvaGroup,
+                        targetNodeRect: targetNode.konvaRect, // Store rect for intersection calculation
                     });
-                    currentKonvaLinks.push({ konvaLine: line, konvaLabel: label }); // Lưu trữ để truy cập sau này
                 }
             });
 
             layer.batchDraw(); 
             centerMindMap(); // Căn giữa sau khi vẽ ban đầu
 
-            // 4. Thiết lập Mô phỏng Lực D3 cho bố cục truyền thống
-            d3Simulation = d3.forceSimulation(d3Nodes)
-                .force("link", d3.forceLink(d3Links).id(d => d.id).distance(180).strength(0.7)) // Khoảng cách hơi giảm, cường độ vừa phải
-                .force("charge", d3.forceManyBody().strength(-900).theta(0.8)) // Lực đẩy mạnh hơn giữa các node
-                .force("center", d3.forceCenter(stage.width() / 2, stage.height() / 2)) // Kéo về trung tâm
-                .force("x", d3.forceX(stage.width() / 2).strength(0.2)) // Căn giữa ngang yếu hơn, cho phép trải rộng
-                .force("y", d3.forceY(d => { 
-                    // Lực mạnh để sắp xếp theo chiều dọc dựa trên cấp độ đã tính toán
-                    const levelSpacing = 150; // Khoảng cách dọc giữa các cấp
-                    const baseOffsetY = stage.height() * 0.1; // Offset Y bắt đầu cho cấp 0
-                    return baseOffsetY + d.level * levelSpacing;
-                }).strength(1.8)) // Lực dọc rất mạnh cho luồng phân cấp rõ ràng
-                // Thêm lực va chạm cho các node hình chữ nhật. bán kính phải đủ lớn để ngăn chặn chồng chéo.
-                .force("collide", d3.forceCollide().radius(d => Math.max(d.konvaRect.width(), d.konvaRect.height()) / 2 + 25).iterations(4)) // Tăng padding và số lần lặp
-                .on("tick", () => { // Cập nhật vị trí Konva trên mỗi tick mô phỏng
-                    // Cập nhật vị trí node
-                    d3Nodes.forEach(d => {
-                        // Giữ các node trong giới hạn
-                        d.x = Math.max(d.konvaRect.width()/2, Math.min(stage.width() - d.konvaRect.width()/2, d.x));
-                        d.y = Math.max(d.konvaRect.height()/2, Math.min(stage.height() - d.konvaRect.height()/2, d.y));
-
-                        d.konvaGroup.position({ x: d.x - d.konvaRect.width()/2, y: d.y - d.konvaRect.height()/2 });
-                    });
-
-                    // Cập nhật vị trí liên kết
-                    d3Links.forEach(link => {
-                        const sourceRect = link.source.konvaRect;
-                        const targetRect = link.target.konvaRect;
-
-                        const p1 = {
-                            x: link.source.x,
-                            y: link.source.y,
-                        };
-                        const p2 = {
-                            x: link.target.x,
-                            y: link.target.y,
-                        };
-
-                        const startIntersection = getRectIntersectionPoint(p1, p2, {
-                            x: link.source.konvaGroup.x(), y: link.source.konvaGroup.y(),
-                            width: sourceRect.width(), height: sourceRect.height()
-                        });
-                        const endIntersection = getRectIntersectionPoint(p2, p1, {
-                            x: link.target.konvaGroup.x(), y: link.target.konvaGroup.y(),
-                            width: targetRect.width(), height: targetRect.height()
-                        });
-
-                        link.konvaLine.points([startIntersection.x, startIntersection.y, endIntersection.x, endIntersection.y]);
-                    });
-                    layer.batchDraw();
-                });
-
-            // Tạm dừng mô phỏng khi một node được kéo
-            d3Nodes.forEach(d => {
-                d.konvaGroup.on('dragstart', () => {
-                    d3Simulation.alphaTarget(0.3).restart();
-                    d.fx = d.x;
-                    d.fy = d.y;
-                });
-                d.konvaGroup.on('dragmove', () => {
-                    d.fx = d.konvaGroup.x() + d.konvaRect.width()/2;
-                    d.fy = d.konvaGroup.y() + d.konvaRect.height()/2;
-                });
-                d.konvaGroup.on('dragend', () => {
-                    d.fx = null;
-                    d.fy = null;
-                    d3Simulation.alphaTarget(0); // Dừng mô phỏng sau khi kéo kết thúc
-                });
+            // Sau khi tất cả các node và liên kết đã được tạo, cập nhật tất cả các liên kết
+            // để đảm bảo chúng bám chính xác vào các cạnh node
+            konvaNodesData.forEach(node => {
+                updateLinksForNode(node.konvaGroup);
             });
-            d3Simulation.alpha(1).restart(); // Bắt đầu mô phỏng với alpha cao hơn để ổn định ban đầu
-            // Tăng thời gian chạy ban đầu để sơ đồ có thêm thời gian ổn định
-            setTimeout(() => {
-                d3Simulation.alphaTarget(0); // Dừng mô phỏng sau một thời gian dài hơn để ổn định
-            }, 3000); // Chạy 3 giây
-
-        }
-
-        // Hàm trợ giúp để lấy tâm của node (được cập nhật để nhận nhóm và hình chữ nhật)
-        function getNodeCenter(nodeGroup, nodeRect) {
-            return {
-                x: nodeGroup.x() + nodeRect.width() / 2,
-                y: nodeGroup.y() + nodeRect.height() / 2
-            };
         }
 
         // Hàm để căn giữa toàn bộ sơ đồ tư duy trên canvas
@@ -1148,8 +1043,10 @@
 
             let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
 
+            // Tính toán giới hạn của tất cả các đối tượng trên layer
             layer.children.forEach(child => {
-                const bbox = child.getClientRect();
+                // Konva Group's getClientRect already accounts for its children (rect and text)
+                const bbox = child.getClientRect(); 
                 minX = Math.min(minX, bbox.x);
                 minY = Math.min(minY, bbox.y);
                 maxX = Math.max(maxX, bbox.x + bbox.width);
@@ -1169,6 +1066,7 @@
             const offsetY = stageCenterY - currentMapCenterY;
 
             // Di chuyển layer để căn giữa nội dung
+            // Điều này áp dụng offset cho tất cả các children trên layer
             layer.x(layer.x() + offsetX);
             layer.y(layer.y() + offsetY);
 
@@ -1277,21 +1175,14 @@
                         layer.destroyChildren();
                         layer.batchDraw();
                         canvasPlaceholder.classList.remove('hidden'); // Hiển thị lại placeholder
-                        if (d3Simulation) { // Dừng mô phỏng nếu đang hoạt động
-                            d3Simulation.stop();
-                        }
+                        // Removed D3.js related logic: if (d3Simulation) { d3Simulation.stop(); }
                     }
                 });
             }
-            // Gán sự kiện cho nút Kích hoạt Bố cục Lực
+            // Gán sự kiện cho nút Kích hoạt Bố cục Lực (Chức năng này không còn hoạt động)
             if (activateForceLayoutBtn) {
                 activateForceLayoutBtn.addEventListener('click', () => {
-                    if (d3Simulation) {
-                        d3Simulation.alpha(1).restart(); // Khởi động lại mô phỏng từ đầu
-                        showToast('Sơ đồ đang được sắp xếp...', 'info');
-                    } else {
-                        showToast('Không có sơ đồ để sắp xếp. Hãy tạo một bài học trước.', 'info');
-                    }
+                    showToast('Chức năng "Sắp xếp sơ đồ tự động" không khả dụng khi không sử dụng D3.js.', 'info');
                 });
             }
 
