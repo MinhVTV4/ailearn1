@@ -143,24 +143,26 @@
 
         /* Responsive chat view container */
         .chat-view-container-collapsed {
-            width: 0;
-            min-width: 0; /* Ensure it can collapse to 0 */
+            width: 0 !important; /* Force override Tailwind if present */
+            min-width: 0 !important;
             overflow: hidden;
-            transition: width 0.3s ease-in-out;
-            border-right: none; /* Hide border when collapsed */
+            transition: width 0.3s ease-in-out, min-width 0.3s ease-in-out;
+            border-right: none !important; /* Hide border when collapsed */
         }
         .chat-view-container-expanded {
-            width: 100%; /* Take full width on small screens */
-            width: 33.333333%; /* Match lg:w-1/3 on large screens */
-            min-width: 300px; /* Minimum width to prevent unreadable content */
-            transition: width 0.3s ease-in-out;
-            border-right: border-gray-200;
+            width: 100% !important; /* Take full width on small screens */
+            min-width: 300px !important; /* Minimum width to prevent unreadable content */
+            transition: width 0.3s ease-in-out, min-width 0.3s ease-in-out;
+            /* Border properties handled by Tailwind classes on the element directly */
         }
 
         @media (min-width: 1024px) { /* lg breakpoint */
             .chat-view-container-collapsed {
-                width: 60px; /* Small visible bar with toggle button */
-                min-width: 60px;
+                width: 60px !important; /* Small visible bar with toggle button */
+                min-width: 60px !important;
+            }
+            .chat-view-container-expanded {
+                width: 33.333333% !important; /* Match lg:w-1/3 on large screens */
             }
         }
     </style>
@@ -171,7 +173,7 @@
     <div id="app-container" class="flex flex-1 overflow-hidden">
 
         <!-- Phần Box Chat (Bên trái) -->
-        <div id="chat-view-container" class="flex flex-col h-full bg-gray-50 dark:bg-slate-900 w-full lg:w-1/3 flex-shrink-0 border-r border-gray-200 dark:border-slate-700 chat-view-container-expanded">
+        <div id="chat-view-container" class="flex flex-col h-full bg-gray-50 dark:bg-slate-900 flex-shrink-0 border-r border-gray-200 dark:border-slate-700 chat-view-container-expanded">
             <header id="main-header" class="flex-shrink-0 flex justify-between items-center p-3 sm:p-4 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
                 <div class="flex items-center gap-3">
                     <span class="text-2xl">📚</span> <!-- Biểu tượng cho chế độ học tập -->
