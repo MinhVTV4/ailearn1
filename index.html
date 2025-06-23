@@ -88,6 +88,55 @@
         #scrollToTopBtn.show { opacity: 1; display: block; }
         .dark #scrollToTopBtn { background-color: #60a5fa; }
         .dark #scrollToTopBtn:hover { background-color: #3b82f6; }
+
+        /* Style cho Modal */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 101; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+        }
+        .dark .modal-content {
+            background-color: #2d3748;
+            color: #e2e8f0;
+        }
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .dark .close-button {
+            color: #ccc;
+        }
+        .dark .close-button:hover,
+        .dark .close-button:focus {
+            color: white;
+        }
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 font-sans h-screen flex">
@@ -164,6 +213,20 @@
     <!-- Container cho thông báo Toast -->
     <div id="toast-container" class="fixed top-5 right-5 z-[100] space-y-2"></div>
 
+    <!-- Term Explanation Modal -->
+    <div id="term-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h3 id="modal-term-title" class="text-xl font-bold mb-4"></h3>
+            <p id="modal-term-explanation" class="mb-4 text-gray-700 dark:text-gray-300">
+                AI sẽ giải thích thuật ngữ này tại đây...
+            </p>
+            <button id="ask-ai-more-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                Hỏi AI thêm chi tiết
+            </button>
+        </div>
+    </div>
+
     <!-- Các thẻ script được chuyển xuống cuối body -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@2.3.6/dist/purify.min.js"></script>
@@ -177,6 +240,8 @@
         import { getAI, getGenerativeModel } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-ai.js";
         
         // Khởi tạo Firebase
+        // NOTE: Trong môi trường thực tế, API Key này cần được bảo mật và không nên nhúng trực tiếp vào mã nguồn client.
+        // Có thể sử dụng biến môi trường hoặc một API Gateway/Cloud Function để gọi Gemini API.
         const firebaseConfig = {
             apiKey: "AIzaSyDDp2ugpgSbqtkQMFLHSNsL0cFMxYBdyng",
             authDomain: "ailearn-e8cc0.firebaseapp.com",
@@ -191,13 +256,38 @@
         const ai = getAI(app);
         const model = getGenerativeModel(ai, { model: "gemini-2.5-flash" }); // Main AI model
 
+        // GLOBAL CONSTANTS and CONFIGURATION
+        const CONSTANTS = {
+            NODE_PADDING: 20, // Internal padding for Konva nodes
+            MIN_NODE_WIDTH: 120,
+            MIN_NODE_HEIGHT: 60,
+            GRID_SIZE: 50, // Distance between grid lines on canvas
+            CANVAS_ZOOM_SCALE_FACTOR: 1.1, // Zoom increment factor
+            D3_LINK_DISTANCE: 220, // Ideal distance between linked nodes
+            D3_CHARGE_STRENGTH: -800, // Repulsion force between nodes
+            D3_COLLIDE_PADDING: 20, // Padding for collision detection
+            D3_COLLIDE_ITERATIONS: 3, // Iterations for collision force
+            D3_SIMULATION_ALPHA_TARGET_DRAG: 0.3, // Alpha target when dragging a node
+            D3_SIMULATION_INITIAL_ALPHA: 1, // Initial alpha for simulation restart
+            D3_SIMULATION_STOP_TIMEOUT: 3000, // Time in ms to run simulation initially
+            TOAST_DISPLAY_TIME: 4000, // Time in ms for toast messages to display
+            CHAT_SCROLL_THRESHOLD: 0.5 // Percentage of chat height to scroll before showing "scroll to top" button
+        };
+
         // Global state variables
         let localHistory = []; // Stores the full conversation history (text-only for AI)
         let isRecording = false; // Speech recording state
         let activeSpeech = null; // Tracks current speech synthesis utterance
-        let d3Simulation = null; // D3 force simulation instance
-        let currentKonvaNodes = []; // Store references to Konva groups (nodes)
-        let currentKonvaLinks = []; // Store references to Konva arrows (links)
+
+        // Canvas state management object
+        const canvasState = {
+            stage: null,
+            layer: null,
+            gridLayer: null,
+            d3Simulation: null,
+            konvaNodesMap: new Map(), // Maps D3 node IDs to {konvaGroup, konvaRect}
+            konvaLinks: [] // Stores {konvaLine, konvaLabel} for all links
+        };
 
         // Cached DOM elements
         const appContainer = document.getElementById('app-container');
@@ -219,10 +309,14 @@
         const learningCanvas = document.getElementById('learning-canvas');
         const canvasPlaceholder = document.getElementById('canvas-placeholder');
         const clearCanvasBtn = document.getElementById('clear-canvas-btn');
-        const activateForceLayoutBtn = document.getElementById('activate-force-layout-btn'); // New button
+        const activateForceLayoutBtn = document.getElementById('activate-force-layout-btn');
 
-        let stage, layer; // Konva Stage and Layer objects
-        let gridLayer; // Optional: Separate layer for grid
+        // Term modal elements
+        const termModal = document.getElementById('term-modal');
+        const closeModalBtn = termModal.querySelector('.close-button');
+        const modalTermTitle = document.getElementById('modal-term-title');
+        const modalTermExplanation = document.getElementById('modal-term-explanation');
+        const askAiMoreBtn = document.getElementById('ask-ai-more-btn');
 
         // System prompt for AI to generate learning content and canvas data
         const LEARNING_SYSTEM_PROMPT = `
@@ -232,7 +326,7 @@
         2.  **Giải thích Chatbox:** Cung cấp giải thích chi tiết, rõ ràng cho từng phần trong chatbox, sử dụng Markdown (tiêu đề, danh sách, in đậm, code block).
         3.  **Dữ liệu Canvas:** **QUAN TRỌNG:** Đồng thời, tạo ra một đối tượng JSON DỮ LIỆU CẦU TRÚC để tôi có thể vẽ trên Canvas. JSON này phải tuân thủ định dạng sau.
             **Hãy đảm bảo các node được phân bổ một cách có tổ chức, tránh chồng chéo tối đa, và thể hiện rõ ràng dòng chảy thông tin hoặc cấu trúc phân cấp (ví dụ: các node tổng quan ở trên, các node chi tiết ở dưới).**
-            **Sử dụng các tọa độ X, Y ban đầu để phân tán các node đều khắp canvas (giả định kích thước canvas là 800x600 để định vị sơ bộ).**
+            **Sử dụng các tọa độ X, Y ban đầu để phân tán các node đều khắp canvas (tọa độ này sẽ được D3 force simulation điều chỉnh để tối ưu hóa).**
             **Node đầu tiên trong mảng 'nodes' phải là node chủ đề chính hoặc node khởi đầu. Đánh dấu node chủ đề chính bằng "isMainTopic": true.**
             **Mỗi nhãn đường nối ("text" trong "connections") PHẢI ngắn gọn, chỉ 1-3 từ.**
             \`\`\`json
@@ -245,8 +339,8 @@
                   "type": "concept", // hoặc "step", "example", "summary", "question"
                   "text": "Nội dung ngắn gọn của node",
                   "description": "Mô tả chi tiết hơn (nếu cần, có thể để trống)",
-                  "x": 100, // Tọa độ X trên canvas
-                  "y": 100, // Tọa độ Y trên canvas
+                  "x": 100, // Tọa độ X ban đầu trên canvas
+                  "y": 100, // Tọa độ Y ban đầu trên canvas
                   "color": "#FFDDC1", // Màu nền cho node (hex color)
                   "image": "url_to_image_if_any", // URL hình ảnh (tùy chọn)
                   "isMainTopic": true // Đánh dấu node chủ đề chính
@@ -354,7 +448,7 @@
             };
 
             toast.addEventListener('click', hideToast);
-            setTimeout(hideToast, 4000);
+            setTimeout(hideToast, CONSTANTS.TOAST_DISPLAY_TIME);
         }
         
         /**
@@ -423,6 +517,10 @@
             document.documentElement.classList.toggle('dark');
             localStorage.setItem('color-theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
             updateThemeIcon();
+            // Redraw grid when theme changes to update color
+            if (canvasState.gridLayer) {
+                drawGrid();
+            }
         });
         updateThemeIcon(); 
 
@@ -509,22 +607,31 @@
         
         /**
          * Sends a message to the AI model, displays the response, and renders on canvas.
+         * @param {string} promptText - The text prompt from the user.
+         * @param {boolean} [isTermExplanation=false] - True if this is a request to explain a term.
          */
-        async function sendMessage() {
-            const promptText = promptInput.value.trim();
+        async function sendMessage(promptText, isTermExplanation = false) {
             if (!promptText) return;
 
-            promptInput.value = '';
-            adjustInputHeight();
-            sendBtn.disabled = true;
+            if (!isTermExplanation) { // Only clear input for regular messages
+                promptInput.value = '';
+                adjustInputHeight();
+                sendBtn.disabled = true;
+            } else {
+                // For term explanation, close modal and show thinking state
+                termModal.style.display = 'none';
+                modalTermExplanation.textContent = 'AI sẽ giải thích thuật ngữ này tại đây...'; // Reset modal
+            }
 
             // Hide canvas placeholder when starting chat
             if (canvasPlaceholder) {
                 canvasPlaceholder.classList.add('hidden');
             }
 
-            addMessage('user', promptText);
-            localHistory.push({ role: 'user', parts: [{ text: promptText }] });
+            if (!isTermExplanation) {
+                addMessage('user', promptText);
+                localHistory.push({ role: 'user', parts: [{ text: promptText }] });
+            }
 
             const { messageWrapper, contentElem, statusElem, actionsContainer } = addMessage('ai', '<span class="blinking-cursor"></span>');
             if (statusElem) statusElem.textContent = 'Thinking...';
@@ -625,12 +732,12 @@
             recognition.onend = () => { 
                 isRecording = false; 
                 recordBtn.classList.remove('recording'); 
-                promptInput.placeholder = 'Enter your question...'; 
+                promptInput.placeholder = 'Nhập câu hỏi hoặc yêu cầu học tập...'; 
             };
             recognition.onresult = (event) => { 
                 promptInput.value = event.results[event.results.length - 1][0].transcript.trim(); 
                 adjustInputHeight(); 
-                sendMessage(); 
+                sendMessage(promptInput.value); 
             };
             recognition.onerror = (event) => { 
                 showToast(`Recording error: ${event.error}`, 'error'); 
@@ -656,86 +763,82 @@
 
         /** Initializes the Konva.js stage and layer. */
         function initCanvas() {
-            stage = new Konva.Stage({
+            canvasState.stage = new Konva.Stage({
                 container: 'learning-canvas',
                 width: canvasContainer.offsetWidth,
                 height: canvasContainer.offsetHeight,
             });
-            layer = new Konva.Layer();
-            stage.add(layer);
+            canvasState.layer = new Konva.Layer();
+            canvasState.stage.add(canvasState.layer);
 
             // Add a separate layer for grid to avoid redrawing with nodes
-            gridLayer = new Konva.Layer();
-            stage.add(gridLayer);
+            canvasState.gridLayer = new Konva.Layer();
+            canvasState.stage.add(canvasState.gridLayer);
             drawGrid(); // Draw grid initially
 
             // Handle responsive canvas on window resize
             window.addEventListener('resize', () => {
-                stage.width(canvasContainer.offsetWidth);
-                stage.height(canvasContainer.offsetHeight);
+                canvasState.stage.width(canvasContainer.offsetWidth);
+                canvasState.stage.height(canvasContainer.offsetHeight);
                 drawGrid(); // Redraw grid on resize
-                if (d3Simulation) {
+                if (canvasState.d3Simulation) {
                     // Re-center force layout if active
-                    d3Simulation.force("center", d3.forceCenter(stage.width() / 2, stage.height() / 2));
-                    d3Simulation.alpha(0.3).restart(); // Restart simulation for new center
+                    canvasState.d3Simulation.force("center", d3.forceCenter(canvasState.stage.width() / 2, canvasState.stage.height() / 2));
+                    canvasState.d3Simulation.alpha(CONSTANTS.D3_SIMULATION_ALPHA_TARGET_DRAG).restart(); // Restart simulation for new center
                 }
-                layer.batchDraw();
-                gridLayer.batchDraw();
+                canvasState.layer.batchDraw();
+                canvasState.gridLayer.batchDraw();
             });
 
             // Implement zoom and pan
-            const scaleBy = 1.1;
-            stage.on('wheel', (e) => {
+            canvasState.stage.on('wheel', (e) => {
                 e.evt.preventDefault();
-                const oldScale = stage.scaleX();
-                const pointer = stage.getPointerPosition();
+                const oldScale = canvasState.stage.scaleX();
+                const pointer = canvasState.stage.getPointerPosition();
 
                 const mousePointTo = {
-                    x: (pointer.x - stage.x()) / oldScale,
-                    y: (pointer.y - stage.y()) / oldScale,
+                    x: (pointer.x - canvasState.stage.x()) / oldScale,
+                    y: (pointer.y - canvasState.stage.y()) / oldScale,
                 };
 
-                const newScale = e.evt.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy;
+                const newScale = e.evt.deltaY < 0 ? oldScale * CONSTANTS.CANVAS_ZOOM_SCALE_FACTOR : oldScale / CONSTANTS.CANVAS_ZOOM_SCALE_FACTOR;
 
-                stage.scale({ x: newScale, y: newScale });
+                canvasState.stage.scale({ x: newScale, y: newScale });
 
                 const newPos = {
                     x: pointer.x - mousePointTo.x * newScale,
                     y: pointer.y - mousePointTo.y * newScale,
                 };
-                stage.position(newPos);
-                stage.draw();
+                canvasState.stage.position(newPos);
+                canvasState.stage.draw();
             });
 
-            stage.draggable(true); // Enable dragging for pan
+            canvasState.stage.draggable(true); // Enable dragging for pan
         }
 
         /** Draws a grid on the canvas. */
         function drawGrid() {
-            gridLayer.destroyChildren(); // Clear existing grid
-            const gridSize = 50; // Distance between grid lines
-            const stageWidth = stage.width();
-            const stageHeight = stage.height();
+            canvasState.gridLayer.destroyChildren(); // Clear existing grid
             const strokeColor = document.documentElement.classList.contains('dark') ? '#4a5568' : '#e2e8f0'; // Tailwind gray-700 / gray-200
 
             // Draw vertical lines
-            for (let i = 0; i * gridSize < stageWidth; i++) {
-                gridLayer.add(new Konva.Line({
-                    points: [i * gridSize, 0, i * gridSize, stageHeight],
+            for (let i = 0; i * CONSTANTS.GRID_SIZE < canvasState.stage.width(); i++) {
+                canvasState.gridLayer.add(new Konva.Line({
+                    points: [i * CONSTANTS.GRID_SIZE, 0, i * CONSTANTS.GRID_SIZE, canvasState.stage.height()],
                     stroke: strokeColor,
                     strokeWidth: 0.5,
                 }));
             }
 
             // Draw horizontal lines
-            for (let i = 0; i * gridSize < stageHeight; i++) {
-                gridLayer.add(new Konva.Line({
-                    points: [0, i * gridSize, stageWidth, i * gridSize],
+            for (let i = 0; i * CONSTANTS.GRID_SIZE < canvasState.stage.height(); i++) {
+                canvasState.gridLayer.add(new Konva.Line({
+                    points: [0, i * CONSTANTS.GRID_SIZE, canvasState.stage.width(), i * CONSTANTS.GRID_SIZE],
                     stroke: strokeColor,
                     strokeWidth: 0.5,
                 }));
             }
-            gridLayer.batchDraw();
+            canvasState.gridLayer.batchDraw();
         }
 
 
@@ -811,235 +914,142 @@
             };
         }
 
+        /**
+         * Creates a Konva Group representing a node with a rectangle and text.
+         * @param {object} nodeData - The node data from the JSON.
+         * @returns {object} An object containing the Konva Group and D3 node data.
+         */
+        function createKonvaNodeGroup(nodeData) {
+            const group = new Konva.Group({
+                x: nodeData.x,
+                y: nodeData.y,
+                draggable: true, 
+            });
+
+            const text = new Konva.Text({
+                text: nodeData.text,
+                fontSize: 16,
+                fontFamily: 'Inter, Arial, sans-serif',
+                fill: '#333',
+                align: 'center',
+                verticalAlign: 'middle',
+                padding: CONSTANTS.NODE_PADDING / 2, 
+                wrap: 'word',
+            });
+            
+            // Calculate actual text size to adjust rectangle size
+            const textMetrics = text.measureSize(nodeData.text);
+            const rectWidth = Math.max(CONSTANTS.MIN_NODE_WIDTH, textMetrics.width + CONSTANTS.NODE_PADDING); 
+            const rectHeight = Math.max(CONSTANTS.MIN_NODE_HEIGHT, textMetrics.height + CONSTANTS.NODE_PADDING); 
+
+            const rect = new Konva.Rect({
+                width: rectWidth,
+                height: rectHeight,
+                fill: nodeData.color || '#E0E0E0',
+                cornerRadius: 10,
+                shadowBlur: 5,
+                shadowOpacity: 0.2,
+                stroke: '#AAAAAA',
+                strokeWidth: 1,
+            });
+
+            // Apply special styling for the main topic node
+            if (nodeData.isMainTopic) {
+                rect.stroke("#FF0000"); // Red border for main topic
+                rect.strokeWidth(3);
+            }
+
+            // Position text inside the rectangle to center it
+            text.position({
+                x: (rect.width() - textMetrics.width) / 2 - CONSTANTS.NODE_PADDING/2, 
+                y: (rect.height() - textMetrics.height) / 2 - CONSTANTS.NODE_PADDING/2,
+            });
+
+            group.add(rect);
+            group.add(text);
+            
+            // Add click event for description
+            if (nodeData.description) {
+                group.on('click', () => {
+                    showToast(`Mô tả: ${nodeData.description}`, 'info');
+                });
+            }
+
+            return { konvaGroup: group, konvaRect: rect, d3NodeData: { id: nodeData.id, isMainTopic: nodeData.isMainTopic || false } };
+        }
 
         /**
-         * Renders content on the Konva canvas based on the parsed JSON data, and sets up D3 force simulation.
-         * @param {object} lessonData - The JSON object containing nodes and connections.
+         * Creates a Konva Arrow representing a connection between nodes.
+         * @param {object} sourceD3Node - The D3 node object for the source.
+         * @param {object} targetD3Node - The D3 node object for the target.
+         * @param {object} connectionData - The connection data from the JSON.
+         * @returns {object} An object containing the Konva Arrow and Konva Label (if any).
          */
-        function renderContentOnCanvas(lessonData) {
-            if (!stage || !layer) {
-                console.error("Konva stage or layer not initialized.");
-                return;
-            }
+        function createKonvaArrow(sourceD3Node, targetD3Node, connectionData) {
+            // Initial points (will be updated by D3 force)
+            const line = new Konva.Arrow({
+                points: [sourceD3Node.konvaGroup.x(), sourceD3Node.konvaGroup.y(), targetD3Node.konvaGroup.x(), targetD3Node.konvaGroup.y()],
+                stroke: connectionData.color || '#000000',
+                strokeWidth: 2,
+                pointerLength: 10,
+                pointerWidth: 10,
+            });
 
-            // Stop any active D3 simulation
-            if (d3Simulation) {
-                d3Simulation.stop();
-            }
-
-            layer.destroyChildren(); // Clear existing elements on canvas
-            canvasPlaceholder.classList.add('hidden'); // Hide placeholder when content is present
-
-            const PADDING = 20; // Internal padding for nodes
-
-            const d3Nodes = []; // Nodes for D3 simulation
-            const d3Links = []; // Links for D3 simulation
-
-            currentKonvaNodes = []; // Reset stored Konva nodes
-            currentKonvaLinks = []; // Reset stored Konva links
-
-            // 1. Create Konva Nodes and D3 Nodes
-            lessonData.nodes.forEach(nodeData => {
-                const group = new Konva.Group({
-                    x: nodeData.x,
-                    y: nodeData.y,
-                    draggable: true, 
-                });
-
-                const text = new Konva.Text({
-                    text: nodeData.text,
-                    fontSize: 16,
+            let labelGroup = null;
+            if (connectionData.text) {
+                const labelText = new Konva.Text({
+                    text: connectionData.text,
+                    fontSize: 12,
+                    fill: connectionData.color || '#555',
                     fontFamily: 'Inter, Arial, sans-serif',
-                    fill: '#333',
-                    align: 'center',
-                    verticalAlign: 'middle',
-                    padding: PADDING / 2, 
-                    wrap: 'word',
-                });
-                
-                // Calculate actual text size to adjust rectangle size
-                const textMetrics = text.measureSize(nodeData.text);
-                const rectWidth = Math.max(120, textMetrics.width + PADDING); 
-                const rectHeight = Math.max(60, textMetrics.height + PADDING); 
-
-                const rect = new Konva.Rect({
-                    width: rectWidth,
-                    height: rectHeight,
-                    fill: nodeData.color || '#E0E0E0',
-                    cornerRadius: 10,
-                    shadowBlur: 5,
-                    shadowOpacity: 0.2,
-                    stroke: '#AAAAAA',
-                    strokeWidth: 1,
+                    padding: 3, // Padding for text inside label
                 });
 
-                // Apply special styling for the main topic node
-                if (nodeData.isMainTopic) {
-                    rect.stroke("#FF0000"); // Red border for main topic
-                    rect.strokeWidth(3);
-                }
-
-                // Position text inside the rectangle to center it
-                text.position({
-                    x: (rect.width() - textMetrics.width) / 2 - PADDING/2, 
-                    y: (rect.height() - textMetrics.height) / 2 - PADDING/2,
+                // Calculate background size for the label
+                const labelMetrics = labelText.measureSize(connectionData.text);
+                const labelRect = new Konva.Rect({
+                    width: labelMetrics.width + 6, // Add padding
+                    height: labelMetrics.height + 6, // Add padding
+                    fill: '#FFFFFF', // White background
+                    opacity: 0.8, // Slightly transparent
+                    cornerRadius: 5,
                 });
 
-                group.add(rect);
-                group.add(text);
-                layer.add(group);
+                labelGroup = new Konva.Group();
+                labelGroup.add(labelRect);
+                labelGroup.add(labelText);
+            }
+            return { konvaLine: line, konvaLabel: labelGroup };
+        }
 
-                // Store Konva group and add to D3 nodes
-                const d3Node = { 
-                    id: nodeData.id, 
-                    konvaGroup: group,
-                    konvaRect: rect, // Store reference to rect for getRectIntersectionPoint
-                    isMainTopic: nodeData.isMainTopic || false // Pass main topic flag to D3 node
-                };
-                d3Nodes.push(d3Node);
-                currentKonvaNodes.push(d3Node); // Store for later access (e.g., force layout activation)
+        /**
+         * Sets up the D3 force simulation with provided nodes and links.
+         * @param {Array<object>} d3Nodes - Array of D3 nodes.
+         * @param {Array<object>} d3Links - Array of D3 links.
+         */
+        function setupD3Simulation(d3Nodes, d3Links, lessonData) {
+            // Stop any active D3 simulation
+            if (canvasState.d3Simulation) {
+                canvasState.d3Simulation.stop();
+            }
 
-                // Add click event for description
-                if (nodeData.description) {
-                    group.on('click', () => {
-                        showToast(`Description: ${nodeData.description}`, 'info');
-                    });
-                }
-            });
-
-            // Map d3Nodes for easier link creation
-            const nodeMap = new Map(d3Nodes.map(d => [d.id, d]));
-
-            // 2. Create Konva Connections and D3 Links
-            lessonData.connections.forEach(conn => {
-                const sourceD3Node = nodeMap.get(conn.from);
-                const targetD3Node = nodeMap.get(conn.to);
-
-                if (sourceD3Node && targetD3Node) {
-                    // Initial points (will be updated by D3 force)
-                    const line = new Konva.Arrow({
-                        points: [sourceD3Node.konvaGroup.x(), sourceD3Node.konvaGroup.y(), targetD3Node.konvaGroup.x(), targetD3Node.konvaGroup.y()],
-                        stroke: conn.color || '#000000',
-                        strokeWidth: 2,
-                        pointerLength: 10,
-                        pointerWidth: 10,
-                    });
-                    layer.add(line);
-
-                    let label = null;
-                    if (conn.text) {
-                        const labelText = new Konva.Text({
-                            text: conn.text,
-                            fontSize: 14, // Tăng font size cho nhãn
-                            fill: '#333',
-                            fontFamily: 'Inter, Arial, sans-serif',
-                            padding: 3, 
-                        });
-
-                        // Tính toán kích thước nền cho label
-                        const labelMetrics = labelText.measureSize(conn.text);
-                        const labelRect = new Konva.Rect({
-                            width: labelMetrics.width + 6, 
-                            height: labelMetrics.height + 6, 
-                            fill: '#FFFFFF', // Màu nền trắng
-                            opacity: 1, // Độ trong suốt tuyệt đối
-                            cornerRadius: 5,
-                        });
-
-                        const labelGroup = new Konva.Group();
-                        labelGroup.add(labelRect);
-                        labelGroup.add(labelText);
-                        layer.add(labelGroup);
-                        label = labelGroup; 
-                    }
-
-                    d3Links.push({ 
-                        source: sourceD3Node, 
-                        target: targetD3Node, 
-                        konvaLine: line, 
-                        konvaLabel: label 
-                    });
-                    currentKonvaLinks.push({ konvaLine: line, konvaLabel: label }); // Store for later access
-                }
-            });
-
-            layer.batchDraw(); 
-            centerMindMap(); // Center after initial drawing
-
-            // 3. Setup D3 Force Simulation
-            d3Simulation = d3.forceSimulation(d3Nodes)
-                .force("link", d3.forceLink(d3Links).id(d => d.id).distance(220).strength(0.9)) 
-                .force("charge", d3.forceManyBody().strength(-800).theta(0.8)) 
-                .force("center", d3.forceCenter(stage.width() / 2, stage.height() / 2)) 
-                .force("x", d3.forceX(stage.width() / 2).strength(0.3)) 
-                .force("y", d3.forceY(d => { 
+            canvasState.d3Simulation = d3.forceSimulation(d3Nodes)
+                .force("link", d3.forceLink(d3Links).id(d => d.id).distance(CONSTANTS.D3_LINK_DISTANCE).strength(0.9))
+                .force("charge", d3.forceManyBody().strength(CONSTANTS.D3_CHARGE_STRENGTH).theta(0.8))
+                .force("center", d3.forceCenter(canvasState.stage.width() / 2, canvasState.stage.height() / 2))
+                .force("x", d3.forceX(canvasState.stage.width() / 2).strength(0.3))
+                .force("y", d3.forceY(d => {
                     const nodeIndex = lessonData.nodes.findIndex(n => n.id === d.id);
-                    return stage.height() * (0.1 + (nodeIndex / Math.max(1, lessonData.nodes.length -1)) * 0.8);
+                    // Distribute nodes vertically based on their original order
+                    return canvasState.stage.height() * (0.1 + (nodeIndex / Math.max(1, lessonData.nodes.length -1)) * 0.8);
                 }).strength(1.5)) 
-                .force("collide", d3.forceCollide().radius(d => Math.max(d.konvaRect.width(), d.konvaRect.height()) / 2 + 20).iterations(3)) 
-                .on("tick", () => { 
-                    // Update node positions
-                    d3Nodes.forEach(d => {
-                        // Keep nodes within bounds
-                        d.x = Math.max(d.konvaRect.width()/2, Math.min(stage.width() - d.konvaRect.width()/2, d.x));
-                        d.y = Math.max(d.konvaRect.height()/2, Math.min(stage.height() - d.konvaRect.height()/2, d.y));
-
-                        d.konvaGroup.position({ x: d.x - d.konvaRect.width()/2, y: d.y - d.konvaRect.height()/2 });
-                    });
-
-                    // Update link positions
-                    d3Links.forEach(link => {
-                        const sourceRect = link.source.konvaRect;
-                        const targetRect = link.target.konvaRect;
-
-                        const p1 = {
-                            x: link.source.x,
-                            y: link.source.y,
-                        };
-                        const p2 = {
-                            x: link.target.x,
-                            y: link.target.y,
-                        };
-
-                        const startIntersection = getRectIntersectionPoint(p1, p2, {
-                            x: link.source.konvaGroup.x(), y: link.source.konvaGroup.y(),
-                            width: sourceRect.width(), height: sourceRect.height()
-                        });
-                        const endIntersection = getRectIntersectionPoint(p2, p1, {
-                            x: link.target.konvaGroup.x(), y: link.target.konvaGroup.y(),
-                            width: targetRect.width(), height: targetRect.height()
-                        });
-
-                        link.konvaLine.points([startIntersection.x, startIntersection.y, endIntersection.x, endIntersection.y]);
-
-                        // Update label position if it exists
-                        if (link.konvaLabel) {
-                            const labelGroup = link.konvaLabel;
-                            const labelRect = labelGroup.children[0]; 
-                            const labelText = labelGroup.children[1]; 
-                            
-                            // Center the label group on the midpoint of the link
-                            labelGroup.x((startIntersection.x + endIntersection.x) / 2 - labelRect.width() / 2);
-                            labelGroup.y((startIntersection.y + endIntersection.y) / 2 - labelRect.height() / 2);
-                            
-                            // Calculate rotation angle and apply to the label group
-                            const angleRad = Math.atan2(endIntersection.y - startIntersection.y, endIntersection.x - startIntersection.x);
-                            labelGroup.rotation(angleRad * 180 / Math.PI);
-
-                            // Ensure text and background are correctly positioned relative to the group's origin after rotation
-                            labelRect.x(0);
-                            labelRect.y(0);
-                            labelText.x(0);
-                            labelText.y(0);
-                        }
-                    });
-                    layer.batchDraw();
-                });
+                .force("collide", d3.forceCollide().radius(d => Math.max(d.konvaRect.width(), d.konvaRect.height()) / 2 + CONSTANTS.D3_COLLIDE_PADDING).iterations(CONSTANTS.D3_COLLIDE_ITERATIONS))
+                .on("tick", () => updateKonvaElements(d3Nodes, d3Links));
 
             // Pause simulation when a node is dragged
             d3Nodes.forEach(d => {
                 d.konvaGroup.on('dragstart', () => {
-                    d3Simulation.alphaTarget(0.3).restart();
+                    canvasState.d3Simulation.alphaTarget(CONSTANTS.D3_SIMULATION_ALPHA_TARGET_DRAG).restart();
                     d.fx = d.x;
                     d.fy = d.y;
                 });
@@ -1050,31 +1060,148 @@
                 d.konvaGroup.on('dragend', () => {
                     d.fx = null;
                     d.fy = null;
-                    d3Simulation.alphaTarget(0); // Stop simulation after drag ends
+                    canvasState.d3Simulation.alphaTarget(0); // Stop simulation after drag ends
                 });
             });
-            d3Simulation.alpha(1).restart(); // Start simulation with higher alpha for initial settling
+            canvasState.d3Simulation.alpha(CONSTANTS.D3_SIMULATION_INITIAL_ALPHA).restart(); // Start simulation with higher alpha for initial settling
+            // Let the simulation run for a set duration to stabilize
             setTimeout(() => {
-                d3Simulation.alphaTarget(0); // Stop simulation after a longer while for stability
-            }, 3000); // Run for 3 seconds
-
+                canvasState.d3Simulation.alphaTarget(0); // Stop simulation after stability
+            }, CONSTANTS.D3_SIMULATION_STOP_TIMEOUT);
         }
 
-        // Helper to get center of node (updated to receive group and rect)
-        function getNodeCenter(nodeGroup, nodeRect) {
-            return {
-                x: nodeGroup.x() + nodeRect.width() / 2,
-                y: nodeGroup.y() + nodeRect.height() / 2
-            };
+        /**
+         * Updates the positions of Konva nodes and links based on D3 simulation results.
+         * This function is called on each "tick" of the D3 simulation.
+         * @param {Array<object>} d3Nodes - Array of D3 nodes with updated positions.
+         * @param {Array<object>} d3Links - Array of D3 links with updated source/target positions.
+         */
+        function updateKonvaElements(d3Nodes, d3Links) {
+            // Update node positions
+            d3Nodes.forEach(d => {
+                // Keep nodes within bounds
+                d.x = Math.max(d.konvaRect.width()/2, Math.min(canvasState.stage.width() - d.konvaRect.width()/2, d.x));
+                d.y = Math.max(d.konvaRect.height()/2, Math.min(canvasState.stage.height() - d.konvaRect.height()/2, d.y));
+
+                d.konvaGroup.position({ x: d.x - d.konvaRect.width()/2, y: d.y - d.konvaRect.height()/2 });
+            });
+
+            // Update link positions
+            d3Links.forEach(link => {
+                const sourceRect = link.source.konvaRect;
+                const targetRect = link.target.konvaRect;
+
+                const p1 = {
+                    x: link.source.x,
+                    y: link.source.y,
+                };
+                const p2 = {
+                    x: link.target.x,
+                    y: link.target.y,
+                };
+
+                // Calculate intersection points with node rectangles for cleaner links
+                const startIntersection = getRectIntersectionPoint(p1, p2, {
+                    x: link.source.konvaGroup.x(), y: link.source.konvaGroup.y(),
+                    width: sourceRect.width(), height: sourceRect.height()
+                });
+                const endIntersection = getRectIntersectionPoint(p2, p1, {
+                    x: link.target.konvaGroup.x(), y: link.target.konvaGroup.y(),
+                    width: targetRect.width(), height: targetRect.height()
+                });
+
+                link.konvaLine.points([startIntersection.x, startIntersection.y, endIntersection.x, endIntersection.y]);
+
+                // Update label position if it exists
+                if (link.konvaLabel) {
+                    const labelGroup = link.konvaLabel;
+                    const labelText = labelGroup.children[1]; 
+                    const labelRect = labelGroup.children[0]; 
+
+                    labelGroup.x((startIntersection.x + endIntersection.x) / 2 - labelRect.width() / 2);
+                    labelGroup.y((startIntersection.y + endIntersection.y) / 2 - labelRect.height() / 2);
+                    
+                    // Calculate and apply rotation for the label group
+                    const angleRad = Math.atan2(endIntersection.y - startIntersection.y, endIntersection.x - startIntersection.x);
+                    labelGroup.rotation(angleRad * 180 / Math.PI);
+
+                    // Ensure text and background are correctly positioned within the group after rotation
+                    labelText.x(0);
+                    labelText.y(0);
+                    labelRect.x(0);
+                    labelRect.y(0);
+                }
+            });
+            canvasState.layer.batchDraw();
+        }
+
+        /**
+         * Renders content on the Konva canvas based on the parsed JSON data, and sets up D3 force simulation.
+         * @param {object} lessonData - The JSON object containing nodes and connections.
+         */
+        function renderContentOnCanvas(lessonData) {
+            if (!canvasState.stage || !canvasState.layer) {
+                console.error("Konva stage or layer not initialized.");
+                return;
+            }
+
+            // Clear existing elements on canvas and reset state
+            canvasState.layer.destroyChildren(); 
+            canvasPlaceholder.classList.add('hidden'); 
+            canvasState.konvaNodesMap.clear();
+            canvasState.konvaLinks = [];
+
+            const d3Nodes = []; // Nodes for D3 simulation
+            const d3Links = []; // Links for D3 simulation
+
+            // 1. Create Konva Nodes and prepare D3 Nodes
+            lessonData.nodes.forEach(nodeData => {
+                const { konvaGroup, konvaRect, d3NodeData } = createKonvaNodeGroup(nodeData);
+                
+                // Attach Konva elements to the D3 node data
+                const d3Node = { ...d3NodeData, konvaGroup, konvaRect, x: nodeData.x, y: nodeData.y };
+                d3Nodes.push(d3Node);
+                canvasState.konvaNodesMap.set(d3Node.id, d3Node); // Store D3 node with Konva references
+
+                canvasState.layer.add(konvaGroup);
+            });
+
+            // 2. Create Konva Connections and prepare D3 Links
+            lessonData.connections.forEach(conn => {
+                const sourceD3Node = canvasState.konvaNodesMap.get(conn.from);
+                const targetD3Node = canvasState.konvaNodesMap.get(conn.to);
+
+                if (sourceD3Node && targetD3Node) {
+                    const { konvaLine, konvaLabel } = createKonvaArrow(sourceD3Node, targetD3Node, conn);
+                    canvasState.layer.add(konvaLine);
+                    if (konvaLabel) {
+                        canvasState.layer.add(konvaLabel);
+                    }
+
+                    d3Links.push({ 
+                        source: sourceD3Node, 
+                        target: targetD3Node, 
+                        konvaLine: konvaLine, 
+                        konvaLabel: konvaLabel 
+                    });
+                    canvasState.konvaLinks.push({ konvaLine: konvaLine, konvaLabel: konvaLabel });
+                }
+            });
+
+            canvasState.layer.batchDraw(); 
+            centerMindMap(); // Center after initial drawing
+
+            // 3. Setup D3 Force Simulation
+            setupD3Simulation(d3Nodes, d3Links, lessonData);
         }
 
         // Function to center the entire mind map on the canvas
         function centerMindMap() {
-            if (!stage || !layer || layer.children.length === 0) return;
+            if (!canvasState.stage || !canvasState.layer || canvasState.layer.children.length === 0) return;
 
             let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
 
-            layer.children.forEach(child => {
+            canvasState.layer.children.forEach(child => {
                 const bbox = child.getClientRect();
                 minX = Math.min(minX, bbox.x);
                 minY = Math.min(minY, bbox.y);
@@ -1085,8 +1212,8 @@
             const contentWidth = maxX - minX;
             const contentHeight = maxY - minY;
 
-            const stageCenterX = stage.width() / 2;
-            const stageCenterY = stage.height() / 2;
+            const stageCenterX = canvasState.stage.width() / 2;
+            const stageCenterY = canvasState.stage.height() / 2;
 
             const currentMapCenterX = minX + contentWidth / 2;
             const currentMapCenterY = minY + contentHeight / 2;
@@ -1095,18 +1222,18 @@
             const offsetY = stageCenterY - currentMapCenterY;
 
             // Move layer to center content
-            layer.x(layer.x() + offsetX);
-            layer.y(layer.y() + offsetY);
+            canvasState.layer.x(canvasState.layer.x() + offsetX);
+            canvasState.layer.y(canvasState.layer.y() + offsetY);
 
-            layer.batchDraw();
+            canvasState.layer.batchDraw();
         }
 
         // --- GLOBAL EVENT LISTENERS ---
-        sendBtn.addEventListener('click', sendMessage);
+        sendBtn.addEventListener('click', () => sendMessage(promptInput.value));
         promptInput.addEventListener('keydown', e => { 
             if (e.key === 'Enter' && !e.shiftKey) { 
                 e.preventDefault(); 
-                sendMessage(); 
+                sendMessage(promptInput.value); 
             } 
         });
         promptInput.addEventListener('input', adjustInputHeight);
@@ -1123,7 +1250,7 @@
                     const term = link.dataset.term;
                     const messageContentElement = link.closest('.message-content');
                     const context = messageContentElement ? messageContentElement.dataset.rawText : '';
-                    showToast(`Giải thích thuật ngữ: "${term}" (ngữ cảnh: "${context.substring(0, 50)}...")`, 'info');
+                    showTermModal(term, context);
                 }
             } else if (button) {
                  if (button.classList.contains('copy-btn')) {
@@ -1136,12 +1263,12 @@
                             const currentState = button.dataset.state;
                             if (currentState === 'paused') {
                                 speechSynthesis.resume();
-                                button.innerHTML = '⏸️'; button.dataset.state = 'playing'; button.title = 'Tạm dừng';
+                                button.innerHTML = '⏸️'; button.dataset.state = 'playing'; button.title = 'Pause';
                                 return;
                             }
                             if (currentState === 'playing') {
                                 speechSynthesis.pause();
-                                button.innerHTML = '▶️'; button.dataset.state = 'Tiếp tục';
+                                button.innerHTML = '▶️'; button.dataset.state = 'Resume';
                                 return;
                             }
                         }
@@ -1153,12 +1280,12 @@
                     utterance.onstart = () => {
                         resetActiveSpeechButton(); 
                         activeSpeech = { utterance, button: button }; 
-                        button.innerHTML = '⏸️'; button.dataset.state = 'playing'; button.title = 'Tạm dừng';
+                        button.innerHTML = '⏸️'; button.dataset.state = 'playing'; button.title = 'Pause';
                     };
                     utterance.onend = () => { resetActiveSpeechButton(); activeSpeech = null; };
                     utterance.onerror = (event) => { 
                         console.error("SpeechSynthesisUtterance error:", event);
-                        showToast(`Lỗi phát âm: ${event.error}`, 'error');
+                        showToast(`Speech error: ${event.error}`, 'error');
                         resetActiveSpeechButton(); 
                         activeSpeech = null; 
                     };
@@ -1167,12 +1294,12 @@
             }
         });
         
-        // --- LOGIC NÚT CUỘN LÊN ĐẦU TRANG ---
+        // --- SCROLL TO TOP BUTTON LOGIC ---
         /** Function to show/hide the scroll to top button. */
         function toggleScrollToTopButton() {
             if (!scrollToTopBtn || !chatContainer) return; 
 
-            if (chatContainer.scrollTop > chatContainer.clientHeight * 0.5) { 
+            if (chatContainer.scrollTop > chatContainer.clientHeight * CONSTANTS.CHAT_SCROLL_THRESHOLD) { 
                 scrollToTopBtn.classList.add('show');
             } else {
                 scrollToTopBtn.classList.remove('show');
@@ -1188,6 +1315,37 @@
                 });
             }
         }
+
+        // --- TERM MODAL LOGIC ---
+        /**
+         * Displays the term explanation modal.
+         * @param {string} term - The term to explain.
+         * @param {string} context - The context where the term appeared.
+         */
+        function showTermModal(term, context) {
+            modalTermTitle.textContent = `Giải thích: "${term}"`;
+            modalTermExplanation.textContent = `Bạn muốn tôi giải thích rõ hơn về "${term}"?`; // Placeholder for now
+            termModal.style.display = 'flex'; // Use flex to center the modal
+
+            // Event listener for "Ask AI for more details" button inside modal
+            // Ensure this listener is only added once or remove previous before adding
+            askAiMoreBtn.onclick = () => {
+                const query = `Giải thích chi tiết về "${term}" trong ngữ cảnh "${context.substring(0, 200)}..."`;
+                sendMessage(query, true); // Send as a term explanation query
+            };
+        }
+
+        // Close the modal when the user clicks on (x)
+        closeModalBtn.addEventListener('click', () => {
+            termModal.style.display = 'none';
+        });
+
+        // Close the modal when the user clicks anywhere outside of the modal content
+        window.addEventListener('click', (event) => {
+            if (event.target == termModal) {
+                termModal.style.display = 'none';
+            }
+        });
         
         document.addEventListener('DOMContentLoaded', () => {
             if (chatContainer) {
@@ -1199,22 +1357,28 @@
             // Assign event to Clear Canvas button
             if (clearCanvasBtn) {
                 clearCanvasBtn.addEventListener('click', () => {
-                    if (layer) {
-                        layer.destroyChildren();
-                        layer.batchDraw();
+                    if (canvasState.layer) {
+                        canvasState.layer.destroyChildren();
+                        canvasState.layer.batchDraw();
                         canvasPlaceholder.classList.remove('hidden'); // Show placeholder again
-                        if (d3Simulation) { // Stop simulation if active
-                            d3Simulation.stop();
+                        if (canvasState.d3Simulation) { // Stop simulation if active
+                            canvasState.d3Simulation.stop();
                         }
+                        canvasState.konvaNodesMap.clear();
+                        canvasState.konvaLinks = [];
                     }
                 });
             }
             // Assign event to Activate Force Layout button
             if (activateForceLayoutBtn) {
                 activateForceLayoutBtn.addEventListener('click', () => {
-                    if (d3Simulation) {
-                        d3Simulation.alpha(1).restart(); // Restart simulation from scratch
+                    if (canvasState.d3Simulation) {
+                        canvasState.d3Simulation.alpha(CONSTANTS.D3_SIMULATION_INITIAL_ALPHA).restart(); // Restart simulation from scratch
                         showToast('Sơ đồ đang được sắp xếp...', 'info');
+                        // Run for a fixed time then stop
+                        setTimeout(() => {
+                            canvasState.d3Simulation.alphaTarget(0);
+                        }, CONSTANTS.D3_SIMULATION_STOP_TIMEOUT);
                     } else {
                         showToast('Không có sơ đồ để sắp xếp. Hãy tạo một bài học trước.', 'info');
                     }
