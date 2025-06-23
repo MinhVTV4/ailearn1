@@ -225,7 +225,6 @@
         let gridLayer; // Optional: Separate layer for grid
 
         // System prompt for AI to generate learning content and canvas data
-        // Updated prompt to encourage better coordinate generation for force layout
         const LEARNING_SYSTEM_PROMPT = `
         Bạn là một giáo viên AI chuyên nghiệp và tận tâm. Mục tiêu của bạn là giúp người học hiểu sâu về một chủ đề thông qua giải thích, ví dụ, và tạo ra các thành phần trực quan trên canvas.
         Khi người dùng yêu cầu một chủ đề học, hãy:
@@ -235,6 +234,7 @@
             **Hãy đảm bảo các node được phân bổ một cách có tổ chức, tránh chồng chéo tối đa, và thể hiện rõ ràng dòng chảy thông tin hoặc cấu trúc phân cấp (ví dụ: các node tổng quan ở trên, các node chi tiết ở dưới).**
             **Sử dụng các tọa độ X, Y ban đầu để phân tán các node đều khắp canvas (giả định kích thước canvas là 800x600 để định vị sơ bộ).**
             **Node đầu tiên trong mảng 'nodes' phải là node chủ đề chính hoặc node khởi đầu. Đánh dấu node chủ đề chính bằng "isMainTopic": true.**
+            **Mỗi nhãn đường nối ("text" trong "connections") PHẢI ngắn gọn, chỉ 1-3 từ.**
             \`\`\`json
             {
               "type": "lesson_data",
@@ -928,13 +928,29 @@
 
                     let label = null;
                     if (conn.text) {
-                        label = new Konva.Text({
+                        const labelText = new Konva.Text({
                             text: conn.text,
-                            fontSize: 12,
-                            fill: conn.color || '#555',
+                            fontSize: 14, // Tăng font size cho nhãn
+                            fill: '#333',
                             fontFamily: 'Inter, Arial, sans-serif',
+                            padding: 3, 
                         });
-                        layer.add(label);
+
+                        // Tính toán kích thước nền cho label
+                        const labelMetrics = labelText.measureSize(conn.text);
+                        const labelRect = new Konva.Rect({
+                            width: labelMetrics.width + 6, 
+                            height: labelMetrics.height + 6, 
+                            fill: '#FFFFFF', // Màu nền trắng
+                            opacity: 1, // Độ trong suốt tuyệt đối
+                            cornerRadius: 5,
+                        });
+
+                        const labelGroup = new Konva.Group();
+                        labelGroup.add(labelRect);
+                        labelGroup.add(labelText);
+                        layer.add(labelGroup);
+                        label = labelGroup; 
                     }
 
                     d3Links.push({ 
@@ -952,19 +968,16 @@
 
             // 3. Setup D3 Force Simulation
             d3Simulation = d3.forceSimulation(d3Nodes)
-                .force("link", d3.forceLink(d3Links).id(d => d.id).distance(180).strength(0.8)) // Tăng khoảng cách và lực hút
-                .force("charge", d3.forceManyBody().strength(-400).theta(0.8)) // Tăng lực đẩy giữa các node
-                .force("center", d3.forceCenter(stage.width() / 2, stage.height() / 2)) // Lực kéo về trung tâm
-                .force("x", d3.forceX(stage.width() / 2).strength(0.2)) // Kéo nhẹ về trung tâm ngang
-                .force("y", d3.forceY(d => { // Kéo mạnh về vị trí Y dựa trên thứ tự ban đầu
-                    // Định hướng Y dựa trên thứ tự xuất hiện của node trong mảng lessonData.nodes
+                .force("link", d3.forceLink(d3Links).id(d => d.id).distance(220).strength(0.9)) 
+                .force("charge", d3.forceManyBody().strength(-800).theta(0.8)) 
+                .force("center", d3.forceCenter(stage.width() / 2, stage.height() / 2)) 
+                .force("x", d3.forceX(stage.width() / 2).strength(0.3)) 
+                .force("y", d3.forceY(d => { 
                     const nodeIndex = lessonData.nodes.findIndex(n => n.id === d.id);
-                    // Phân bổ các node theo chiều dọc, với node đầu tiên ở gần đỉnh, cuối cùng ở gần đáy
                     return stage.height() * (0.1 + (nodeIndex / Math.max(1, lessonData.nodes.length -1)) * 0.8);
-                }).strength(0.9)) // Lực kéo dọc mạnh mẽ hơn để tạo dòng chảy top-down
-                // Thêm lực tránh va chạm cho các node hình chữ nhật. radius phải lớn hơn một nửa đường chéo
-                .force("collide", d3.forceCollide().radius(d => Math.max(d.konvaRect.width(), d.konvaRect.height()) / 2 + 15).iterations(2)) // Thêm padding và số lần lặp lại
-                .on("tick", () => { // Update Konva positions on each simulation tick
+                }).strength(1.5)) 
+                .force("collide", d3.forceCollide().radius(d => Math.max(d.konvaRect.width(), d.konvaRect.height()) / 2 + 20).iterations(3)) 
+                .on("tick", () => { 
                     // Update node positions
                     d3Nodes.forEach(d => {
                         // Keep nodes within bounds
@@ -1001,9 +1014,23 @@
 
                         // Update label position if it exists
                         if (link.konvaLabel) {
-                            link.konvaLabel.x((startIntersection.x + endIntersection.x) / 2);
-                            link.konvaLabel.y((startIntersection.y + endIntersection.y) / 2 - 15);
-                            link.konvaLabel.rotation(Math.atan2(endIntersection.y - startIntersection.y, endIntersection.x - startIntersection.x) * 180 / Math.PI);
+                            const labelGroup = link.konvaLabel;
+                            const labelRect = labelGroup.children[0]; 
+                            const labelText = labelGroup.children[1]; 
+                            
+                            // Center the label group on the midpoint of the link
+                            labelGroup.x((startIntersection.x + endIntersection.x) / 2 - labelRect.width() / 2);
+                            labelGroup.y((startIntersection.y + endIntersection.y) / 2 - labelRect.height() / 2);
+                            
+                            // Calculate rotation angle and apply to the label group
+                            const angleRad = Math.atan2(endIntersection.y - startIntersection.y, endIntersection.x - startIntersection.x);
+                            labelGroup.rotation(angleRad * 180 / Math.PI);
+
+                            // Ensure text and background are correctly positioned relative to the group's origin after rotation
+                            labelRect.x(0);
+                            labelRect.y(0);
+                            labelText.x(0);
+                            labelText.y(0);
                         }
                     });
                     layer.batchDraw();
@@ -1027,10 +1054,9 @@
                 });
             });
             d3Simulation.alpha(1).restart(); // Start simulation with higher alpha for initial settling
-            // Tăng thời gian chạy ban đầu để sơ đồ có thêm thời gian ổn định
             setTimeout(() => {
                 d3Simulation.alphaTarget(0); // Stop simulation after a longer while for stability
-            }, 3000); // Chạy 3 giây
+            }, 3000); // Run for 3 seconds
 
         }
 
@@ -1097,7 +1123,7 @@
                     const term = link.dataset.term;
                     const messageContentElement = link.closest('.message-content');
                     const context = messageContentElement ? messageContentElement.dataset.rawText : '';
-                    showToast(`Explain term: "${term}" (context: "${context.substring(0, 50)}...")`, 'info');
+                    showToast(`Giải thích thuật ngữ: "${term}" (ngữ cảnh: "${context.substring(0, 50)}...")`, 'info');
                 }
             } else if (button) {
                  if (button.classList.contains('copy-btn')) {
@@ -1110,12 +1136,12 @@
                             const currentState = button.dataset.state;
                             if (currentState === 'paused') {
                                 speechSynthesis.resume();
-                                button.innerHTML = '⏸️'; button.dataset.state = 'playing'; button.title = 'Pause';
+                                button.innerHTML = '⏸️'; button.dataset.state = 'playing'; button.title = 'Tạm dừng';
                                 return;
                             }
                             if (currentState === 'playing') {
                                 speechSynthesis.pause();
-                                button.innerHTML = '▶️'; button.dataset.state = 'Resume';
+                                button.innerHTML = '▶️'; button.dataset.state = 'Tiếp tục';
                                 return;
                             }
                         }
@@ -1127,12 +1153,12 @@
                     utterance.onstart = () => {
                         resetActiveSpeechButton(); 
                         activeSpeech = { utterance, button: button }; 
-                        button.innerHTML = '⏸️'; button.dataset.state = 'playing'; button.title = 'Pause';
+                        button.innerHTML = '⏸️'; button.dataset.state = 'playing'; button.title = 'Tạm dừng';
                     };
                     utterance.onend = () => { resetActiveSpeechButton(); activeSpeech = null; };
                     utterance.onerror = (event) => { 
                         console.error("SpeechSynthesisUtterance error:", event);
-                        showToast(`Speech error: ${event.error}`, 'error');
+                        showToast(`Lỗi phát âm: ${event.error}`, 'error');
                         resetActiveSpeechButton(); 
                         activeSpeech = null; 
                     };
@@ -1141,7 +1167,7 @@
             }
         });
         
-        // --- SCROLL TO TOP BUTTON LOGIC ---
+        // --- LOGIC NÚT CUỘN LÊN ĐẦU TRANG ---
         /** Function to show/hide the scroll to top button. */
         function toggleScrollToTopButton() {
             if (!scrollToTopBtn || !chatContainer) return; 
