@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Học Tập Tương Tác</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Phong cách cuộn tùy chỉnh */
+        :root {
+            --scrollbar-track-bg: #f1f1f1;
+            --scrollbar-thumb-bg: #888;
+            --scrollbar-thumb-hover-bg: #555;
+        }
+        .dark {
+            --scrollbar-track-bg: #2d3748;
+            --scrollbar-thumb-bg: #718096;
+            --scrollbar-thumb-hover-bg: #a0aec0;
+        }
+        body {
+            overflow: hidden; /* Ngăn cuộn toàn bộ trang */
+        }
+        /* Style cho thanh cuộn của chat và canvas */
+        #chat-container::-webkit-scrollbar, #canvas-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        #chat-container::-webkit-scrollbar-track, #canvas-container::-webkit-scrollbar-track {
+            background: var(--scrollbar-track-bg);
+        }
+        #chat-container::-webkit-scrollbar-thumb, #canvas-container::-webkit-scrollbar-thumb {
+            background: var(--scrollbar-thumb-bg);
+            border-radius: 6px;
+        }
+        #chat-container::-webkit-scrollbar-thumb:hover, #canvas-container::-webkit-scrollbar-thumb:hover {
+            background: var(--scrollbar-thumb-hover-bg);
+        }
+
+        /* Phong cách hiển thị Markdown */
+        .message-content pre { background-color: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; font-family: 'Courier New', Courier, monospace; }
+        .dark .message-content pre { background-color: #0f172a; }
+        .message-content code:not(pre > code) { background-color: #e2e8f0; color: #1e293b; padding: 0.2em 0.4em; margin: 0; font-size: 85%; border-radius: 3px; }
+        .dark .message-content code:not(pre > code) { background-color: #334155; color: #e2e8f0; }
+        .message-content h1, .message-content h2, .message-content h3, .message-content h4 { font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; }
+        .message-content h1 { font-size: 1.5em; }
+        .message-content h2 { font-size: 1.25em; }
+        .message-content h3 { font-size: 1.1em; }
+        .message-content p { margin-bottom: 0.75rem; }
+        .message-content ul, .message-content ol { margin-left: 1.25rem; margin-top: 0.5rem; margin-bottom: 1rem; display: block; }
+        .message-content ul { list-style-type: disc; }
+        .message-content ol { list-style-type: decimal; }
+        .message-content li { margin-bottom: 0.5rem; padding-left: 0.5rem; }
+        .message-content a { color: #3b82f6; text-decoration: underline; }
+        .dark .message-content a { color: #60a5fa; }
+        .message-content blockquote { border-left: 4px solid #d1d5db; padding-left: 1rem; margin: 1rem 0; color: #4b5563; font-style: italic; }
+        .dark .message-content blockquote { border-left-color: #4b5563; color: #9ca3af; }
+        
+        /* Hiệu ứng nhấp nháy cho con trỏ AI */
+        .blinking-cursor { display: inline-block; width: 8px; height: 1.2em; background-color: #333; animation: blink 1s step-end infinite; vertical-align: text-bottom; }
+        .dark .blinking-cursor { background-color: #ccc; }
+        @keyframes blink { from, to { background-color: transparent; } 50% { background-color: inherit; } }
+
+        /* Animation cho nút ghi âm */
+        #record-btn.recording { animation: pulse-red 1s infinite; background-color: #ef4444; color: white; }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); transform: scale(1); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); transform: scale(1.05); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); transform: scale(1); } }
+
+        /* Style cho vùng nhập liệu */
+        .p-4 > #input-area-wrapper { box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); border-radius: 9999px; padding: 4px; background-color: white; transition: box-shadow 0.2s ease-in-out; }
+        .p-4 > #input-area-wrapper:focus-within { box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08); }
+        .dark .p-4 > #input-area-wrapper { background-color: #1f2937; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); }
+        .dark .p-4 > #input-area-wrapper:focus-within { box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); }
+        
+        /* Animation quay cho loading */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .animate-spin { animation: spin 1s linear infinite; }
+        
+        /* Phong cách thông báo Toast */
+        .toast { transition: all 0.4s ease-in-out; opacity: 0; transform: translateX(100%); }
+        .toast.show { opacity: 1; transform: translateX(0); }
+        .toast.hide { opacity: 0; transform: translateX(120%); }
+        
+        /* Nút cuộn lên đầu trang */
+        #scrollToTopBtn {
+            display: none; position: absolute; bottom: 20px; right: 20px; z-index: 99; border: none; outline: none;
+            background-color: #3b82f6; color: white; cursor: pointer; padding: 10px 15px; border-radius: 50%; font-size: 18px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: background-color 0.3s, opacity 0.3s; opacity: 0;
+        }
+        #scrollToTopBtn:hover { background-color: #2563eb; }
+        #scrollToTopBtn.show { opacity: 1; display: block; }
+        .dark #scrollToTopBtn { background-color: #60a5fa; }
+        .dark #scrollToTopBtn:hover { background-color: #3b82f6; }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 font-sans h-screen flex">
+
+    <!-- Container chính của ứng dụng -->
+    <div id="app-container" class="flex flex-1 overflow-hidden">
+
+        <!-- Phần Box Chat (Bên trái) -->
+        <div id="chat-view-container" class="flex flex-col h-full bg-gray-50 dark:bg-slate-900 w-full lg:w-1/3 flex-shrink-0 border-r border-gray-200 dark:border-slate-700">
+            <header id="main-header" class="flex-shrink-0 flex justify-between items-center p-3 sm:p-4 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">📚</span> <!-- Biểu tượng cho chế độ học tập -->
+                    <span class="text-lg font-bold text-gray-800 dark:text-gray-100">AI Học Tập</span>
+                </div>
+                <div class="flex items-center gap-1 sm:gap-2">
+                    <!-- Nút chuyển đổi chế độ Sáng/Tối -->
+                    <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Chuyển chế độ Sáng/Tối">
+                        <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+                        <svg id="theme-toggle-light-icon" class="hidden w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 14.95a1 1 0 010-1.414l.707-.707a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414 0zM3 11a1 1 0 100-2H2a1 1 0 100 2h1z" clip-rule="evenodd"></path></svg>
+                    </button>
+                    <!-- Nút Xóa Canvas -->
+                    <button id="clear-canvas-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Xóa Canvas">
+                        <svg class="w-6 h-6 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.67-.114 1.022-.165m-1.022.165L5.41 19.673a2.25 2.25 0 002.244 2.077h7.212a2.25 2.25 0 002.244-2.077L19.25 5.79m0 0h-.008v.008H19.25z" /></svg>
+                    </button>
+                    <!-- Nút Kích hoạt Sắp xếp Lực -->
+                    <button id="activate-force-layout-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Sắp xếp sơ đồ tự động">
+                        <svg class="w-6 h-6 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.898 20.572L16.5 21.75l-.398-1.178a3.375 3.375 0 00-2.455-2.456L12.75 18l1.178-.398a3.375 3.375 0 002.455-2.456L16.5 14.25l.398 1.178a3.375 3.375 0 002.456 2.456L20.25 18l-1.178.398a3.375 3.375 0 00-2.456 2.456z" /></svg>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Khu vực hiển thị tin nhắn chat -->
+            <div id="chat-container" class="flex-1 px-4 pt-4 space-y-4 overflow-y-auto relative">
+                <div id="notification-area" class="hidden sticky bottom-2 w-full flex justify-center">
+                    <div class="bg-blue-100 dark:bg-slate-700 text-blue-800 dark:text-blue-200 text-xs font-semibold px-4 py-2 rounded-full shadow-lg">
+                        Đang tối ưu hóa...
+                    </div>
+                </div>
+                <!-- Nút cuộn lên đầu trang -->
+                <button id="scrollToTopBtn" title="Cuộn lên đầu">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l7.5-7.5 7.5 7.5m-15 6l7.5-7.5 7.5 7.5" /></svg>
+                </button>
+            </div>
+
+            <!-- Vùng nhập liệu chat -->
+            <div class="p-4 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700">
+                <div id="input-area-wrapper" class="rounded-full">
+                    <div id="input-area" class="flex items-center gap-3 bg-gray-100 dark:bg-slate-700 rounded-full p-2">
+                        <textarea id="prompt-input" rows="1" placeholder="Nhập câu hỏi hoặc yêu cầu học tập..." class="flex-1 bg-transparent px-3 py-2 resize-none focus:outline-none dark:text-gray-200 dark:placeholder-gray-400"></textarea>
+                        <!-- Nút ghi âm -->
+                        <button id="record-btn" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors" title="Ghi âm">
+                            <svg class="w-6 h-6 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+                        </button>
+                        <!-- Nút gửi -->
+                        <button id="send-btn" class="w-10 h-10 flex items-center justify-center bg-blue-600 rounded-full text-white hover:bg-blue-700 transition-colors disabled:bg-blue-300 dark:disabled:bg-blue-800 disabled:cursor-not-allowed" title="Gửi">
+                            <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2 .01 7z"/></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Phần Canvas (Bên phải) -->
+        <div id="canvas-container" class="flex-1 h-full bg-white dark:bg-gray-800 overflow-auto relative">
+            <div id="learning-canvas" class="w-full h-full">
+                <!-- Nội dung canvas sẽ được render tại đây bởi Konva.js -->
+                <div id="canvas-placeholder" class="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-600 text-center p-4">
+                    <p class="max-w-md">Chào mừng bạn đến với AI Học Tập! <br> Hãy nhập câu hỏi hoặc yêu cầu một chủ đề (ví dụ: "giải thích HTML", "cấu trúc dữ liệu", "khái niệm Vật lý lượng tử") để bắt đầu bài học được trực quan hóa tại đây.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Container cho thông báo Toast -->
+    <div id="toast-container" class="fixed top-5 right-5 z-[100] space-y-2"></div>
+
+    <!-- Các thẻ script được chuyển xuống cuối body -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@2.3.6/dist/purify.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/konva@8.x.x/konva.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script> <!-- Thêm D3.js -->
+    
+    <script type="module">
+        // Import các module Firebase từ CDN
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+        import { getAI, getGenerativeModel } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-ai.js";
+        
+        // Khởi tạo Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyDDp2ugpgSbqtkQMFLHSNsL0cFMxYBdyng",
+            authDomain: "ailearn-e8cc0.firebaseapp.com",
+            projectId: "ailearn-e8cc0",
+            storageBucket: "ailearn-e8cc0.firebasestorage.app",
+            messagingSenderId: "873200516391",
+            appId: "1:873200516391:web:1ddc79e4fb45199292fd02"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const ai = getAI(app);
+        const model = getGenerativeModel(ai, { model: "gemini-2.5-flash" }); // Main AI model
+
+        // Global state variables
+        let localHistory = []; // Stores the full conversation history (text-only for AI)
+        let isRecording = false; // Speech recording state
+        let activeSpeech = null; // Tracks current speech synthesis utterance
+        let d3Simulation = null; // D3 force simulation instance
+        let currentKonvaNodes = []; // Store references to Konva groups (nodes)
+        let currentKonvaLinks = []; // Store references to Konva arrows (links)
+
+        // Cached DOM elements
+        const appContainer = document.getElementById('app-container');
+        const chatViewContainer = document.getElementById('chat-view-container');
+        const mainHeader = document.getElementById('main-header');
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+        const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+        const chatContainer = document.getElementById('chat-container');
+        const notificationArea = document.getElementById('notification-area');
+        const inputAreaWrapper = document.getElementById('input-area-wrapper');
+        const inputArea = document.getElementById('input-area');
+        const promptInput = document.getElementById('prompt-input');
+        const recordBtn = document.getElementById('record-btn');
+        const sendBtn = document.getElementById('send-btn');
+        const scrollToTopBtn = document.getElementById("scrollToTopBtn");
+        const toastContainer = document.getElementById('toast-container');
+        const canvasContainer = document.getElementById('canvas-container');
+        const learningCanvas = document.getElementById('learning-canvas');
+        const canvasPlaceholder = document.getElementById('canvas-placeholder');
+        const clearCanvasBtn = document.getElementById('clear-canvas-btn');
+        const activateForceLayoutBtn = document.getElementById('activate-force-layout-btn'); // New button
+
+        let stage, layer; // Konva Stage and Layer objects
+        let gridLayer; // Optional: Separate layer for grid
+
+        // System prompt for AI to generate learning content and canvas data
+        // Updated prompt to encourage better coordinate generation for force layout
+        const LEARNING_SYSTEM_PROMPT = `
+        Bạn là một giáo viên AI chuyên nghiệp và tận tâm. Mục tiêu của bạn là giúp người học hiểu sâu về một chủ đề thông qua giải thích, ví dụ, và tạo ra các thành phần trực quan trên canvas.
+        Khi người dùng yêu cầu một chủ đề học, hãy:
+        1.  **Phân tích và Chia nhỏ:** Chia chủ đề thành các phần nhỏ, logic, theo một **trình tự logic và cấu trúc phân cấp (ví dụ: từ tổng quan đến chi tiết, hoặc từng bước)**.
+        2.  **Giải thích Chatbox:** Cung cấp giải thích chi tiết, rõ ràng cho từng phần trong chatbox, sử dụng Markdown (tiêu đề, danh sách, in đậm, code block).
+        3.  **Dữ liệu Canvas:** **QUAN TRỌNG:** Đồng thời, tạo ra một đối tượng JSON DỮ LIỆU CẦU TRÚC để tôi có thể vẽ trên Canvas. JSON này phải tuân thủ định dạng sau.
+            **Hãy đảm bảo các node được phân bổ một cách có tổ chức, tránh chồng chéo tối đa, và thể hiện rõ ràng dòng chảy thông tin hoặc cấu trúc phân cấp (ví dụ: các node tổng quan ở trên, các node chi tiết ở dưới).**
+            **Sử dụng các tọa độ X, Y ban đầu để phân tán các node đều khắp canvas (giả định kích thước canvas là 800x600 để định vị sơ bộ).**
+            **Node đầu tiên trong mảng 'nodes' phải là node chủ đề chính hoặc node khởi đầu. Đánh dấu node chủ đề chính bằng "isMainTopic": true.**
+            \`\`\`json
+            {
+              "type": "lesson_data",
+              "title": "Tên Chủ Đề Chính",
+              "nodes": [
+                {
+                  "id": "node1",
+                  "type": "concept", // hoặc "step", "example", "summary", "question"
+                  "text": "Nội dung ngắn gọn của node",
+                  "description": "Mô tả chi tiết hơn (nếu cần, có thể để trống)",
+                  "x": 100, // Tọa độ X trên canvas
+                  "y": 100, // Tọa độ Y trên canvas
+                  "color": "#FFDDC1", // Màu nền cho node (hex color)
+                  "image": "url_to_image_if_any", // URL hình ảnh (tùy chọn)
+                  "isMainTopic": true // Đánh dấu node chủ đề chính
+                },
+                {
+                  "id": "node2",
+                  "type": "step",
+                  "text": "Bước 2",
+                  "description": "Giải thích bước",
+                  "x": 250,
+                  "y": 150,
+                  "color": "#C1FFDD"
+                }
+              ],
+              "connections": [
+                {
+                  "from": "node1",
+                  "to": "node2",
+                  "text": "Mối quan hệ (ví dụ: dẫn đến, là một phần của)", // Tùy chọn, cho label trên đường nối
+                  "color": "#333333" // Màu đường nối (hex color)
+                }
+              ]
+            }
+            \`\`\`
+        4.  **Luôn bắt đầu và kết thúc với Markdown trong chatbox.** Đối tượng JSON phải được đặt **sau** nội dung Markdown trong phản hồi của bạn, và nằm trong một khối code block với chỉ định ngôn ngữ là \`json\`.
+        5.  **Ví dụ phản hồi mong muốn (để bạn hiểu):**
+            \`\`\`
+            Chào mừng bạn đến với bài học về **Javascript cơ bản**!
+            Javascript là ngôn ngữ lập trình phổ biến nhất thế giới để phát triển web. Nó giúp trang web của bạn trở nên động và tương tác hơn.
+            ### 1. Biến và Kiểu dữ liệu
+            Trong Javascript, bạn có thể khai báo biến với \`var\`, \`let\`, và \`const\`. Mỗi loại có phạm vi và cách sử dụng khác nhau.
+            * \`var\`: Phạm vi hàm, có thể khai báo lại và gán lại.
+            * \`let\`: Phạm vi khối, có thể gán lại nhưng không khai báo lại.
+            * \`const\`: Phạm vi khối, không thể gán lại (hằng số).
+            \`\`\`json
+            {
+              "type": "lesson_data",
+              "title": "Javascript Cơ bản",
+              "nodes": [
+                { "id": "intro", "type": "concept", "text": "Javascript là gì?", "description": "Ngôn ngữ lập trình cho web động.", "x": 100, "y": 100, "color": "#FFC0CB", "isMainTopic": true },
+                { "id": "vars", "type": "concept", "text": "Biến & Kiểu dữ liệu", "description": "var, let, const", "x": 300, "y": 100, "color": "#ADD8E6" },
+                { "id": "var_exp", "type": "example", "text": "Ví dụ var", "description": "var x = 10;", "x": 200, "y": 250, "color": "#DDA0DD" },
+                { "id": "let_exp", "type": "example", "description": "let y = 20;", "x": 400, "y": 250, "color": "#DDA0DD" }
+              ],
+              "connections": [
+                { "from": "intro", "to": "vars" },
+                { "from": "vars", "to": "var_exp", "text": "Ví dụ" },
+                { "from": "vars", "to": "let_exp", "text": "Ví dụ" }
+              ]
+            }
+            \`\`\`
+        `;
+
+        // --- HÀM TIỆN ÍCH ---
+        /**
+         * Hiển thị thông báo toast cho người dùng.
+         * @param {string} message - Nội dung tin nhắn.
+         * @param {'info'|'success'|'error'} type - Loại thông báo (quyết định màu sắc và biểu tượng).
+         */
+        function showToast(message, type = 'info') {
+            const toastContainer = document.getElementById('toast-container');
+            if (!toastContainer) return;
+            const toast = document.createElement('div');
+            
+            let bgColor, textColor, icon;
+
+            switch (type) {
+                case 'success':
+                    bgColor = 'bg-green-100 dark:bg-green-900';
+                    textColor = 'text-green-700 dark:text-green-200';
+                    icon = `<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>`;
+                    break;
+                case 'error':
+                    bgColor = 'bg-red-100 dark:bg-red-900';
+                    textColor = 'text-red-700 dark:text-red-200';
+                    icon = `<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>`;
+                    break;
+                default: // info
+                    bgColor = 'bg-blue-100 dark:bg-blue-900';
+                    textColor = 'text-blue-700 dark:text-blue-200';
+                    icon = `<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>`;
+                    break;
+            }
+
+            toast.className = `toast max-w-xs w-full ${bgColor} ${textColor} p-4 rounded-lg shadow-lg flex items-center space-x-3`;
+            toast.innerHTML = `
+                <div class="flex-shrink-0">${icon}</div>
+                <div class="flex-1 text-sm font-medium">${message}</div>
+            `;
+
+            toastContainer.appendChild(toast);
+            
+            requestAnimationFrame(() => {
+                toast.classList.add('show');
+            });
+
+            const hideToast = () => {
+                toast.classList.remove('show');
+                toast.classList.add('hide');
+                toast.addEventListener('transitionend', () => {
+                    if (toast.parentNode) {
+                        toast.remove();
+                    }
+                }, { once: true });
+            };
+
+            toast.addEventListener('click', hideToast);
+            setTimeout(hideToast, 4000);
+        }
+        
+        /**
+         * Copies text to the clipboard.
+         * @param {string} text - The text to copy.
+         */
+        function copyToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'absolute';
+            textarea.style.left = '-9999px';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showToast('Đã sao chép vào bộ nhớ đệm!', 'success');
+            } catch (err) {
+                showToast('Không thể sao chép.', 'error');
+            }
+            document.body.removeChild(textarea);
+        }
+
+        /**
+         * Pre-processes the text from the AI response to handle Markdown and interactive links.
+         * @param {string} text - The raw text from the AI response.
+         * @returns {string} The HTML string with interactive links.
+         */
+        function preprocessText(text) {
+            // Remove JSON blocks from chatbox display
+            const markdownOnly = text.split('```json')[0];
+            const termLinkRegex = /\[([^\]]+?)\]/g; // Regex for terms enclosed in square brackets
+            return markdownOnly.replace(termLinkRegex, `<a href="#" class="term-link" data-term="$1">$1</a>`);
+        }
+
+        // --- AUTHENTICATION (Anonymous sign-in) ---
+        onAuthStateChanged(auth, async user => {
+            if (!user) {
+                // Sign in anonymously if no user is authenticated
+                try {
+                    await signInAnonymously(auth);
+                    console.log("Signed in anonymously.");
+                } catch (error) {
+                    console.error("Anonymous sign-in failed:", error);
+                    showToast("Failed to sign in. Please try again.", "error");
+                    return; 
+                }
+            }
+            // Initialize Konva Stage and Layer after user is authenticated (anonymous or otherwise)
+            initCanvas();
+            // Display welcome message in chatbox
+            addMessage('ai', 'Welcome to AI Learning! Please type a question or request a topic (e.g., "explain HTML", "data structures", "quantum physics concepts") to start a visualized lesson here.');
+        });
+
+        // --- THEME TOGGLE ---
+        /** Updates the theme toggle icon based on the current theme. */
+        const updateThemeIcon = () => {
+            if (document.documentElement.classList.contains('dark')) {
+                themeToggleDarkIcon.classList.add('hidden');
+                themeToggleLightIcon.classList.remove('hidden');
+            } else {
+                themeToggleDarkIcon.classList.remove('hidden');
+                themeToggleLightIcon.classList.add('hidden');
+            }
+        };
+        themeToggle.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('color-theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+            updateThemeIcon();
+        });
+        updateThemeIcon(); 
+
+        // --- CHAT LOGIC ---
+        /**
+         * Adds action buttons (copy, speak) to a message.
+         * @param {HTMLElement} actionsContainer - The container for the action buttons.
+         * @param {string} rawText - The raw text content of the message.
+         */
+        function addMessageActions(actionsContainer, rawText) {
+             if (!actionsContainer || !rawText || rawText.includes('blinking-cursor')) return;
+            
+            actionsContainer.innerHTML = ''; 
+
+            // Copy button
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'copy-btn p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-full transition-colors';
+            copyBtn.innerHTML = `<svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" /></svg>`;
+            copyBtn.title = 'Copy content';
+            copyBtn.dataset.text = rawText; 
+            actionsContainer.appendChild(copyBtn);
+            
+            // Speak button
+            const speakBtn = document.createElement('button');
+            speakBtn.className = 'speak-btn p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-full transition-colors';
+            speakBtn.innerHTML = '🔊';
+            speakBtn.title = 'Read text aloud';
+            speakBtn.dataset.text = rawText; 
+            speakBtn.dataset.state = 'idle'; 
+            actionsContainer.appendChild(speakBtn);
+        }
+
+        /**
+         * Adds a message to the chat display.
+         * @param {'user'|'ai'|'model'} role - The role of the message sender.
+         * @param {string} text - The content of the message.
+         * @param {boolean} [shouldScroll=true] - Whether to scroll the chat to the bottom after adding the message.
+         * @returns {{messageWrapper: HTMLElement, contentElem: HTMLElement, statusElem?: HTMLElement, actionsContainer?: HTMLElement}}
+         */
+        function addMessage(role, text, shouldScroll = true) {
+            const messageWrapper = document.createElement('div');
+            let contentElem;
+            let statusElem;
+            let actionsContainer = null;
+
+            if (role === 'ai' || role === 'model') {
+                messageWrapper.className = 'w-full space-y-2';
+                messageWrapper.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-7 h-7 rounded-full flex-shrink-0 bg-gradient-to-tr from-purple-400 to-indigo-500 flex items-center justify-center">
+                               <svg class="w-4 h-4 text-white" xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor"><path d="M12 6c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6 2.69-6 6-6m0-2c-4.42 0-8 3.58-8 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8z"/><path d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                            </div>
+                            <span class="font-semibold text-gray-800 dark:text-gray-200">AI Học Tập</span>
+                        </div>
+                        <div class="ai-status"></div>
+                    </div>
+                    <div class="message-content text-gray-800 dark:text-gray-200" data-raw-text="${text.replace(/"/g, '&quot;')}"></div>
+                    <div class="message-actions mt-1 flex justify-end items-center gap-2"></div>`;
+                contentElem = messageWrapper.querySelector('.message-content');
+                statusElem = messageWrapper.querySelector('.ai-status');
+                actionsContainer = messageWrapper.querySelector('.message-actions');
+            } else if (role === 'user') {
+                messageWrapper.className = 'flex justify-end';
+                messageWrapper.innerHTML = `<div class="message-content px-4 py-2 rounded-2xl bg-blue-600 dark:bg-blue-700 text-white max-w-xs sm:max-w-md lg:max-w-2xl"></div>`;
+                contentElem = messageWrapper.querySelector('.message-content');
+            }
+            
+            // Process Markdown and interactive links (only term-links)
+            const preprocessedText = preprocessText(text);
+            contentElem.innerHTML = DOMPurify.sanitize(marked.parse(preprocessedText), { ADD_ATTR: ['target', 'data-term'] });
+
+            if (actionsContainer) {
+                addMessageActions(actionsContainer, preprocessedText); 
+            }
+
+            chatContainer.insertBefore(messageWrapper, notificationArea);
+            if (shouldScroll) {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+
+            return { messageWrapper, contentElem, statusElem, actionsContainer };
+        }
+        
+        /**
+         * Sends a message to the AI model, displays the response, and renders on canvas.
+         */
+        async function sendMessage() {
+            const promptText = promptInput.value.trim();
+            if (!promptText) return;
+
+            promptInput.value = '';
+            adjustInputHeight();
+            sendBtn.disabled = true;
+
+            // Hide canvas placeholder when starting chat
+            if (canvasPlaceholder) {
+                canvasPlaceholder.classList.add('hidden');
+            }
+
+            addMessage('user', promptText);
+            localHistory.push({ role: 'user', parts: [{ text: promptText }] });
+
+            const { messageWrapper, contentElem, statusElem, actionsContainer } = addMessage('ai', '<span class="blinking-cursor"></span>');
+            if (statusElem) statusElem.textContent = 'Thinking...';
+
+            try {
+                // Prepare chat history to send to the model (text-only, without JSON)
+                const historyForApiModel = localHistory.map(msg => {
+                    if (msg.role === 'model') {
+                        // Separate text part and JSON part (if any)
+                        const parts = msg.parts[0].text.split('```json');
+                        return { role: 'model', parts: [{ text: parts[0].trim() }] };
+                    }
+                    return msg;
+                });
+                
+                const chatSession = model.startChat({ history: historyForApiModel });
+                const result = await chatSession.sendMessageStream(LEARNING_SYSTEM_PROMPT + "\nUser request: " + promptText);
+
+                let fullResponseText = "";
+                let jsonResponse = null;
+                let isFirstChunk = true;
+
+                for await (const chunk of result.stream) {
+                    if (isFirstChunk) {
+                        if (statusElem) statusElem.textContent = 'Writing...';
+                        isFirstChunk = false;
+                    }
+                    fullResponseText += chunk.text();
+                    
+                    // Extract JSON from Markdown during streaming
+                    const jsonStringMatch = fullResponseText.match(/```json\n([\s\S]*?)\n```/);
+                    if (jsonStringMatch && jsonStringMatch[1]) {
+                        try {
+                            const tempJson = JSON.parse(jsonStringMatch[1]);
+                            // Only update jsonResponse if parsed successfully and it's new data
+                            if (JSON.stringify(tempJson) !== JSON.stringify(jsonResponse)) {
+                                jsonResponse = tempJson;
+                                renderContentOnCanvas(jsonResponse); // Render on canvas immediately
+                            }
+                        } catch (e) {
+                            // console.warn("Partial JSON, waiting for full response:", e);
+                        }
+                    }
+
+                    // Update chatbox content with blinking cursor
+                    const markdownPartForDisplay = fullResponseText.split('```json')[0];
+                    const processedChunk = preprocessText(markdownPartForDisplay + '<span class="blinking-cursor"></span>');
+                    contentElem.innerHTML = DOMPurify.sanitize(marked.parse(processedChunk), {ADD_ATTR: ['target', 'data-term']});
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                }
+                
+                if (statusElem) statusElem.classList.add('hidden');
+                
+                // Final render without blinking cursor and store raw text
+                const finalMarkdownPart = fullResponseText.split('```json')[0].trim();
+                const finalProcessedText = preprocessText(finalMarkdownPart);
+                contentElem.innerHTML = DOMPurify.sanitize(marked.parse(finalProcessedText), {ADD_ATTR: ['target', 'data-term']});
+                contentElem.dataset.rawText = finalMarkdownPart;
+
+                addMessageActions(actionsContainer, finalMarkdownPart); // Add copy/speak buttons
+
+                // Save full response (both Markdown and JSON) to localHistory
+                localHistory.push({ role: 'model', parts: [{ text: fullResponseText }] });
+
+            } catch (error) {
+                console.error("Error during sendMessage:", error);
+                contentElem.innerHTML = `**Error:** ${error.message}`;
+                // Remove the last message (if any) to avoid corrupted history
+                if (localHistory.length > 0) {
+                    localHistory.pop();
+                }
+                showToast(`Message send error: ${error.message}`, 'error');
+
+            } finally {
+                sendBtn.disabled = false; // Re-enable send button
+            }
+        }
+
+        /** Adjusts the height of the prompt input textarea based on its content. */
+        function adjustInputHeight() {
+            promptInput.style.height = 'auto';
+            promptInput.style.height = promptInput.scrollHeight + 'px';
+        }
+        
+        // --- SPEECH RECOGNITION ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if(SpeechRecognition) {
+            const recognition = new SpeechRecognition();
+            recognition.continuous = false; 
+            recognition.lang = 'vi-VN'; 
+            recognition.interimResults = false; 
+
+            recognition.onstart = () => { 
+                isRecording = true; 
+                recordBtn.classList.add('recording'); 
+                promptInput.placeholder = 'Listening...'; 
+            };
+            recognition.onend = () => { 
+                isRecording = false; 
+                recordBtn.classList.remove('recording'); 
+                promptInput.placeholder = 'Enter your question...'; 
+            };
+            recognition.onresult = (event) => { 
+                promptInput.value = event.results[event.results.length - 1][0].transcript.trim(); 
+                adjustInputHeight(); 
+                sendMessage(); 
+            };
+            recognition.onerror = (event) => { 
+                showToast(`Recording error: ${event.error}`, 'error'); 
+                console.error("Speech Recognition error:", event.error);
+            };
+            recordBtn.addEventListener('click', () => { 
+                isRecording ? recognition.stop() : recognition.start(); 
+            });
+        } else { 
+            recordBtn.classList.add('hidden'); // Hide record button if API not supported
+        }
+        
+        /** Resets the state of the active speech synthesis button. */
+        function resetActiveSpeechButton() {
+            if (activeSpeech && activeSpeech.button) {
+                activeSpeech.button.innerHTML = '🔊';
+                activeSpeech.button.dataset.state = 'idle';
+                activeSpeech.button.title = 'Read text aloud';
+            }
+        }
+
+        // --- CANVAS LOGIC (Konva.js with D3-Force Integration) ---
+
+        /** Initializes the Konva.js stage and layer. */
+        function initCanvas() {
+            stage = new Konva.Stage({
+                container: 'learning-canvas',
+                width: canvasContainer.offsetWidth,
+                height: canvasContainer.offsetHeight,
+            });
+            layer = new Konva.Layer();
+            stage.add(layer);
+
+            // Add a separate layer for grid to avoid redrawing with nodes
+            gridLayer = new Konva.Layer();
+            stage.add(gridLayer);
+            drawGrid(); // Draw grid initially
+
+            // Handle responsive canvas on window resize
+            window.addEventListener('resize', () => {
+                stage.width(canvasContainer.offsetWidth);
+                stage.height(canvasContainer.offsetHeight);
+                drawGrid(); // Redraw grid on resize
+                if (d3Simulation) {
+                    // Re-center force layout if active
+                    d3Simulation.force("center", d3.forceCenter(stage.width() / 2, stage.height() / 2));
+                    d3Simulation.alpha(0.3).restart(); // Restart simulation for new center
+                }
+                layer.batchDraw();
+                gridLayer.batchDraw();
+            });
+
+            // Implement zoom and pan
+            const scaleBy = 1.1;
+            stage.on('wheel', (e) => {
+                e.evt.preventDefault();
+                const oldScale = stage.scaleX();
+                const pointer = stage.getPointerPosition();
+
+                const mousePointTo = {
+                    x: (pointer.x - stage.x()) / oldScale,
+                    y: (pointer.y - stage.y()) / oldScale,
+                };
+
+                const newScale = e.evt.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy;
+
+                stage.scale({ x: newScale, y: newScale });
+
+                const newPos = {
+                    x: pointer.x - mousePointTo.x * newScale,
+                    y: pointer.y - mousePointTo.y * newScale,
+                };
+                stage.position(newPos);
+                stage.draw();
+            });
+
+            stage.draggable(true); // Enable dragging for pan
+        }
+
+        /** Draws a grid on the canvas. */
+        function drawGrid() {
+            gridLayer.destroyChildren(); // Clear existing grid
+            const gridSize = 50; // Distance between grid lines
+            const stageWidth = stage.width();
+            const stageHeight = stage.height();
+            const strokeColor = document.documentElement.classList.contains('dark') ? '#4a5568' : '#e2e8f0'; // Tailwind gray-700 / gray-200
+
+            // Draw vertical lines
+            for (let i = 0; i * gridSize < stageWidth; i++) {
+                gridLayer.add(new Konva.Line({
+                    points: [i * gridSize, 0, i * gridSize, stageHeight],
+                    stroke: strokeColor,
+                    strokeWidth: 0.5,
+                }));
+            }
+
+            // Draw horizontal lines
+            for (let i = 0; i * gridSize < stageHeight; i++) {
+                gridLayer.add(new Konva.Line({
+                    points: [0, i * gridSize, stageWidth, i * gridSize],
+                    stroke: strokeColor,
+                    strokeWidth: 0.5,
+                }));
+            }
+            gridLayer.batchDraw();
+        }
+
+
+        /**
+         * Helper function to calculate the intersection point of a line with a rectangle.
+         * This helps links start/end precisely at the edge of nodes.
+         * @param {{x: number, y: number}} p1 - Start point of the line (usually source node center).
+         * @param {{x: number, y: number}} p2 - End point of the line (usually target node center).
+         * @param {{x: number, y: number, width: number, height: number}} r - The rectangle (target or source node).
+         * @returns {{x: number, y: number}} The intersection point.
+         */
+        function getRectIntersectionPoint(p1, p2, r) {
+            const dx = p2.x - p1.x;
+            const dy = p2.y - p1.y;
+
+            const rx = r.x;
+            const ry = r.y;
+            const rw = r.width;
+            const rh = r.height;
+
+            let t = Infinity; 
+
+            // Left edge
+            if (dx !== 0) {
+                const t1 = (rx - p1.x) / dx;
+                if (t1 >= 0 && t1 <= 1) {
+                    const y = p1.y + t1 * dy;
+                    if (y >= ry && y <= ry + rh) {
+                        t = Math.min(t, t1);
+                    }
+                }
+            }
+
+            // Right edge
+            if (dx !== 0) {
+                const t2 = (rx + rw - p1.x) / dx;
+                if (t2 >= 0 && t2 <= 1) {
+                    const y = p1.y + t2 * dy;
+                    if (y >= ry && y <= ry + rh) {
+                        t = Math.min(t, t2);
+                    }
+                }
+            }
+
+            // Top edge
+            if (dy !== 0) {
+                const t3 = (ry - p1.y) / dy;
+                if (t3 >= 0 && t3 <= 1) {
+                    const x = p1.x + t3 * dx;
+                    if (x >= rx && x <= rx + rw) {
+                        t = Math.min(t, t3);
+                    }
+                }
+            }
+
+            // Bottom edge
+            if (dy !== 0) {
+                const t4 = (ry + rh - p1.y) / dy;
+                if (t4 >= 0 && t4 <= 1) {
+                    const x = p1.x + t4 * dx;
+                    if (x >= rx && x <= rx + rw) {
+                        t = Math.min(t, t4);
+                    }
+                }
+            }
+
+            if (t === Infinity) {
+                return p2; 
+            }
+            return {
+                x: p1.x + t * dx,
+                y: p1.y + t * dy
+            };
+        }
+
+
+        /**
+         * Renders content on the Konva canvas based on the parsed JSON data, and sets up D3 force simulation.
+         * @param {object} lessonData - The JSON object containing nodes and connections.
+         */
+        function renderContentOnCanvas(lessonData) {
+            if (!stage || !layer) {
+                console.error("Konva stage or layer not initialized.");
+                return;
+            }
+
+            // Stop any active D3 simulation
+            if (d3Simulation) {
+                d3Simulation.stop();
+            }
+
+            layer.destroyChildren(); // Clear existing elements on canvas
+            canvasPlaceholder.classList.add('hidden'); // Hide placeholder when content is present
+
+            const PADDING = 20; // Internal padding for nodes
+
+            const d3Nodes = []; // Nodes for D3 simulation
+            const d3Links = []; // Links for D3 simulation
+
+            currentKonvaNodes = []; // Reset stored Konva nodes
+            currentKonvaLinks = []; // Reset stored Konva links
+
+            // 1. Create Konva Nodes and D3 Nodes
+            lessonData.nodes.forEach(nodeData => {
+                const group = new Konva.Group({
+                    x: nodeData.x,
+                    y: nodeData.y,
+                    draggable: true, 
+                });
+
+                const text = new Konva.Text({
+                    text: nodeData.text,
+                    fontSize: 16,
+                    fontFamily: 'Inter, Arial, sans-serif',
+                    fill: '#333',
+                    align: 'center',
+                    verticalAlign: 'middle',
+                    padding: PADDING / 2, 
+                    wrap: 'word',
+                });
+                
+                // Calculate actual text size to adjust rectangle size
+                const textMetrics = text.measureSize(nodeData.text);
+                const rectWidth = Math.max(120, textMetrics.width + PADDING); 
+                const rectHeight = Math.max(60, textMetrics.height + PADDING); 
+
+                const rect = new Konva.Rect({
+                    width: rectWidth,
+                    height: rectHeight,
+                    fill: nodeData.color || '#E0E0E0',
+                    cornerRadius: 10,
+                    shadowBlur: 5,
+                    shadowOpacity: 0.2,
+                    stroke: '#AAAAAA',
+                    strokeWidth: 1,
+                });
+
+                // Apply special styling for the main topic node
+                if (nodeData.isMainTopic) {
+                    rect.stroke("#FF0000"); // Red border for main topic
+                    rect.strokeWidth(3);
+                }
+
+                // Position text inside the rectangle to center it
+                text.position({
+                    x: (rect.width() - textMetrics.width) / 2 - PADDING/2, 
+                    y: (rect.height() - textMetrics.height) / 2 - PADDING/2,
+                });
+
+                group.add(rect);
+                group.add(text);
+                layer.add(group);
+
+                // Store Konva group and add to D3 nodes
+                const d3Node = { 
+                    id: nodeData.id, 
+                    konvaGroup: group,
+                    konvaRect: rect, // Store reference to rect for getRectIntersectionPoint
+                    isMainTopic: nodeData.isMainTopic || false // Pass main topic flag to D3 node
+                };
+                d3Nodes.push(d3Node);
+                currentKonvaNodes.push(d3Node); // Store for later access (e.g., force layout activation)
+
+                // Add click event for description
+                if (nodeData.description) {
+                    group.on('click', () => {
+                        showToast(`Description: ${nodeData.description}`, 'info');
+                    });
+                }
+            });
+
+            // Map d3Nodes for easier link creation
+            const nodeMap = new Map(d3Nodes.map(d => [d.id, d]));
+
+            // 2. Create Konva Connections and D3 Links
+            lessonData.connections.forEach(conn => {
+                const sourceD3Node = nodeMap.get(conn.from);
+                const targetD3Node = nodeMap.get(conn.to);
+
+                if (sourceD3Node && targetD3Node) {
+                    // Initial points (will be updated by D3 force)
+                    const line = new Konva.Arrow({
+                        points: [sourceD3Node.konvaGroup.x(), sourceD3Node.konvaGroup.y(), targetD3Node.konvaGroup.x(), targetD3Node.konvaGroup.y()],
+                        stroke: conn.color || '#000000',
+                        strokeWidth: 2,
+                        pointerLength: 10,
+                        pointerWidth: 10,
+                    });
+                    layer.add(line);
+
+                    let label = null;
+                    if (conn.text) {
+                        label = new Konva.Text({
+                            text: conn.text,
+                            fontSize: 12,
+                            fill: conn.color || '#555',
+                            fontFamily: 'Inter, Arial, sans-serif',
+                        });
+                        layer.add(label);
+                    }
+
+                    d3Links.push({ 
+                        source: sourceD3Node, 
+                        target: targetD3Node, 
+                        konvaLine: line, 
+                        konvaLabel: label 
+                    });
+                    currentKonvaLinks.push({ konvaLine: line, konvaLabel: label }); // Store for later access
+                }
+            });
+
+            layer.batchDraw(); 
+            centerMindMap(); // Center after initial drawing
+
+            // 3. Setup D3 Force Simulation
+            d3Simulation = d3.forceSimulation(d3Nodes)
+                .force("link", d3.forceLink(d3Links).id(d => d.id).distance(180).strength(0.8)) // Tăng khoảng cách và lực hút
+                .force("charge", d3.forceManyBody().strength(-400).theta(0.8)) // Tăng lực đẩy giữa các node
+                .force("center", d3.forceCenter(stage.width() / 2, stage.height() / 2)) // Lực kéo về trung tâm
+                .force("x", d3.forceX(stage.width() / 2).strength(0.2)) // Kéo nhẹ về trung tâm ngang
+                .force("y", d3.forceY(d => { // Kéo mạnh về vị trí Y dựa trên thứ tự ban đầu
+                    // Định hướng Y dựa trên thứ tự xuất hiện của node trong mảng lessonData.nodes
+                    const nodeIndex = lessonData.nodes.findIndex(n => n.id === d.id);
+                    // Phân bổ các node theo chiều dọc, với node đầu tiên ở gần đỉnh, cuối cùng ở gần đáy
+                    return stage.height() * (0.1 + (nodeIndex / Math.max(1, lessonData.nodes.length -1)) * 0.8);
+                }).strength(0.9)) // Lực kéo dọc mạnh mẽ hơn để tạo dòng chảy top-down
+                // Thêm lực tránh va chạm cho các node hình chữ nhật. radius phải lớn hơn một nửa đường chéo
+                .force("collide", d3.forceCollide().radius(d => Math.max(d.konvaRect.width(), d.konvaRect.height()) / 2 + 15).iterations(2)) // Thêm padding và số lần lặp lại
+                .on("tick", () => { // Update Konva positions on each simulation tick
+                    // Update node positions
+                    d3Nodes.forEach(d => {
+                        // Keep nodes within bounds
+                        d.x = Math.max(d.konvaRect.width()/2, Math.min(stage.width() - d.konvaRect.width()/2, d.x));
+                        d.y = Math.max(d.konvaRect.height()/2, Math.min(stage.height() - d.konvaRect.height()/2, d.y));
+
+                        d.konvaGroup.position({ x: d.x - d.konvaRect.width()/2, y: d.y - d.konvaRect.height()/2 });
+                    });
+
+                    // Update link positions
+                    d3Links.forEach(link => {
+                        const sourceRect = link.source.konvaRect;
+                        const targetRect = link.target.konvaRect;
+
+                        const p1 = {
+                            x: link.source.x,
+                            y: link.source.y,
+                        };
+                        const p2 = {
+                            x: link.target.x,
+                            y: link.target.y,
+                        };
+
+                        const startIntersection = getRectIntersectionPoint(p1, p2, {
+                            x: link.source.konvaGroup.x(), y: link.source.konvaGroup.y(),
+                            width: sourceRect.width(), height: sourceRect.height()
+                        });
+                        const endIntersection = getRectIntersectionPoint(p2, p1, {
+                            x: link.target.konvaGroup.x(), y: link.target.konvaGroup.y(),
+                            width: targetRect.width(), height: targetRect.height()
+                        });
+
+                        link.konvaLine.points([startIntersection.x, startIntersection.y, endIntersection.x, endIntersection.y]);
+
+                        // Update label position if it exists
+                        if (link.konvaLabel) {
+                            link.konvaLabel.x((startIntersection.x + endIntersection.x) / 2);
+                            link.konvaLabel.y((startIntersection.y + endIntersection.y) / 2 - 15);
+                            link.konvaLabel.rotation(Math.atan2(endIntersection.y - startIntersection.y, endIntersection.x - startIntersection.x) * 180 / Math.PI);
+                        }
+                    });
+                    layer.batchDraw();
+                });
+
+            // Pause simulation when a node is dragged
+            d3Nodes.forEach(d => {
+                d.konvaGroup.on('dragstart', () => {
+                    d3Simulation.alphaTarget(0.3).restart();
+                    d.fx = d.x;
+                    d.fy = d.y;
+                });
+                d.konvaGroup.on('dragmove', () => {
+                    d.fx = d.konvaGroup.x() + d.konvaRect.width()/2;
+                    d.fy = d.konvaGroup.y() + d.konvaRect.height()/2;
+                });
+                d.konvaGroup.on('dragend', () => {
+                    d.fx = null;
+                    d.fy = null;
+                    d3Simulation.alphaTarget(0); // Stop simulation after drag ends
+                });
+            });
+            d3Simulation.alpha(1).restart(); // Start simulation with higher alpha for initial settling
+            // Tăng thời gian chạy ban đầu để sơ đồ có thêm thời gian ổn định
+            setTimeout(() => {
+                d3Simulation.alphaTarget(0); // Stop simulation after a longer while for stability
+            }, 3000); // Chạy 3 giây
+
+        }
+
+        // Helper to get center of node (updated to receive group and rect)
+        function getNodeCenter(nodeGroup, nodeRect) {
+            return {
+                x: nodeGroup.x() + nodeRect.width() / 2,
+                y: nodeGroup.y() + nodeRect.height() / 2
+            };
+        }
+
+        // Function to center the entire mind map on the canvas
+        function centerMindMap() {
+            if (!stage || !layer || layer.children.length === 0) return;
+
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+            layer.children.forEach(child => {
+                const bbox = child.getClientRect();
+                minX = Math.min(minX, bbox.x);
+                minY = Math.min(minY, bbox.y);
+                maxX = Math.max(maxX, bbox.x + bbox.width);
+                maxY = Math.max(maxY, bbox.y + bbox.height);
+            });
+
+            const contentWidth = maxX - minX;
+            const contentHeight = maxY - minY;
+
+            const stageCenterX = stage.width() / 2;
+            const stageCenterY = stage.height() / 2;
+
+            const currentMapCenterX = minX + contentWidth / 2;
+            const currentMapCenterY = minY + contentHeight / 2;
+
+            const offsetX = stageCenterX - currentMapCenterX;
+            const offsetY = stageCenterY - currentMapCenterY;
+
+            // Move layer to center content
+            layer.x(layer.x() + offsetX);
+            layer.y(layer.y() + offsetY);
+
+            layer.batchDraw();
+        }
+
+        // --- GLOBAL EVENT LISTENERS ---
+        sendBtn.addEventListener('click', sendMessage);
+        promptInput.addEventListener('keydown', e => { 
+            if (e.key === 'Enter' && !e.shiftKey) { 
+                e.preventDefault(); 
+                sendMessage(); 
+            } 
+        });
+        promptInput.addEventListener('input', adjustInputHeight);
+
+        // Click handler for chat container to handle dynamic links/buttons
+        chatContainer.addEventListener('click', async (e) => {
+            const link = e.target.closest('a');
+            const button = e.target.closest('button');
+
+            if (link) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (link.classList.contains('term-link')) {
+                    const term = link.dataset.term;
+                    const messageContentElement = link.closest('.message-content');
+                    const context = messageContentElement ? messageContentElement.dataset.rawText : '';
+                    showToast(`Explain term: "${term}" (context: "${context.substring(0, 50)}...")`, 'info');
+                }
+            } else if (button) {
+                 if (button.classList.contains('copy-btn')) {
+                    e.preventDefault(); e.stopPropagation();
+                    copyToClipboard(button.dataset.text);
+                 } else if (button.classList.contains('speak-btn')) {
+                    e.preventDefault(); e.stopPropagation();
+                    if (speechSynthesis.speaking || speechSynthesis.paused) {
+                        if (activeSpeech && activeSpeech.button === button) {
+                            const currentState = button.dataset.state;
+                            if (currentState === 'paused') {
+                                speechSynthesis.resume();
+                                button.innerHTML = '⏸️'; button.dataset.state = 'playing'; button.title = 'Pause';
+                                return;
+                            }
+                            if (currentState === 'playing') {
+                                speechSynthesis.pause();
+                                button.innerHTML = '▶️'; button.dataset.state = 'Resume';
+                                return;
+                            }
+                        }
+                        speechSynthesis.cancel(); 
+                    }
+
+                    const utterance = new SpeechSynthesisUtterance(button.dataset.text);
+                    utterance.lang = 'vi-VN'; 
+                    utterance.onstart = () => {
+                        resetActiveSpeechButton(); 
+                        activeSpeech = { utterance, button: button }; 
+                        button.innerHTML = '⏸️'; button.dataset.state = 'playing'; button.title = 'Pause';
+                    };
+                    utterance.onend = () => { resetActiveSpeechButton(); activeSpeech = null; };
+                    utterance.onerror = (event) => { 
+                        console.error("SpeechSynthesisUtterance error:", event);
+                        showToast(`Speech error: ${event.error}`, 'error');
+                        resetActiveSpeechButton(); 
+                        activeSpeech = null; 
+                    };
+                    speechSynthesis.speak(utterance);
+                 }
+            }
+        });
+        
+        // --- SCROLL TO TOP BUTTON LOGIC ---
+        /** Function to show/hide the scroll to top button. */
+        function toggleScrollToTopButton() {
+            if (!scrollToTopBtn || !chatContainer) return; 
+
+            if (chatContainer.scrollTop > chatContainer.clientHeight * 0.5) { 
+                scrollToTopBtn.classList.add('show');
+            } else {
+                scrollToTopBtn.classList.remove('show');
+            }
+        }
+
+        /** Function to scroll to the top of the chat container. */
+        function scrollToTop() {
+            if (chatContainer) {
+                chatContainer.scrollTo({
+                    top: 0,
+                    behavior: "smooth" 
+                });
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            if (chatContainer) {
+                chatContainer.addEventListener("scroll", toggleScrollToTopButton);
+            }
+            if (scrollToTopBtn) { 
+                scrollToTopBtn.addEventListener("click", scrollToTop);
+            }
+            // Assign event to Clear Canvas button
+            if (clearCanvasBtn) {
+                clearCanvasBtn.addEventListener('click', () => {
+                    if (layer) {
+                        layer.destroyChildren();
+                        layer.batchDraw();
+                        canvasPlaceholder.classList.remove('hidden'); // Show placeholder again
+                        if (d3Simulation) { // Stop simulation if active
+                            d3Simulation.stop();
+                        }
+                    }
+                });
+            }
+            // Assign event to Activate Force Layout button
+            if (activateForceLayoutBtn) {
+                activateForceLayoutBtn.addEventListener('click', () => {
+                    if (d3Simulation) {
+                        d3Simulation.alpha(1).restart(); // Restart simulation from scratch
+                        showToast('Sơ đồ đang được sắp xếp...', 'info');
+                    } else {
+                        showToast('Không có sơ đồ để sắp xếp. Hãy tạo một bài học trước.', 'info');
+                    }
+                });
+            }
+        });
+
+    </script>
+</body>
+</html>
