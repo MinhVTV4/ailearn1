@@ -217,7 +217,6 @@
         let localHistory = []; // Stores the full conversation history (text-only for AI)
         let isRecording = false; // Speech recording state
         let activeSpeech = null; // Tracks current speech synthesis utterance
-        // Removed D3.js related variables: let d3Simulation = null;
         let konvaNodesData = []; // Stores Konva node groups and their original data
         let konvaLinksData = []; // Stores Konva link arrows and references to source/target nodes
         let clickedNodeData = null; // Stores data of the node that was right-clicked
@@ -603,8 +602,7 @@
                 
                 // Render cuối cùng không có con trỏ nhấp nháy và lưu văn bản thô
                 const finalMarkdownPart = fullResponseText.split('```json')[0].trim();
-                const finalProcessedText = preprocessText(finalMarkdownPart);
-                contentElem.innerHTML = DOMPurify.sanitize(marked.parse(finalProcessedText), {ADD_ATTR: ['target', 'data-term']});
+                contentElem.innerHTML = DOMPurify.sanitize(marked.parse(preprocessText(finalMarkdownPart)), {ADD_ATTR: ['target', 'data-term']}); // Re-preprocess final text
                 contentElem.dataset.rawText = finalMarkdownPart;
 
                 addMessageActions(actionsContainer, finalMarkdownPart); // Thêm nút sao chép/đọc
@@ -978,9 +976,11 @@
                 nodesMap.set(nodeData.id, { konvaGroup: group, konvaRect: rect, nodeData: nodeData });
 
                 // Thêm sự kiện click để hiển thị mô tả
-                group.on('click', (e) => { // Added 'e' parameter
-                    // ONLY trigger this if it's a left-click (button === 0)
-                    if (e.evt.button === 0) {
+                group.on('click', (e) => {
+                    // Đảm bảo đây là click chuột trái và không phải là sự kiện contextmenu được kích hoạt cùng lúc
+                    if (e.evt.button === 0) { // e.evt.button === 0 là chuột trái
+                        // Ngăn chặn sự kiện lan truyền trong Konva để tránh xung đột
+                        e.cancelBubble = true; 
                         if (nodeData.description && nodeData.description.trim() !== '') {
                             addMessage('ai', `**Mô tả chi tiết cho "${nodeData.text}":**\n\n${nodeData.description}`);
                         } else {
@@ -992,6 +992,7 @@
                 // Thêm sự kiện click chuột phải (contextmenu) cho node mở rộng
                 group.on('contextmenu', (e) => {
                     e.evt.preventDefault(); // Ngăn chặn menu ngữ cảnh mặc định của trình duyệt
+                    e.cancelBubble = true; // Ngăn chặn sự kiện lan truyền trong Konva
                     clickedNodeData = nodeData; // Lưu dữ liệu của node được click
                     showNodeContextMenu(e.evt.clientX, e.evt.clientY);
                 });
@@ -1200,19 +1201,26 @@
             // Gán sự kiện cho nút "Mở rộng vấn đề" trong menu ngữ cảnh
             if (expandTopicBtn) {
                 expandTopicBtn.addEventListener('click', (e) => { // Added 'e' parameter
-                    e.stopPropagation(); // Stop propagation to prevent window click from hiding menu immediately
+                    e.stopPropagation(); // Ngăn chặn sự kiện lan truyền để tránh window click ẩn menu ngay lập tức
+                    console.log("Nút 'Mở rộng vấn đề' đã được nhấn!"); // LOG: Kiểm tra nút đã được nhấn
+                    console.log("Dữ liệu clickedNodeData:", clickedNodeData); // LOG: Kiểm tra dữ liệu node
                     hideNodeContextMenu(); // Ẩn menu
                     if (clickedNodeData) {
                         const promptToAI = `Mở rộng chi tiết về chủ đề: "${clickedNodeData.text}". Vui lòng cung cấp giải thích sâu hơn, các ví dụ minh họa và thông tin liên quan.`;
+                        console.log("Prompt được tạo:", promptToAI); // LOG: Kiểm tra prompt
                         // Mô phỏng người dùng nhập và gửi prompt này
                         promptInput.value = promptToAI;
-                        sendMessage();
+                        sendBtn.disabled = false; // Đảm bảo nút gửi được bật
+                        sendMessage(); // Gọi hàm gửi tin nhắn
                         clickedNodeData = null; // Xóa dữ liệu node đã lưu
+                    } else {
+                        showToast('Không tìm thấy dữ liệu node để mở rộng.', 'error');
+                        console.log("Lỗi: clickedNodeData rỗng khi nhấn 'Mở rộng vấn đề'."); // LOG: Lỗi nếu dữ liệu rỗng
                     }
                 });
             }
 
-            // Fix: Stop propagation for clicks on the context menu itself (this was already there)
+            // Fix: Ngăn chặn sự lan truyền sự kiện click trên chính menu ngữ cảnh (đã có)
             if (nodeContextMenu) {
                 nodeContextMenu.addEventListener('click', (e) => {
                     e.stopPropagation();
