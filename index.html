@@ -807,6 +807,9 @@
                     if (y >= ry && y <= ry + rh) {
                         t = Math.min(t, t2);
                     }
+                    if (y >= ry && y <= ry + rh) {
+                        t = Math.min(t, t2);
+                    }
                 }
             }
 
@@ -975,11 +978,14 @@
                 nodesMap.set(nodeData.id, { konvaGroup: group, konvaRect: rect, nodeData: nodeData });
 
                 // Thêm sự kiện click để hiển thị mô tả
-                group.on('click', () => {
-                    if (nodeData.description && nodeData.description.trim() !== '') {
-                        addMessage('ai', `**Mô tả chi tiết cho "${nodeData.text}":**\n\n${nodeData.description}`);
-                    } else {
-                        showToast(`Không có mô tả chi tiết cho node "${nodeData.text}".`, 'info');
+                group.on('click', (e) => { // Added 'e' parameter
+                    // ONLY trigger this if it's a left-click (button === 0)
+                    if (e.evt.button === 0) {
+                        if (nodeData.description && nodeData.description.trim() !== '') {
+                            addMessage('ai', `**Mô tả chi tiết cho "${nodeData.text}":**\n\n${nodeData.description}`);
+                        } else {
+                            showToast(`Không có mô tả chi tiết cho node "${nodeData.text}".`, 'info');
+                        }
                     }
                 });
 
