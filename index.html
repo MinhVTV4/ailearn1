@@ -174,6 +174,27 @@
         .dark #canvas-loading-overlay svg {
             color: #60a5fa; /* Light blue spinner */
         }
+
+        /* Node Tooltip */
+        #node-tooltip {
+            position: absolute;
+            background-color: rgba(31, 41, 55, 0.95); /* Tailwind gray-800 with opacity */
+            color: white;
+            padding: 0.75rem;
+            border-radius: 0.375rem; /* rounded-md */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* shadow-md */
+            max-width: 300px;
+            z-index: 60; /* Higher than canvas overlay */
+            pointer-events: none; /* Do not block mouse events on canvas */
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+            word-wrap: break-word; /* Ensure long descriptions wrap */
+            font-size: 0.875rem; /* text-sm */
+            line-height: 1.5;
+        }
+        #node-tooltip.show {
+            opacity: 1;
+        }
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 font-sans h-screen flex">
@@ -252,6 +273,9 @@
                     <p id="canvas-loading-text">Đang tải sơ đồ...</p>
                 </div>
             </div>
+
+            <!-- Node Tooltip -->
+            <div id="node-tooltip" class="absolute hidden"></div>
         </div>
     </div>
 
@@ -271,6 +295,31 @@
             </button>
         </div>
     </div>
+
+    <!-- Node Edit Modal -->
+    <div id="node-edit-modal" class="modal">
+        <div class="modal-content dark:bg-slate-700">
+            <span class="close-button">&times;</span>
+            <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">Chỉnh sửa Node</h3>
+            <div class="mb-4">
+                <label for="modal-edit-text" class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Văn bản (ngắn gọn):</label>
+                <input type="text" id="modal-edit-text" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:bg-slate-800 dark:text-gray-200 leading-tight focus:outline-none focus:shadow-outline">
+            </div>
+            <div class="mb-6">
+                <label for="modal-edit-description" class="block text-gray-700 dark:text-gray-300 text-sm font-bold mb-2">Mô tả/Ghi chú (chi tiết):</label>
+                <textarea id="modal-edit-description" rows="5" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 dark:bg-slate-800 dark:text-gray-200 leading-tight focus:outline-none focus:shadow-outline resize-y"></textarea>
+            </div>
+            <div class="flex justify-end gap-2">
+                <button id="modal-save-node-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                    Lưu thay đổi
+                </button>
+                <button id="modal-cancel-node-btn" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 transition-colors dark:bg-gray-600 dark:text-gray-100 dark:hover:bg-gray-500">
+                    Hủy
+                </button>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Các thẻ script được chuyển xuống cuối body -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -323,6 +372,7 @@
         let localHistory = []; // Stores the full conversation history (text-only for AI)
         let isRecording = false; // Speech recording state
         let activeSpeech = null; // Tracks current speech synthesis utterance
+        let editingNode = null; // Stores the D3 node currently being edited
 
         // Canvas state management object
         const canvasState = {
@@ -330,7 +380,7 @@
             layer: null,
             gridLayer: null,
             d3Simulation: null,
-            konvaNodesMap: new Map(), // Maps D3 node IDs to {konvaGroup, konvaRect}
+            konvaNodesMap: new Map(), // Maps D3 node IDs to {konvaGroup, konvaRect, text, description}
             konvaLinks: [] // Stores {konvaLine, konvaLabel} for all links
         };
 
@@ -355,8 +405,8 @@
         const canvasPlaceholder = document.getElementById('canvas-placeholder');
         const clearCanvasBtn = document.getElementById('clear-canvas-btn');
         const activateForceLayoutBtn = document.getElementById('activate-force-layout-btn');
-        const canvasLoadingOverlay = document.getElementById('canvas-loading-overlay'); // New element
-        const canvasLoadingText = document.getElementById('canvas-loading-text');     // New element
+        const canvasLoadingOverlay = document.getElementById('canvas-loading-overlay'); 
+        const canvasLoadingText = document.getElementById('canvas-loading-text');     
 
         // Term modal elements
         const termModal = document.getElementById('term-modal');
@@ -364,6 +414,17 @@
         const modalTermTitle = document.getElementById('modal-term-title');
         const modalTermExplanation = document.getElementById('modal-term-explanation');
         const askAiMoreBtn = document.getElementById('ask-ai-more-btn');
+
+        // Node Edit Modal elements
+        const nodeEditModal = document.getElementById('node-edit-modal');
+        const closeNodeEditModalBtn = nodeEditModal.querySelector('.close-button');
+        const modalEditTextInput = document.getElementById('modal-edit-text');
+        const modalEditDescriptionInput = document.getElementById('modal-edit-description');
+        const modalSaveNodeBtn = document.getElementById('modal-save-node-btn');
+        const modalCancelNodeBtn = document.getElementById('modal-cancel-node-btn');
+
+        // Node Tooltip element
+        const nodeTooltip = document.getElementById('node-tooltip');
 
         // System prompt for AI to generate learning content and canvas data
         const LEARNING_SYSTEM_PROMPT = `
@@ -984,9 +1045,13 @@
                 x: nodeData.x,
                 y: nodeData.y,
                 draggable: true, 
+                // Add these listeners for editing and tooltip
+                onDblclick: () => showNodeEditModal(d3Node), // Double-click to edit
+                onMouseover: (evt) => showNodeTooltip(d3Node, evt.evt.clientX, evt.evt.clientY),
+                onMouseout: () => hideNodeTooltip()
             });
 
-            const text = new Konva.Text({
+            const textKonva = new Konva.Text({
                 text: nodeData.text,
                 fontSize: 16,
                 fontFamily: 'Inter, Arial, sans-serif',
@@ -998,11 +1063,11 @@
             });
             
             // Calculate actual text size to adjust rectangle size
-            const textMetrics = text.measureSize(nodeData.text);
+            const textMetrics = textKonva.measureSize(nodeData.text);
             const rectWidth = Math.max(CONSTANTS.MIN_NODE_WIDTH, textMetrics.width + CONSTANTS.NODE_PADDING); 
             const rectHeight = Math.max(CONSTANTS.MIN_NODE_HEIGHT, textMetrics.height + CONSTANTS.NODE_PADDING); 
 
-            const rect = new Konva.Rect({
+            const rectKonva = new Konva.Rect({
                 width: rectWidth,
                 height: rectHeight,
                 fill: nodeData.color || '#E0E0E0',
@@ -1015,27 +1080,38 @@
 
             // Apply special styling for the main topic node
             if (nodeData.isMainTopic) {
-                rect.stroke("#FF0000"); // Red border for main topic
-                rect.strokeWidth(3);
+                rectKonva.stroke("#FF0000"); // Red border for main topic
+                rectKonva.strokeWidth(3);
             }
 
             // Position text inside the rectangle to center it
-            text.position({
-                x: (rect.width() - textMetrics.width) / 2 - CONSTANTS.NODE_PADDING/2, 
-                y: (rect.height() - textMetrics.height) / 2 - CONSTANTS.NODE_PADDING/2,
+            textKonva.position({
+                x: (rectKonva.width() - textMetrics.width) / 2 - CONSTANTS.NODE_PADDING/2, 
+                y: (rectKonva.height() - textMetrics.height) / 2 - CONSTANTS.NODE_PADDING/2,
             });
 
-            group.add(rect);
-            group.add(text);
+            group.add(rectKonva);
+            group.add(textKonva);
             
-            // Add click event for description
+            // Add click event for description (now also handled by tooltip)
             if (nodeData.description) {
                 group.on('click', () => {
-                    showToast(`Mô tả: ${nodeData.description}`, 'info');
+                    // showToast(`Mô tả: ${nodeData.description}`, 'info'); // This can be removed or kept as a secondary option
                 });
             }
 
-            return { konvaGroup: group, konvaRect: rect, d3NodeData: { id: nodeData.id, isMainTopic: nodeData.isMainTopic || false } };
+            // Enhanced D3 node data to include text and description for editing
+            const d3Node = { 
+                id: nodeData.id, 
+                isMainTopic: nodeData.isMainTopic || false,
+                text: nodeData.text, // Store the short text
+                description: nodeData.description || "", // Store the detailed description
+                konvaGroup: group, 
+                konvaRect: rectKonva,
+                konvaText: textKonva // Reference to the Konva Text object
+            };
+
+            return { konvaGroup: group, konvaRect: rectKonva, d3NodeData: d3Node };
         }
 
         /**
@@ -1224,7 +1300,8 @@
                 const { konvaGroup, konvaRect, d3NodeData } = createKonvaNodeGroup(nodeData);
                 
                 // Attach Konva elements to the D3 node data
-                const d3Node = { ...d3NodeData, konvaGroup, konvaRect, x: nodeData.x, y: nodeData.y };
+                // d3NodeData now includes text and description
+                const d3Node = { ...d3NodeData, konvaGroup, konvaRect }; // Ensure konva elements are attached
                 d3Nodes.push(d3Node);
                 canvasState.konvaNodesMap.set(d3Node.id, d3Node); // Store D3 node with Konva references
 
@@ -1411,6 +1488,101 @@
                 termModal.style.display = 'none';
             }
         });
+
+        // --- NODE EDIT MODAL LOGIC ---
+        /**
+         * Displays the node editing modal.
+         * @param {object} nodeD3Data - The D3 node object to edit.
+         */
+        function showNodeEditModal(nodeD3Data) {
+            editingNode = nodeD3Data;
+            modalEditTextInput.value = editingNode.text;
+            modalEditDescriptionInput.value = editingNode.description;
+            nodeEditModal.style.display = 'flex'; // Use flex to center the modal
+        }
+
+        /** Saves changes from the node edit modal back to the Konva node and D3 data. */
+        function saveNodeChanges() {
+            if (!editingNode) return;
+
+            const newText = modalEditTextInput.value.trim();
+            const newDescription = modalEditDescriptionInput.value.trim();
+
+            if (newText === "") {
+                showToast("Văn bản node không được để trống.", "error");
+                return;
+            }
+
+            // Update D3 node data
+            editingNode.text = newText;
+            editingNode.description = newDescription;
+
+            // Update Konva Text and Rect
+            const konvaText = editingNode.konvaText;
+            const konvaRect = editingNode.konvaRect;
+
+            konvaText.text(newText);
+            
+            // Recalculate dimensions for the rectangle based on new text
+            const textMetrics = konvaText.measureSize(newText);
+            const newRectWidth = Math.max(CONSTANTS.MIN_NODE_WIDTH, textMetrics.width + CONSTANTS.NODE_PADDING); 
+            const newRectHeight = Math.max(CONSTANTS.MIN_NODE_HEIGHT, textMetrics.height + CONSTANTS.NODE_PADDING); 
+
+            konvaRect.width(newRectWidth);
+            konvaRect.height(newRectHeight);
+
+            // Re-position text within the potentially resized rectangle
+            konvaText.position({
+                x: (newRectWidth - textMetrics.width) / 2 - CONSTANTS.NODE_PADDING/2, 
+                y: (newRectHeight - textMetrics.height) / 2 - CONSTANTS.NODE_PADDING/2,
+            });
+
+            canvasState.layer.batchDraw(); // Redraw the layer to reflect changes
+            showToast("Đã lưu thay đổi cho node.", "success");
+            nodeEditModal.style.display = 'none'; // Hide the modal
+            editingNode = null; // Clear editing node
+        }
+
+        /** Cancels node editing and hides the modal. */
+        function cancelNodeChanges() {
+            nodeEditModal.style.display = 'none';
+            editingNode = null;
+        }
+
+        // Event listeners for Node Edit Modal buttons
+        modalSaveNodeBtn.addEventListener('click', saveNodeChanges);
+        modalCancelNodeBtn.addEventListener('click', cancelNodeChanges);
+        closeNodeEditModalBtn.addEventListener('click', cancelNodeChanges);
+
+        // Close modal when clicking outside
+        window.addEventListener('click', (event) => {
+            if (event.target == nodeEditModal) {
+                cancelNodeChanges();
+            }
+        });
+
+        // --- NODE TOOLTIP LOGIC ---
+        /**
+         * Displays the node tooltip.
+         * @param {object} nodeD3Data - The D3 node object whose description is to be shown.
+         * @param {number} clientX - Mouse X coordinate on screen.
+         * @param {number} clientY - Mouse Y coordinate on screen.
+         */
+        function showNodeTooltip(nodeD3Data, clientX, clientY) {
+            if (!nodeD3Data.description || nodeD3Data.description.trim() === "") {
+                nodeTooltip.classList.remove('show');
+                return;
+            }
+            nodeTooltip.innerHTML = nodeD3Data.description;
+            nodeTooltip.style.left = `${clientX + 15}px`; // Offset from mouse pointer
+            nodeTooltip.style.top = `${clientY + 15}px`;  // Offset from mouse pointer
+            nodeTooltip.classList.add('show');
+        }
+
+        /** Hides the node tooltip. */
+        function hideNodeTooltip() {
+            nodeTooltip.classList.remove('show');
+        }
         
         document.addEventListener('DOMContentLoaded', () => {
             if (chatContainer) {
