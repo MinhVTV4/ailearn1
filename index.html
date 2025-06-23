@@ -6,7 +6,7 @@
     <title>AI Học Tập Tương Tác</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom scrollbar styles */
+        /* Phong cách cuộn tùy chỉnh */
         :root {
             --scrollbar-track-bg: #f1f1f1;
             --scrollbar-thumb-bg: #888;
@@ -18,9 +18,9 @@
             --scrollbar-thumb-hover-bg: #a0aec0;
         }
         body {
-            overflow: hidden; /* Prevent overall page scrolling */
+            overflow: hidden; /* Ngăn cuộn toàn bộ trang */
         }
-        /* Styles for chat and canvas scrollbars */
+        /* Style cho thanh cuộn của chat và canvas */
         #chat-container::-webkit-scrollbar, #canvas-container::-webkit-scrollbar {
             width: 6px;
         }
@@ -35,7 +35,7 @@
             background: var(--scrollbar-thumb-hover-bg);
         }
 
-        /* Markdown display styles */
+        /* Phong cách hiển thị Markdown */
         .message-content pre { background-color: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; font-family: 'Courier New', Courier, monospace; }
         .dark .message-content pre { background-color: #0f172a; }
         .message-content code:not(pre > code) { background-color: #e2e8f0; color: #1e293b; padding: 0.2em 0.4em; margin: 0; font-size: 85%; border-radius: 3px; }
@@ -54,31 +54,31 @@
         .message-content blockquote { border-left: 4px solid #d1d5db; padding-left: 1rem; margin: 1rem 0; color: #4b5563; font-style: italic; }
         .dark .message-content blockquote { border-left-color: #4b5563; color: #9ca3af; }
         
-        /* Blinking cursor effect for AI */
+        /* Hiệu ứng nhấp nháy cho con trỏ AI */
         .blinking-cursor { display: inline-block; width: 8px; height: 1.2em; background-color: #333; animation: blink 1s step-end infinite; vertical-align: text-bottom; }
         .dark .blinking-cursor { background-color: #ccc; }
         @keyframes blink { from, to { background-color: transparent; } 50% { background-color: inherit; } }
 
-        /* Recording button animation */
+        /* Animation cho nút ghi âm */
         #record-btn.recording { animation: pulse-red 1s infinite; background-color: #ef4444; color: white; }
         @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); transform: scale(1); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); transform: scale(1.05); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); transform: scale(1); } }
 
-        /* Input area styling */
+        /* Style cho vùng nhập liệu */
         .p-4 > #input-area-wrapper { box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); border-radius: 9999px; padding: 4px; background-color: white; transition: box-shadow 0.2s ease-in-out; }
         .p-4 > #input-area-wrapper:focus-within { box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08); }
         .dark .p-4 > #input-area-wrapper { background-color: #1f2937; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); }
         .dark .p-4 > #input-area-wrapper:focus-within { box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); }
         
-        /* Spinning animation for loading */
+        /* Animation quay cho loading */
         @keyframes spin { to { transform: rotate(360deg); } }
         .animate-spin { animation: spin 1s linear infinite; }
         
-        /* Toast notification style */
+        /* Phong cách thông báo Toast */
         .toast { transition: all 0.4s ease-in-out; opacity: 0; transform: translateX(100%); }
         .toast.show { opacity: 1; transform: translateX(0); }
         .toast.hide { opacity: 0; transform: translateX(120%); }
         
-        /* Scroll to top button */
+        /* Nút cuộn lên đầu trang */
         #scrollToTopBtn {
             display: none; position: absolute; bottom: 20px; right: 20px; z-index: 99; border: none; outline: none;
             background-color: #3b82f6; color: white; cursor: pointer; padding: 10px 15px; border-radius: 50%; font-size: 18px;
@@ -88,60 +88,74 @@
         #scrollToTopBtn.show { opacity: 1; display: block; }
         .dark #scrollToTopBtn { background-color: #60a5fa; }
         .dark #scrollToTopBtn:hover { background-color: #3b82f6; }
+
+        /* Custom Context Menu Styles */
+        #node-context-menu {
+            border: 1px solid #e2e8f0;
+            background-color: white;
+            padding: 0;
+        }
+        .dark #node-context-menu {
+            border: 1px solid #4a5568;
+            background-color: #2d3748;
+        }
+        #node-context-menu button {
+            white-space: nowrap; /* Prevent text wrapping */
+        }
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 font-sans h-screen flex">
 
-    <!-- Main application container -->
+    <!-- Container chính của ứng dụng -->
     <div id="app-container" class="flex flex-1 overflow-hidden">
 
-        <!-- Chat Box Section (Left) -->
+        <!-- Phần Box Chat (Bên trái) -->
         <div id="chat-view-container" class="flex flex-col h-full bg-gray-50 dark:bg-slate-900 w-full lg:w-1/3 flex-shrink-0 border-r border-gray-200 dark:border-slate-700">
             <header id="main-header" class="flex-shrink-0 flex justify-between items-center p-3 sm:p-4 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
                 <div class="flex items-center gap-3">
-                    <span class="text-2xl">📚</span> <!-- Icon for learning mode -->
+                    <span class="text-2xl">📚</span> <!-- Biểu tượng cho chế độ học tập -->
                     <span class="text-lg font-bold text-gray-800 dark:text-gray-100">AI Học Tập</span>
                 </div>
                 <div class="flex items-center gap-1 sm:gap-2">
-                    <!-- Theme Toggle Button -->
+                    <!-- Nút chuyển đổi chế độ Sáng/Tối -->
                     <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Chuyển chế độ Sáng/Tối">
                         <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
                         <svg id="theme-toggle-light-icon" class="hidden w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 14.95a1 1 0 010-1.414l.707-.707a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414 0zM3 11a1 1 0 100-2H2a1 1 0 100 2h1z" clip-rule="evenodd"></path></svg>
                     </button>
-                    <!-- Clear Canvas Button -->
+                    <!-- Nút Xóa Canvas -->
                     <button id="clear-canvas-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Xóa Canvas">
                         <svg class="w-6 h-6 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.67-.114 1.022-.165m-1.022.165L5.41 19.673a2.25 2.25 0 002.244 2.077h7.212a2.25 2.25 0 002.244-2.077L19.25 5.79m0 0h-.008v.008H19.25z" /></svg>
                     </button>
-                    <!-- Activate Force Layout Button -->
+                    <!-- Nút Kích hoạt Sắp xếp Lực -->
                     <button id="activate-force-layout-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Sắp xếp sơ đồ tự động">
                         <svg class="w-6 h-6 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.898 20.572L16.5 21.75l-.398-1.178a3.375 3.375 0 00-2.455-2.456L12.75 18l1.178-.398a3.375 3.375 0 002.455-2.456L16.5 14.25l.398 1.178a3.375 3.375 0 002.456 2.456L20.25 18l-1.178.398a3.375 3.375 0 00-2.456 2.456z" /></svg>
                     </button>
                 </div>
             </header>
 
-            <!-- Chat message display area -->
+            <!-- Khu vực hiển thị tin nhắn chat -->
             <div id="chat-container" class="flex-1 px-4 pt-4 space-y-4 overflow-y-auto relative">
                 <div id="notification-area" class="hidden sticky bottom-2 w-full flex justify-center">
                     <div class="bg-blue-100 dark:bg-slate-700 text-blue-800 dark:text-blue-200 text-xs font-semibold px-4 py-2 rounded-full shadow-lg">
                         Đang tối ưu hóa...
                     </div>
                 </div>
-                <!-- Scroll to top button -->
+                <!-- Nút cuộn lên đầu trang -->
                 <button id="scrollToTopBtn" title="Cuộn lên đầu">
                     <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l7.5-7.5 7.5 7.5m-15 6l7.5-7.5 7.5 7.5" /></svg>
                 </button>
             </div>
 
-            <!-- Chat input area -->
+            <!-- Vùng nhập liệu chat -->
             <div class="p-4 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700">
                 <div id="input-area-wrapper" class="rounded-full">
                     <div id="input-area" class="flex items-center gap-3 bg-gray-100 dark:bg-slate-700 rounded-full p-2">
                         <textarea id="prompt-input" rows="1" placeholder="Nhập câu hỏi hoặc yêu cầu học tập..." class="flex-1 bg-transparent px-3 py-2 resize-none focus:outline-none dark:text-gray-200 dark:placeholder-gray-400"></textarea>
-                        <!-- Record button -->
+                        <!-- Nút ghi âm -->
                         <button id="record-btn" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors" title="Ghi âm">
                             <svg class="w-6 h-6 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
                         </button>
-                        <!-- Send button -->
+                        <!-- Nút gửi -->
                         <button id="send-btn" class="w-10 h-10 flex items-center justify-center bg-blue-600 rounded-full text-white hover:bg-blue-700 transition-colors disabled:bg-blue-300 dark:disabled:bg-blue-800 disabled:cursor-not-allowed" title="Gửi">
                             <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2 .01 7z"/></svg>
                         </button>
@@ -150,10 +164,10 @@
             </div>
         </div>
 
-        <!-- Canvas Section (Right) -->
+        <!-- Phần Canvas (Bên phải) -->
         <div id="canvas-container" class="flex-1 h-full bg-white dark:bg-gray-800 overflow-auto relative">
             <div id="learning-canvas" class="w-full h-full">
-                <!-- Canvas content will be rendered here by Konva.js -->
+                <!-- Nội dung canvas sẽ được render tại đây bởi Konva.js -->
                 <div id="canvas-placeholder" class="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-600 text-center p-4">
                     <p class="max-w-md">Chào mừng bạn đến với AI Học Tập! <br> Hãy nhập câu hỏi hoặc yêu cầu một chủ đề (ví dụ: "giải thích HTML", "cấu trúc dữ liệu", "khái niệm Vật lý lượng tử") để bắt đầu bài học được trực quan hóa tại đây.</p>
                 </div>
@@ -161,22 +175,30 @@
         </div>
     </div>
 
-    <!-- Toast notification container -->
+    <!-- Container cho thông báo Toast -->
     <div id="toast-container" class="fixed top-5 right-5 z-[100] space-y-2"></div>
 
-    <!-- Script tags moved to the end of body -->
+    <!-- Custom Context Menu for Nodes -->
+    <div id="node-context-menu" class="fixed z-[200] hidden bg-white dark:bg-gray-700 rounded-lg shadow-lg py-2">
+        <button id="expand-topic-btn" class="block w-full text-left px-4 py-2 text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-600">
+            Mở rộng vấn đề
+        </button>
+        <!-- Thêm các mục menu ngữ cảnh khác tại đây nếu cần -->
+    </div>
+
+    <!-- Các thẻ script được chuyển xuống cuối body -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@2.3.6/dist/purify.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/konva@8.x.x/konva.min.js"></script>
-    <script src="https://d3js.org/d3.v7.min.js"></script> <!-- Add D3.js -->
+    <script src="https://d3js.org/d3.v7.min.js"></script> <!-- Thêm D3.js -->
     
     <script type="module">
-        // Import Firebase modules from CDN
+        // Import các module Firebase từ CDN
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
         import { getAI, getGenerativeModel } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-ai.js";
         
-        // Initialize Firebase
+        // Khởi tạo Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyDDp2ugpgSbqtkQMFLHSNsL0cFMxYBdyng",
             authDomain: "ailearn-e8cc0.firebaseapp.com",
@@ -198,6 +220,7 @@
         let d3Simulation = null; // D3 force simulation instance
         let currentKonvaNodes = []; // Store references to Konva groups (nodes)
         let currentKonvaLinks = []; // Store references to Konva arrows (links)
+        let clickedNodeData = null; // Stores data of the node that was right-clicked
 
         // Cached DOM elements
         const appContainer = document.getElementById('app-container');
@@ -220,6 +243,8 @@
         const canvasPlaceholder = document.getElementById('canvas-placeholder');
         const clearCanvasBtn = document.getElementById('clear-canvas-btn');
         const activateForceLayoutBtn = document.getElementById('activate-force-layout-btn'); // New button
+        const nodeContextMenu = document.getElementById('node-context-menu'); // Custom context menu
+        const expandTopicBtn = document.getElementById('expand-topic-btn'); // "Expand Topic" button in context menu
 
         let stage, layer; // Konva Stage and Layer objects
         let gridLayer; // Optional: Separate layer for grid
@@ -298,11 +323,11 @@
             \`\`\`
         `;
 
-        // --- UTILITY FUNCTIONS ---
+        // --- HÀM TIỆN ÍCH ---
         /**
-         * Displays a toast notification to the user.
-         * @param {string} message - The message content.
-         * @param {'info'|'success'|'error'} type - The type of notification (determines color and icon).
+         * Hiển thị thông báo toast cho người dùng.
+         * @param {string} message - Nội dung tin nhắn.
+         * @param {'info'|'success'|'error'} type - Loại thông báo (quyết định màu sắc và biểu tượng).
          */
         function showToast(message, type = 'info') {
             const toastContainer = document.getElementById('toast-container');
@@ -356,8 +381,8 @@
         }
         
         /**
-         * Copies text to the clipboard.
-         * @param {string} text - The text to copy.
+         * Sao chép văn bản vào clipboard.
+         * @param {string} text - Văn bản cần sao chép.
          */
         function copyToClipboard(text) {
             const textarea = document.createElement('textarea');
@@ -376,38 +401,38 @@
         }
 
         /**
-         * Pre-processes the text from the AI response to handle Markdown and interactive links.
-         * @param {string} text - The raw text from the AI response.
-         * @returns {string} The HTML string with interactive links.
+         * Tiền xử lý văn bản từ phản hồi AI để xử lý Markdown và các liên kết tương tác.
+         * @param {string} text - Văn bản thô từ phản hồi AI.
+         * @returns {string} Chuỗi HTML với các liên kết tương tác.
          */
         function preprocessText(text) {
-            // Remove JSON blocks from chatbox display
+            // Loại bỏ các khối JSON khỏi hiển thị chatbox
             const markdownOnly = text.split('```json')[0];
-            const termLinkRegex = /\[([^\]]+?)\]/g; // Regex for terms enclosed in square brackets
+            const termLinkRegex = /\[([^\]]+?)\]/g; // Regex cho các thuật ngữ trong dấu ngoặc vuông
             return markdownOnly.replace(termLinkRegex, `<a href="#" class="term-link" data-term="$1">$1</a>`);
         }
 
-        // --- AUTHENTICATION (Anonymous sign-in) ---
+        // --- XÁC THỰC (Đăng nhập ẩn danh) ---
         onAuthStateChanged(auth, async user => {
             if (!user) {
-                // Sign in anonymously if no user is authenticated
+                // Đăng nhập ẩn danh nếu không có người dùng nào được xác thực
                 try {
                     await signInAnonymously(auth);
-                    console.log("Signed in anonymously.");
+                    console.log("Đã đăng nhập ẩn danh.");
                 } catch (error) {
-                    console.error("Anonymous sign-in failed:", error);
-                    showToast("Failed to sign in. Please try again.", "error");
+                    console.error("Đăng nhập ẩn danh thất bại:", error);
+                    showToast("Đăng nhập thất bại. Vui lòng thử lại.", "error");
                     return; 
                 }
             }
-            // Initialize Konva Stage and Layer after user is authenticated (anonymous or otherwise)
+            // Khởi tạo Konva Stage và Layer sau khi người dùng được xác thực
             initCanvas();
-            // Display welcome message in chatbox
-            addMessage('ai', 'Welcome to AI Learning! Please type a question or request a topic (e.g., "explain HTML", "data structures", "quantum physics concepts") to start a visualized lesson here.');
+            // Hiển thị thông báo chào mừng trong chatbox
+            addMessage('ai', 'Chào mừng bạn đến với AI Học Tập! Hãy nhập câu hỏi hoặc yêu cầu một chủ đề (ví dụ: "giải thích HTML", "cấu trúc dữ liệu", "khái niệm Vật lý lượng tử") để bắt đầu bài học được trực quan hóa tại đây.');
         });
 
-        // --- THEME TOGGLE ---
-        /** Updates the theme toggle icon based on the current theme. */
+        // --- CHUYỂN ĐỔI CHẾ ĐỘ SÁNG/TỐI ---
+        /** Cập nhật biểu tượng chuyển đổi chủ đề dựa trên chủ đề hiện tại. */
         const updateThemeIcon = () => {
             if (document.documentElement.classList.contains('dark')) {
                 themeToggleDarkIcon.classList.add('hidden');
@@ -424,40 +449,40 @@
         });
         updateThemeIcon(); 
 
-        // --- CHAT LOGIC ---
+        // --- LOGIC CHAT ---
         /**
-         * Adds action buttons (copy, speak) to a message.
-         * @param {HTMLElement} actionsContainer - The container for the action buttons.
-         * @param {string} rawText - The raw text content of the message.
+         * Thêm các nút hành động (sao chép, đọc) vào một tin nhắn.
+         * @param {HTMLElement} actionsContainer - Container cho các nút hành động.
+         * @param {string} rawText - Nội dung văn bản thô của tin nhắn.
          */
         function addMessageActions(actionsContainer, rawText) {
              if (!actionsContainer || !rawText || rawText.includes('blinking-cursor')) return;
             
             actionsContainer.innerHTML = ''; 
 
-            // Copy button
+            // Nút sao chép
             const copyBtn = document.createElement('button');
             copyBtn.className = 'copy-btn p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-full transition-colors';
             copyBtn.innerHTML = `<svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" /></svg>`;
-            copyBtn.title = 'Copy content';
+            copyBtn.title = 'Sao chép nội dung';
             copyBtn.dataset.text = rawText; 
             actionsContainer.appendChild(copyBtn);
             
-            // Speak button
+            // Nút đọc
             const speakBtn = document.createElement('button');
             speakBtn.className = 'speak-btn p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-full transition-colors';
             speakBtn.innerHTML = '🔊';
-            speakBtn.title = 'Read text aloud';
+            speakBtn.title = 'Đọc văn bản';
             speakBtn.dataset.text = rawText; 
             speakBtn.dataset.state = 'idle'; 
             actionsContainer.appendChild(speakBtn);
         }
 
         /**
-         * Adds a message to the chat display.
-         * @param {'user'|'ai'|'model'} role - The role of the message sender.
-         * @param {string} text - The content of the message.
-         * @param {boolean} [shouldScroll=true] - Whether to scroll the chat to the bottom after adding the message.
+         * Thêm tin nhắn vào hiển thị chat.
+         * @param {'user'|'ai'|'model'} role - Vai trò của người gửi tin nhắn.
+         * @param {string} text - Nội dung của tin nhắn.
+         * @param {boolean} [shouldScroll=true] - Có nên cuộn chat xuống cuối sau khi thêm tin nhắn hay không.
          * @returns {{messageWrapper: HTMLElement, contentElem: HTMLElement, statusElem?: HTMLElement, actionsContainer?: HTMLElement}}
          */
         function addMessage(role, text, shouldScroll = true) {
@@ -489,7 +514,7 @@
                 contentElem = messageWrapper.querySelector('.message-content');
             }
             
-            // Process Markdown and interactive links (only term-links)
+            // Xử lý Markdown và các liên kết tương tác (chỉ các liên kết thuật ngữ)
             const preprocessedText = preprocessText(text);
             contentElem.innerHTML = DOMPurify.sanitize(marked.parse(preprocessedText), { ADD_ATTR: ['target', 'data-term'] });
 
@@ -506,7 +531,7 @@
         }
         
         /**
-         * Sends a message to the AI model, displays the response, and renders on canvas.
+         * Gửi tin nhắn đến mô hình AI, hiển thị phản hồi và render trên canvas.
          */
         async function sendMessage() {
             const promptText = promptInput.value.trim();
@@ -516,7 +541,7 @@
             adjustInputHeight();
             sendBtn.disabled = true;
 
-            // Hide canvas placeholder when starting chat
+            // Ẩn placeholder canvas khi bắt đầu chat
             if (canvasPlaceholder) {
                 canvasPlaceholder.classList.add('hidden');
             }
@@ -528,10 +553,10 @@
             if (statusElem) statusElem.textContent = 'Thinking...';
 
             try {
-                // Prepare chat history to send to the model (text-only, without JSON)
+                // Chuẩn bị lịch sử trò chuyện để gửi đến mô hình AI (chỉ văn bản, không có JSON)
                 const historyForApiModel = localHistory.map(msg => {
                     if (msg.role === 'model') {
-                        // Separate text part and JSON part (if any)
+                        // Tách phần văn bản và phần JSON (nếu có)
                         const parts = msg.parts[0].text.split('```json');
                         return { role: 'model', parts: [{ text: parts[0].trim() }] };
                     }
@@ -552,22 +577,22 @@
                     }
                     fullResponseText += chunk.text();
                     
-                    // Extract JSON from Markdown during streaming
+                    // Trích xuất JSON từ Markdown trong quá trình streaming
                     const jsonStringMatch = fullResponseText.match(/```json\n([\s\S]*?)\n```/);
                     if (jsonStringMatch && jsonStringMatch[1]) {
                         try {
                             const tempJson = JSON.parse(jsonStringMatch[1]);
-                            // Only update jsonResponse if parsed successfully and it's new data
+                            // Chỉ cập nhật jsonResponse nếu được phân tích cú pháp thành công và là dữ liệu mới
                             if (JSON.stringify(tempJson) !== JSON.stringify(jsonResponse)) {
                                 jsonResponse = tempJson;
-                                renderContentOnCanvas(jsonResponse); // Render on canvas immediately
+                                renderContentOnCanvas(jsonResponse); // Render trên canvas ngay lập tức
                             }
                         } catch (e) {
                             // console.warn("Partial JSON, waiting for full response:", e);
                         }
                     }
 
-                    // Update chatbox content with blinking cursor
+                    // Cập nhật nội dung chatbox với con trỏ nhấp nháy
                     const markdownPartForDisplay = fullResponseText.split('```json')[0];
                     const processedChunk = preprocessText(markdownPartForDisplay + '<span class="blinking-cursor"></span>');
                     contentElem.innerHTML = DOMPurify.sanitize(marked.parse(processedChunk), {ADD_ATTR: ['target', 'data-term']});
@@ -576,38 +601,38 @@
                 
                 if (statusElem) statusElem.classList.add('hidden');
                 
-                // Final render without blinking cursor and store raw text
+                // Render cuối cùng không có con trỏ nhấp nháy và lưu văn bản thô
                 const finalMarkdownPart = fullResponseText.split('```json')[0].trim();
                 const finalProcessedText = preprocessText(finalMarkdownPart);
                 contentElem.innerHTML = DOMPurify.sanitize(marked.parse(finalProcessedText), {ADD_ATTR: ['target', 'data-term']});
                 contentElem.dataset.rawText = finalMarkdownPart;
 
-                addMessageActions(actionsContainer, finalMarkdownPart); // Add copy/speak buttons
+                addMessageActions(actionsContainer, finalMarkdownPart); // Thêm nút sao chép/đọc
 
-                // Save full response (both Markdown and JSON) to localHistory
+                // Lưu toàn bộ phản hồi (cả Markdown và JSON) vào localHistory
                 localHistory.push({ role: 'model', parts: [{ text: fullResponseText }] });
 
             } catch (error) {
-                console.error("Error during sendMessage:", error);
-                contentElem.innerHTML = `**Error:** ${error.message}`;
-                // Remove the last message (if any) to avoid corrupted history
+                console.error("Lỗi trong sendMessage:", error);
+                contentElem.innerHTML = `**Lỗi:** ${error.message}`;
+                // Xóa tin nhắn cuối cùng (nếu có) để tránh lịch sử bị hỏng
                 if (localHistory.length > 0) {
                     localHistory.pop();
                 }
-                showToast(`Message send error: ${error.message}`, 'error');
+                showToast(`Lỗi gửi tin nhắn: ${error.message}`, 'error');
 
             } finally {
-                sendBtn.disabled = false; // Re-enable send button
+                sendBtn.disabled = false; // Bật lại nút gửi
             }
         }
 
-        /** Adjusts the height of the prompt input textarea based on its content. */
+        /** Điều chỉnh chiều cao của textarea input prompt dựa trên nội dung của nó. */
         function adjustInputHeight() {
             promptInput.style.height = 'auto';
             promptInput.style.height = promptInput.scrollHeight + 'px';
         }
         
-        // --- SPEECH RECOGNITION ---
+        // --- NHẬN DIỆN GIỌNG NÓI ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if(SpeechRecognition) {
             const recognition = new SpeechRecognition();
@@ -618,12 +643,12 @@
             recognition.onstart = () => { 
                 isRecording = true; 
                 recordBtn.classList.add('recording'); 
-                promptInput.placeholder = 'Listening...'; 
+                promptInput.placeholder = 'Đang nghe...'; 
             };
             recognition.onend = () => { 
                 isRecording = false; 
                 recordBtn.classList.remove('recording'); 
-                promptInput.placeholder = 'Enter your question...'; 
+                promptInput.placeholder = 'Nhập câu hỏi của bạn...'; 
             };
             recognition.onresult = (event) => { 
                 promptInput.value = event.results[event.results.length - 1][0].transcript.trim(); 
@@ -631,28 +656,28 @@
                 sendMessage(); 
             };
             recognition.onerror = (event) => { 
-                showToast(`Recording error: ${event.error}`, 'error'); 
-                console.error("Speech Recognition error:", event.error);
+                showToast(`Lỗi ghi âm: ${event.error}`, 'error'); 
+                console.error("Lỗi nhận dạng giọng nói:", event.error);
             };
             recordBtn.addEventListener('click', () => { 
                 isRecording ? recognition.stop() : recognition.start(); 
             });
         } else { 
-            recordBtn.classList.add('hidden'); // Hide record button if API not supported
+            recordBtn.classList.add('hidden'); // Ẩn nút ghi âm nếu API không được hỗ trợ
         }
         
-        /** Resets the state of the active speech synthesis button. */
+        /** Đặt lại trạng thái của nút tổng hợp giọng nói đang hoạt động. */
         function resetActiveSpeechButton() {
             if (activeSpeech && activeSpeech.button) {
                 activeSpeech.button.innerHTML = '🔊';
                 activeSpeech.button.dataset.state = 'idle';
-                activeSpeech.button.title = 'Read text aloud';
+                activeSpeech.button.title = 'Đọc văn bản';
             }
         }
 
-        // --- CANVAS LOGIC (Konva.js with D3-Force Integration) ---
+        // --- LOGIC CANVAS (Konva.js với Tích hợp D3-Force) ---
 
-        /** Initializes the Konva.js stage and layer. */
+        /** Khởi tạo Konva.js stage và layer. */
         function initCanvas() {
             stage = new Konva.Stage({
                 container: 'learning-canvas',
@@ -662,26 +687,33 @@
             layer = new Konva.Layer();
             stage.add(layer);
 
-            // Add a separate layer for grid to avoid redrawing with nodes
+            // Thêm một layer riêng biệt cho lưới để tránh vẽ lại với các node
             gridLayer = new Konva.Layer();
             stage.add(gridLayer);
-            drawGrid(); // Draw grid initially
+            drawGrid(); // Vẽ lưới ban đầu
 
-            // Handle responsive canvas on window resize
+            // Xử lý canvas responsive khi thay đổi kích thước cửa sổ
             window.addEventListener('resize', () => {
                 stage.width(canvasContainer.offsetWidth);
                 stage.height(canvasContainer.offsetHeight);
-                drawGrid(); // Redraw grid on resize
+                drawGrid(); // Vẽ lại lưới khi thay đổi kích thước
                 if (d3Simulation) {
-                    // Re-center force layout if active
+                    // Căn lại bố cục lực nếu đang hoạt động
                     d3Simulation.force("center", d3.forceCenter(stage.width() / 2, stage.height() / 2));
-                    d3Simulation.alpha(0.3).restart(); // Restart simulation for new center
+                    d3Simulation.alpha(0.3).restart(); // Khởi động lại mô phỏng cho tâm mới
                 }
                 layer.batchDraw();
                 gridLayer.batchDraw();
             });
 
-            // Implement zoom and pan
+            // Vô hiệu hóa menu ngữ cảnh mặc định của trình duyệt trên stage Konva
+            stage.content.oncontextmenu = (e) => e.preventDefault();
+            // Ẩn menu ngữ cảnh tùy chỉnh khi click chuột trái vào bất kỳ đâu trên cửa sổ
+            window.addEventListener('click', hideNodeContextMenu);
+            // Ẩn menu ngữ cảnh tùy chỉnh khi cuộn trang
+            window.addEventListener('scroll', hideNodeContextMenu, true); // Use capture phase
+
+            // Triển khai zoom và pan
             const scaleBy = 1.1;
             stage.on('wheel', (e) => {
                 e.evt.preventDefault();
@@ -705,18 +737,18 @@
                 stage.draw();
             });
 
-            stage.draggable(true); // Enable dragging for pan
+            stage.draggable(true); // Cho phép kéo để pan
         }
 
-        /** Draws a grid on the canvas. */
+        /** Vẽ lưới trên canvas. */
         function drawGrid() {
-            gridLayer.destroyChildren(); // Clear existing grid
-            const gridSize = 50; // Distance between grid lines
+            gridLayer.destroyChildren(); // Xóa lưới hiện có
+            const gridSize = 50; // Khoảng cách giữa các đường lưới
             const stageWidth = stage.width();
             const stageHeight = stage.height();
             const strokeColor = document.documentElement.classList.contains('dark') ? '#4a5568' : '#e2e8f0'; // Tailwind gray-700 / gray-200
 
-            // Draw vertical lines
+            // Vẽ các đường dọc
             for (let i = 0; i * gridSize < stageWidth; i++) {
                 gridLayer.add(new Konva.Line({
                     points: [i * gridSize, 0, i * gridSize, stageHeight],
@@ -725,7 +757,7 @@
                 }));
             }
 
-            // Draw horizontal lines
+            // Vẽ các đường ngang
             for (let i = 0; i * gridSize < stageHeight; i++) {
                 gridLayer.add(new Konva.Line({
                     points: [0, i * gridSize, stageWidth, i * gridSize],
@@ -738,12 +770,12 @@
 
 
         /**
-         * Helper function to calculate the intersection point of a line with a rectangle.
-         * This helps links start/end precisely at the edge of nodes.
-         * @param {{x: number, y: number}} p1 - Start point of the line (usually source node center).
-         * @param {{x: number, y: number}} p2 - End point of the line (usually target node center).
-         * @param {{x: number, y: number, width: number, height: number}} r - The rectangle (target or source node).
-         * @returns {{x: number, y: number}} The intersection point.
+         * Hàm trợ giúp để tính toán điểm giao nhau của một đường thẳng với một hình chữ nhật.
+         * Điều này giúp các liên kết bắt đầu/kết thúc chính xác tại cạnh của các node.
+         * @param {{x: number, y: number}} p1 - Điểm bắt đầu của đường thẳng (thường là tâm node nguồn).
+         * @param {{x: number, y: number}} p2 - Điểm kết thúc của đường thẳng (thường là tâm node đích).
+         * @param {{x: number, y: number, width: number, height: number}} r - Hình chữ nhật (node đích hoặc nguồn).
+         * @returns {{x: number, y: number}} Điểm giao nhau.
          */
         function getRectIntersectionPoint(p1, p2, r) {
             const dx = p2.x - p1.x;
@@ -756,7 +788,7 @@
 
             let t = Infinity; 
 
-            // Left edge
+            // Cạnh trái
             if (dx !== 0) {
                 const t1 = (rx - p1.x) / dx;
                 if (t1 >= 0 && t1 <= 1) {
@@ -767,7 +799,7 @@
                 }
             }
 
-            // Right edge
+            // Cạnh phải
             if (dx !== 0) {
                 const t2 = (rx + rw - p1.x) / dx;
                 if (t2 >= 0 && t2 <= 1) {
@@ -778,7 +810,7 @@
                 }
             }
 
-            // Top edge
+            // Cạnh trên
             if (dy !== 0) {
                 const t3 = (ry - p1.y) / dy;
                 if (t3 >= 0 && t3 <= 1) {
@@ -789,7 +821,7 @@
                 }
             }
 
-            // Bottom edge
+            // Cạnh dưới
             if (dy !== 0) {
                 const t4 = (ry + rh - p1.y) / dy;
                 if (t4 >= 0 && t4 <= 1) {
@@ -810,23 +842,23 @@
         }
 
         /**
-         * Function to calculate levels using BFS
-         * @param {Array<Object>} nodes - Array of node data from lessonData.
-         * @param {Array<Object>} connections - Array of connection data from lessonData.
-         * @param {string} mainTopicId - ID of the main topic node.
-         * @returns {Map<string, number>} A map where keys are node IDs and values are their levels.
+         * Hàm để tính toán các cấp độ bằng BFS
+         * @param {Array<Object>} nodes - Mảng dữ liệu node từ lessonData.
+         * @param {Array<Object>} connections - Mảng dữ liệu kết nối từ lessonData.
+         * @param {string} mainTopicId - ID của node chủ đề chính.
+         * @returns {Map<string, number>} Một map trong đó các khóa là ID node và giá trị là cấp độ của chúng.
          */
         function calculateNodeLevels(nodes, connections, mainTopicId) {
             const levels = new Map();
             const adjList = new Map();
             nodes.forEach(node => {
                 adjList.set(node.id, []);
-                levels.set(node.id, -1); // Initialize all levels to -1 (unvisited)
+                levels.set(node.id, -1); // Khởi tạo tất cả các cấp độ là -1 (chưa ghé thăm)
             });
 
             connections.forEach(conn => {
                 adjList.get(conn.from).push(conn.to);
-                // Assuming connections represent parent -> child for hierarchical level calculation.
+                // Giả định các kết nối đại diện cho cha -> con để tính toán cấp độ phân cấp.
             });
 
             const queue = [];
@@ -834,14 +866,14 @@
                 queue.push(mainTopicId);
                 levels.set(mainTopicId, 0);
             } else {
-                // Fallback if no main topic is explicitly marked, pick the first one
+                // Fallback nếu không có chủ đề chính được đánh dấu rõ ràng, chọn cái đầu tiên
                 if (nodes.length > 0) {
                     const firstNodeId = nodes[0].id;
                     queue.push(firstNodeId);
                     levels.set(firstNodeId, 0);
-                    console.warn("No main topic found. Using the first node as the starting point for level calculation.");
+                    console.warn("Không tìm thấy chủ đề chính. Sử dụng node đầu tiên làm điểm bắt đầu để tính toán cấp độ.");
                 } else {
-                    return levels; // No nodes to process
+                    return levels; // Không có node để xử lý
                 }
             }
 
@@ -851,8 +883,8 @@
                 const currentLevel = levels.get(currentId);
 
                 adjList.get(currentId).forEach(neighborId => {
-                    // Only update if the neighbor has not been visited or a shorter path (lower level) is found
-                    // For tree-like levels, ensure it's unvisited or a path through a different parent
+                    // Chỉ cập nhật nếu hàng xóm chưa được ghé thăm hoặc tìm thấy đường dẫn ngắn hơn (cấp độ thấp hơn)
+                    // Đối với các cấp độ giống cây, đảm bảo nó chưa được ghé thăm hoặc một đường dẫn thông qua một cha khác
                     if (levels.get(neighborId) === -1) { 
                         levels.set(neighborId, currentLevel + 1);
                         queue.push(neighborId);
@@ -862,39 +894,56 @@
             return levels;
         }
 
+        /**
+         * Hiển thị menu ngữ cảnh tùy chỉnh tại vị trí được chỉ định.
+         * @param {number} x - Tọa độ X của chuột.
+         * @param {number} y - Tọa độ Y của chuột.
+         */
+        function showNodeContextMenu(x, y) {
+            nodeContextMenu.style.left = `${x}px`;
+            nodeContextMenu.style.top = `${y}px`;
+            nodeContextMenu.classList.remove('hidden');
+        }
+
+        /** Ẩn menu ngữ cảnh tùy chỉnh. */
+        function hideNodeContextMenu() {
+            nodeContextMenu.classList.add('hidden');
+            clickedNodeData = null; // Clear stored node data
+        }
+
 
         /**
-         * Renders content on the Konva canvas based on the parsed JSON data, and sets up D3 force simulation.
-         * @param {object} lessonData - The JSON object containing nodes and connections.
+         * Render nội dung trên canvas Konva dựa trên dữ liệu JSON đã phân tích cú pháp và thiết lập mô phỏng lực D3.
+         * @param {object} lessonData - Đối tượng JSON chứa các node và kết nối.
          */
         function renderContentOnCanvas(lessonData) {
             if (!stage || !layer) {
-                console.error("Konva stage or layer not initialized.");
+                console.error("Konva stage hoặc layer chưa được khởi tạo.");
                 return;
             }
 
-            // Stop any active D3 simulation
+            // Dừng mọi mô phỏng D3 đang hoạt động
             if (d3Simulation) {
                 d3Simulation.stop();
             }
 
-            layer.destroyChildren(); // Clear existing elements on canvas
-            canvasPlaceholder.classList.add('hidden'); // Hide placeholder when content is present
+            layer.destroyChildren(); // Xóa các phần tử hiện có trên canvas
+            canvasPlaceholder.classList.add('hidden'); // Ẩn placeholder khi có nội dung
 
-            const PADDING = 20; // Internal padding for nodes
+            const PADDING = 20; // Padding nội bộ cho các node
 
-            const d3Nodes = []; // Nodes for D3 simulation
-            const d3Links = []; // Links for D3 simulation
+            const d3Nodes = []; // Các node cho mô phỏng D3
+            const d3Links = []; // Các liên kết cho mô phỏng D3
 
-            currentKonvaNodes = []; // Reset stored Konva nodes
-            currentKonvaLinks = []; // Reset stored Konva links
+            currentKonvaNodes = []; // Đặt lại các node Konva đã lưu trữ
+            currentKonvaLinks = []; // Đặt lại các liên kết Konva đã lưu trữ
 
-            // 1. Calculate Node Levels (for hierarchical layout)
+            // 1. Tính toán cấp độ Node (cho bố cục phân cấp)
             let mainTopicNode = lessonData.nodes.find(node => node.isMainTopic);
             let mainTopicId = mainTopicNode ? mainTopicNode.id : (lessonData.nodes.length > 0 ? lessonData.nodes[0].id : null);
             const nodeLevels = calculateNodeLevels(lessonData.nodes, lessonData.connections, mainTopicId);
 
-            // 2. Create Konva Nodes and D3 Nodes
+            // 2. Tạo Node Konva và Node D3
             lessonData.nodes.forEach(nodeData => {
                 const group = new Konva.Group({
                     x: nodeData.x,
@@ -913,7 +962,7 @@
                     wrap: 'word',
                 });
                 
-                // Calculate actual text size to adjust rectangle size
+                // Tính toán kích thước văn bản thực tế để điều chỉnh kích thước hình chữ nhật
                 const textMetrics = text.measureSize(nodeData.text);
                 const rectWidth = Math.max(120, textMetrics.width + PADDING); 
                 const rectHeight = Math.max(60, textMetrics.height + PADDING); 
@@ -929,13 +978,13 @@
                     strokeWidth: 1,
                 });
 
-                // Apply special styling for the main topic node
+                // Áp dụng kiểu dáng đặc biệt cho node chủ đề chính
                 if (nodeData.isMainTopic) {
-                    rect.stroke("#FF0000"); // Red border for main topic
+                    rect.stroke("#FF0000"); // Viền đỏ cho chủ đề chính
                     rect.strokeWidth(3);
                 }
 
-                // Position text inside the rectangle to center it
+                // Định vị văn bản bên trong hình chữ nhật để căn giữa
                 text.position({
                     x: (rect.width() - textMetrics.width) / 2 - PADDING/2, 
                     y: (rect.height() - textMetrics.height) / 2 - PADDING/2,
@@ -945,18 +994,18 @@
                 group.add(text);
                 layer.add(group);
 
-                // Store Konva group and add to D3 nodes
+                // Lưu nhóm Konva và thêm vào các node D3
                 const d3Node = { 
                     id: nodeData.id, 
                     konvaGroup: group,
-                    konvaRect: rect, // Store reference to rect for getRectIntersectionPoint
+                    konvaRect: rect, // Lưu tham chiếu đến rect cho getRectIntersectionPoint
                     isMainTopic: nodeData.isMainTopic || false,
-                    level: nodeLevels.get(nodeData.id) !== -1 ? nodeLevels.get(nodeData.id) : 0 // Assign calculated level, default to 0
+                    level: nodeLevels.get(nodeData.id) !== -1 ? nodeLevels.get(nodeData.id) : 0 // Gán cấp độ đã tính toán, mặc định là 0
                 };
                 d3Nodes.push(d3Node);
-                currentKonvaNodes.push(d3Node); // Store for later access (e.g., force layout activation)
+                currentKonvaNodes.push(d3Node); // Lưu trữ để truy cập sau này (ví dụ: kích hoạt bố cục lực)
 
-                // Add click event for description
+                // Thêm sự kiện click để hiển thị mô tả
                 group.on('click', () => {
                     if (nodeData.description && nodeData.description.trim() !== '') {
                         addMessage('ai', `**Mô tả chi tiết cho "${nodeData.text}":**\n\n${nodeData.description}`);
@@ -964,18 +1013,25 @@
                         showToast(`Không có mô tả chi tiết cho node "${nodeData.text}".`, 'info');
                     }
                 });
+
+                // Thêm sự kiện click chuột phải (contextmenu) cho node mở rộng
+                group.on('contextmenu', (e) => {
+                    e.evt.preventDefault(); // Ngăn chặn menu ngữ cảnh mặc định của trình duyệt
+                    clickedNodeData = nodeData; // Lưu dữ liệu của node được click
+                    showNodeContextMenu(e.evt.clientX, e.evt.clientY);
+                });
             });
 
-            // Map d3Nodes for easier link creation
+            // Map d3Nodes để tạo liên kết dễ dàng hơn
             const nodeMap = new Map(d3Nodes.map(d => [d.id, d]));
 
-            // 3. Create Konva Connections and D3 Links
+            // 3. Tạo Kết nối Konva và Liên kết D3
             lessonData.connections.forEach(conn => {
                 const sourceD3Node = nodeMap.get(conn.from);
                 const targetD3Node = nodeMap.get(conn.to);
 
                 if (sourceD3Node && targetD3Node) {
-                    // Initial points (will be updated by D3 force)
+                    // Các điểm ban đầu (sẽ được cập nhật bởi lực D3)
                     const line = new Konva.Arrow({
                         points: [sourceD3Node.konvaGroup.x(), sourceD3Node.konvaGroup.y(), targetD3Node.konvaGroup.x(), targetD3Node.konvaGroup.y()],
                         stroke: conn.color || '#000000',
@@ -985,7 +1041,7 @@
                     });
                     layer.add(line);
 
-                    // Labels are intentionally removed as per user's previous request.
+                    // Các nhãn đã bị loại bỏ một cách có chủ ý theo yêu cầu trước đây của người dùng.
                     let label = null; 
 
                     d3Links.push({ 
@@ -994,38 +1050,38 @@
                         konvaLine: line, 
                         konvaLabel: label 
                     });
-                    currentKonvaLinks.push({ konvaLine: line, konvaLabel: label }); // Store for later access
+                    currentKonvaLinks.push({ konvaLine: line, konvaLabel: label }); // Lưu trữ để truy cập sau này
                 }
             });
 
             layer.batchDraw(); 
-            centerMindMap(); // Center after initial drawing
+            centerMindMap(); // Căn giữa sau khi vẽ ban đầu
 
-            // 4. Setup D3 Force Simulation for traditional layout
+            // 4. Thiết lập Mô phỏng Lực D3 cho bố cục truyền thống
             d3Simulation = d3.forceSimulation(d3Nodes)
-                .force("link", d3.forceLink(d3Links).id(d => d.id).distance(180).strength(0.7)) // Slightly reduced distance, moderate strength
-                .force("charge", d3.forceManyBody().strength(-900).theta(0.8)) // Stronger repulsion between nodes
-                .force("center", d3.forceCenter(stage.width() / 2, stage.height() / 2)) // Pull towards center
-                .force("x", d3.forceX(stage.width() / 2).strength(0.2)) // Weaker horizontal centering, allows for spread
+                .force("link", d3.forceLink(d3Links).id(d => d.id).distance(180).strength(0.7)) // Khoảng cách hơi giảm, cường độ vừa phải
+                .force("charge", d3.forceManyBody().strength(-900).theta(0.8)) // Lực đẩy mạnh hơn giữa các node
+                .force("center", d3.forceCenter(stage.width() / 2, stage.height() / 2)) // Kéo về trung tâm
+                .force("x", d3.forceX(stage.width() / 2).strength(0.2)) // Căn giữa ngang yếu hơn, cho phép trải rộng
                 .force("y", d3.forceY(d => { 
-                    // Strong force to arrange vertically based on calculated level
-                    const levelSpacing = 150; // Vertical distance between levels
-                    const baseOffsetY = stage.height() * 0.1; // Starting Y offset for level 0
+                    // Lực mạnh để sắp xếp theo chiều dọc dựa trên cấp độ đã tính toán
+                    const levelSpacing = 150; // Khoảng cách dọc giữa các cấp
+                    const baseOffsetY = stage.height() * 0.1; // Offset Y bắt đầu cho cấp 0
                     return baseOffsetY + d.level * levelSpacing;
-                }).strength(1.8)) // Very strong vertical force for clear hierarchical flow
-                // Add collision force for rectangular nodes. radius must be large enough to prevent overlap.
-                .force("collide", d3.forceCollide().radius(d => Math.max(d.konvaRect.width(), d.konvaRect.height()) / 2 + 25).iterations(4)) // Increased padding and iterations
-                .on("tick", () => { // Update Konva positions on each simulation tick
-                    // Update node positions
+                }).strength(1.8)) // Lực dọc rất mạnh cho luồng phân cấp rõ ràng
+                // Thêm lực va chạm cho các node hình chữ nhật. bán kính phải đủ lớn để ngăn chặn chồng chéo.
+                .force("collide", d3.forceCollide().radius(d => Math.max(d.konvaRect.width(), d.konvaRect.height()) / 2 + 25).iterations(4)) // Tăng padding và số lần lặp
+                .on("tick", () => { // Cập nhật vị trí Konva trên mỗi tick mô phỏng
+                    // Cập nhật vị trí node
                     d3Nodes.forEach(d => {
-                        // Keep nodes within bounds
+                        // Giữ các node trong giới hạn
                         d.x = Math.max(d.konvaRect.width()/2, Math.min(stage.width() - d.konvaRect.width()/2, d.x));
                         d.y = Math.max(d.konvaRect.height()/2, Math.min(stage.height() - d.konvaRect.height()/2, d.y));
 
                         d.konvaGroup.position({ x: d.x - d.konvaRect.width()/2, y: d.y - d.konvaRect.height()/2 });
                     });
 
-                    // Update link positions
+                    // Cập nhật vị trí liên kết
                     d3Links.forEach(link => {
                         const sourceRect = link.source.konvaRect;
                         const targetRect = link.target.konvaRect;
@@ -1053,7 +1109,7 @@
                     layer.batchDraw();
                 });
 
-            // Pause simulation when a node is dragged
+            // Tạm dừng mô phỏng khi một node được kéo
             d3Nodes.forEach(d => {
                 d.konvaGroup.on('dragstart', () => {
                     d3Simulation.alphaTarget(0.3).restart();
@@ -1067,18 +1123,18 @@
                 d.konvaGroup.on('dragend', () => {
                     d.fx = null;
                     d.fy = null;
-                    d3Simulation.alphaTarget(0); // Stop simulation after drag ends
+                    d3Simulation.alphaTarget(0); // Dừng mô phỏng sau khi kéo kết thúc
                 });
             });
-            d3Simulation.alpha(1).restart(); // Start simulation with higher alpha for initial settling
-            // Increase initial run time for the diagram to stabilize longer
+            d3Simulation.alpha(1).restart(); // Bắt đầu mô phỏng với alpha cao hơn để ổn định ban đầu
+            // Tăng thời gian chạy ban đầu để sơ đồ có thêm thời gian ổn định
             setTimeout(() => {
-                d3Simulation.alphaTarget(0); // Stop simulation after a longer while for stability
-            }, 3000); // Run for 3 seconds
+                d3Simulation.alphaTarget(0); // Dừng mô phỏng sau một thời gian dài hơn để ổn định
+            }, 3000); // Chạy 3 giây
 
         }
 
-        // Helper to get center of node (updated to receive group and rect)
+        // Hàm trợ giúp để lấy tâm của node (được cập nhật để nhận nhóm và hình chữ nhật)
         function getNodeCenter(nodeGroup, nodeRect) {
             return {
                 x: nodeGroup.x() + nodeRect.width() / 2,
@@ -1086,7 +1142,7 @@
             };
         }
 
-        // Function to center the entire mind map on the canvas
+        // Hàm để căn giữa toàn bộ sơ đồ tư duy trên canvas
         function centerMindMap() {
             if (!stage || !layer || layer.children.length === 0) return;
 
@@ -1112,7 +1168,7 @@
             const offsetX = stageCenterX - currentMapCenterX;
             const offsetY = stageCenterY - currentMapCenterY;
 
-            // Move layer to center content
+            // Di chuyển layer để căn giữa nội dung
             layer.x(layer.x() + offsetX);
             layer.y(layer.y() + offsetY);
 
@@ -1141,7 +1197,7 @@
                     const term = link.dataset.term;
                     const messageContentElement = link.closest('.message-content');
                     const context = messageContentElement ? messageContentElement.dataset.rawText : '';
-                    showToast(`Explain term: "${term}" (context: "${context.substring(0, 50)}...")`, 'info');
+                    showToast(`Giải thích thuật ngữ: "${term}" (ngữ cảnh: "${context.substring(0, 50)}...")`, 'info');
                 }
             } else if (button) {
                  if (button.classList.contains('copy-btn')) {
@@ -1154,12 +1210,12 @@
                             const currentState = button.dataset.state;
                             if (currentState === 'paused') {
                                 speechSynthesis.resume();
-                                button.innerHTML = '⏸️'; button.dataset.state = 'playing'; button.title = 'Pause';
+                                button.innerHTML = '⏸️'; button.dataset.state = 'playing'; button.title = 'Tạm dừng';
                                 return;
                             }
                             if (currentState === 'playing') {
                                 speechSynthesis.pause();
-                                button.innerHTML = '▶️'; button.dataset.state = 'Resume';
+                                button.innerHTML = '▶️'; button.dataset.state = 'Tiếp tục';
                                 return;
                             }
                         }
@@ -1171,12 +1227,12 @@
                     utterance.onstart = () => {
                         resetActiveSpeechButton(); 
                         activeSpeech = { utterance, button: button }; 
-                        button.innerHTML = '⏸️'; button.dataset.state = 'playing'; button.title = 'Pause';
+                        button.innerHTML = '⏸️'; button.dataset.state = 'playing'; button.title = 'Tạm dừng';
                     };
                     utterance.onend = () => { resetActiveSpeechButton(); activeSpeech = null; };
                     utterance.onerror = (event) => { 
-                        console.error("SpeechSynthesisUtterance error:", event);
-                        showToast(`Speech error: ${event.error}`, 'error');
+                        console.error("Lỗi SpeechSynthesisUtterance:", event);
+                        showToast(`Lỗi giọng nói: ${event.error}`, 'error');
                         resetActiveSpeechButton(); 
                         activeSpeech = null; 
                     };
@@ -1185,8 +1241,8 @@
             }
         });
         
-        // --- SCROLL TO TOP BUTTON LOGIC ---
-        /** Function to show/hide the scroll to top button. */
+        // --- LOGIC NÚT CUỘN LÊN ĐẦU TRANG ---
+        /** Hàm để hiển thị/ẩn nút cuộn lên đầu trang. */
         function toggleScrollToTopButton() {
             if (!scrollToTopBtn || !chatContainer) return; 
 
@@ -1197,7 +1253,7 @@
             }
         }
 
-        /** Function to scroll to the top of the chat container. */
+        /** Hàm để cuộn lên đầu chat container. */
         function scrollToTop() {
             if (chatContainer) {
                 chatContainer.scrollTo({
@@ -1214,27 +1270,41 @@
             if (scrollToTopBtn) { 
                 scrollToTopBtn.addEventListener("click", scrollToTop);
             }
-            // Assign event to Clear Canvas button
+            // Gán sự kiện cho nút Xóa Canvas
             if (clearCanvasBtn) {
                 clearCanvasBtn.addEventListener('click', () => {
                     if (layer) {
                         layer.destroyChildren();
                         layer.batchDraw();
-                        canvasPlaceholder.classList.remove('hidden'); // Show placeholder again
-                        if (d3Simulation) { // Stop simulation if active
+                        canvasPlaceholder.classList.remove('hidden'); // Hiển thị lại placeholder
+                        if (d3Simulation) { // Dừng mô phỏng nếu đang hoạt động
                             d3Simulation.stop();
                         }
                     }
                 });
             }
-            // Assign event to Activate Force Layout button
+            // Gán sự kiện cho nút Kích hoạt Bố cục Lực
             if (activateForceLayoutBtn) {
                 activateForceLayoutBtn.addEventListener('click', () => {
                     if (d3Simulation) {
-                        d3Simulation.alpha(1).restart(); // Restart simulation from scratch
+                        d3Simulation.alpha(1).restart(); // Khởi động lại mô phỏng từ đầu
                         showToast('Sơ đồ đang được sắp xếp...', 'info');
                     } else {
                         showToast('Không có sơ đồ để sắp xếp. Hãy tạo một bài học trước.', 'info');
+                    }
+                });
+            }
+
+            // Gán sự kiện cho nút "Mở rộng vấn đề" trong menu ngữ cảnh
+            if (expandTopicBtn) {
+                expandTopicBtn.addEventListener('click', () => {
+                    hideNodeContextMenu(); // Ẩn menu
+                    if (clickedNodeData) {
+                        const promptToAI = `Mở rộng chi tiết về chủ đề: "${clickedNodeData.text}". Vui lòng cung cấp giải thích sâu hơn, các ví dụ minh họa và thông tin liên quan.`;
+                        // Mô phỏng người dùng nhập và gửi prompt này
+                        promptInput.value = promptToAI;
+                        sendMessage();
+                        clickedNodeData = null; // Xóa dữ liệu node đã lưu
                     }
                 });
             }
