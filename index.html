@@ -373,6 +373,7 @@
         let isRecording = false; // Speech recording state
         let activeSpeech = null; // Tracks current speech synthesis utterance
         let editingNode = null; // Stores the D3 node currently being edited
+        let currentLessonData = null; // Stores the latest lesson data from AI for canvas rendering
 
         // Canvas state management object
         const canvasState = {
@@ -437,21 +438,35 @@
             **Sử dụng các tọa độ X, Y ban đầu để phân tán các node đều khắp canvas (tọa độ này sẽ được D3 force simulation điều chỉnh để tối ưu hóa).**
             **Node đầu tiên trong mảng 'nodes' phải là node chủ đề chính hoặc node khởi đầu. Đánh dấu node chủ đề chính bằng "isMainTopic": true.**
             **Mỗi nhãn đường nối ("text" trong "connections") PHẢI ngắn gọn, chỉ 1-3 từ.**
+
+            **Bạn CÓ THỂ tạo các loại sơ đồ khác nhau. Đặt trường "diagramType" ở cấp cao nhất của JSON để chỉ định loại sơ đồ:**
+            * \`"diagramType": "mindmap"\`: (Mặc định) Sơ đồ tư duy truyền thống.
+                * Node \`type\`: "concept", "idea", "detail", "example", "question", "summary".
+            * \`"diagramType": "flowchart"\`: Sơ đồ khối cho quy trình hoặc thuật toán.
+                * Node \`type\`: "start", "end", "process", "decision", "input/output".
+                * Connection \`connectionType\`: "default", "dashed" (cho luồng không chính).
+            * \`"diagramType": "tree"\`: Sơ đồ cây cho cấu trúc phân cấp.
+                * Node \`type\`: "root", "parent", "child", "leaf".
+            * \`"diagramType": "relationship"\`: Sơ đồ quan hệ cho các mối liên hệ giữa các đối tượng.
+                * Node \`type\`: "entity", "attribute", "relationship".
+                * Connection \`connectionType\`: "default", "bidirectional".
+
             \`\`\`json
             {
               "type": "lesson_data",
+              "diagramType": "mindmap", // NEW: Thêm trường này và các giá trị trên.
               "title": "Tên Chủ Đề Chính",
               "nodes": [
                 {
                   "id": "node1",
-                  "type": "concept", // hoặc "step", "example", "summary", "question"
+                  "type": "concept", 
                   "text": "Nội dung ngắn gọn của node",
                   "description": "Mô tả chi tiết hơn (nếu cần, có thể để trống)",
-                  "x": 100, // Tọa độ X ban đầu trên canvas
-                  "y": 100, // Tọa độ Y ban đầu trên canvas
-                  "color": "#FFDDC1", // Màu nền cho node (hex color)
-                  "image": "url_to_image_if_any", // URL hình ảnh (tùy chọn)
-                  "isMainTopic": true // Đánh dấu node chủ đề chính
+                  "x": 100, 
+                  "y": 100, 
+                  "color": "#FFDDC1", 
+                  "image": "url_to_image_if_any", 
+                  "isMainTopic": true 
                 },
                 {
                   "id": "node2",
@@ -467,8 +482,9 @@
                 {
                   "from": "node1",
                   "to": "node2",
-                  "text": "Mối quan hệ (ví dụ: dẫn đến, là một phần của)", // Tùy chọn, cho label trên đường nối
-                  "color": "#333333" // Màu đường nối (hex color)
+                  "text": "Mối quan hệ", 
+                  "color": "#333333",
+                  "connectionType": "default" // NEW: "default", "dashed", "bidirectional"
                 }
               ]
             }
@@ -487,6 +503,7 @@
             {
               "type": "lesson_data",
               "title": "Javascript Cơ bản",
+              "diagramType": "mindmap",
               "nodes": [
                 { "id": "intro", "type": "concept", "text": "Javascript là gì?", "description": "Ngôn ngữ lập trình cho web động.", "x": 100, "y": 100, "color": "#FFC0CB", "isMainTopic": true },
                 { "id": "vars", "type": "concept", "text": "Biến & Kiểu dữ liệu", "description": "var, let, const", "x": 300, "y": 100, "color": "#ADD8E6" },
@@ -783,8 +800,9 @@
                             // Only update jsonResponse if parsed successfully and it's new data
                             if (JSON.stringify(tempJson) !== JSON.stringify(jsonResponse)) {
                                 jsonResponse = tempJson;
+                                currentLessonData = jsonResponse; // Store the latest lesson data
                                 if (!isTermExplanation) { // Only render on canvas for main lesson data
-                                    renderContentOnCanvas(jsonResponse); // Render on canvas immediately
+                                    renderContentOnCanvas(currentLessonData); // Pass updated lessonData
                                     canvasLoadingText.textContent = 'Đang tạo sơ đồ...'; // Update text
                                 }
                             }
@@ -1038,9 +1056,10 @@
         /**
          * Creates a Konva Group representing a node with a rectangle and text.
          * @param {object} nodeData - The node data from the JSON.
+         * @param {object} lessonData - The overall lesson data (to get diagramType).
          * @returns {object} An object containing the Konva Group and D3 node data.
          */
-        function createKonvaNodeGroup(nodeData) {
+        function createKonvaNodeGroup(nodeData, lessonData) {
             const group = new Konva.Group({
                 x: nodeData.x,
                 y: nodeData.y,
@@ -1064,24 +1083,59 @@
             
             // Calculate actual text size to adjust rectangle size
             const textMetrics = textKonva.measureSize(nodeData.text);
-            const rectWidth = Math.max(CONSTANTS.MIN_NODE_WIDTH, textMetrics.width + CONSTANTS.NODE_PADDING); 
-            const rectHeight = Math.max(CONSTANTS.MIN_NODE_HEIGHT, textMetrics.height + CONSTANTS.NODE_PADDING); 
+            let rectWidth = Math.max(CONSTANTS.MIN_NODE_WIDTH, textMetrics.width + CONSTANTS.NODE_PADDING); 
+            let rectHeight = Math.max(CONSTANTS.MIN_NODE_HEIGHT, textMetrics.height + CONSTANTS.NODE_PADDING); 
 
-            const rectKonva = new Konva.Rect({
+            let rectKonva = new Konva.Rect({
                 width: rectWidth,
                 height: rectHeight,
                 fill: nodeData.color || '#E0E0E0',
-                cornerRadius: 10,
+                cornerRadius: 10, // Default rounded corners
                 shadowBlur: 5,
                 shadowOpacity: 0.2,
                 stroke: '#AAAAAA',
                 strokeWidth: 1,
             });
 
-            // Apply special styling for the main topic node
-            if (nodeData.isMainTopic) {
-                rectKonva.stroke("#FF0000"); // Red border for main topic
-                rectKonva.strokeWidth(3);
+            // Apply specific styling based on diagramType and node type
+            if (lessonData && lessonData.diagramType) {
+                if (lessonData.diagramType === "flowchart") {
+                    if (nodeData.type === "start" || nodeData.type === "end") {
+                        rectKonva.cornerRadius(Math.min(rectWidth, rectHeight) / 2); // Pill shape
+                        rectKonva.fill(nodeData.color || '#D1F7C4'); // Light green for start/end
+                    } else if (nodeData.type === "decision") {
+                        rectKonva.fill(nodeData.color || '#FFDDDD'); // Light red for decision
+                        rectKonva.strokeWidth(2);
+                        // For a true diamond, Konva.Shape would be needed
+                        // For simplicity, we just style a rectangle differently.
+                    } else if (nodeData.type === "process" || nodeData.type === "input/output") { // Group input/output with process for simplicity
+                        rectKonva.cornerRadius(5); // Slightly less rounded for process
+                        rectKonva.fill(nodeData.color || '#C1FFDD'); // Light blue for process/input/output
+                    }
+                } else if (lessonData.diagramType === "tree") {
+                    if (nodeData.type === "root") {
+                        rectKonva.cornerRadius(Math.min(rectWidth, rectHeight) / 2); // Make root node circular
+                        rectKonva.fill(nodeData.color || '#FFC0CB'); // Pink for root
+                    } else if (nodeData.type === "leaf") {
+                        rectKonva.cornerRadius(5); // Slight roundness
+                        rectKonva.fill(nodeData.color || '#E0FFFF'); // Light cyan for leaves
+                    } else { // Parent/Child nodes
+                        rectKonva.cornerRadius(10); // Default for parent/child
+                        rectKonva.fill(nodeData.color || '#ADD8E6'); // Light blue for other tree nodes
+                    }
+                } else if (lessonData.diagramType === "relationship") {
+                    if (nodeData.type === "entity") {
+                        rectKonva.cornerRadius(10); // Standard rect
+                        rectKonva.fill(nodeData.color || '#D3D3D3'); // Light gray
+                    } else if (nodeData.type === "attribute") {
+                        rectKonva.cornerRadius(Math.min(rectWidth, rectHeight) / 2); // Circular attributes
+                        rectKonva.fill(nodeData.color || '#FFEFD5'); // Light orange
+                    } else if (nodeData.type === "relationship") { // Common for ERD relationships (diamond)
+                        rectKonva.fill(nodeData.color || '#FAEBD7'); // Antique white
+                        rectKonva.strokeWidth(2);
+                        // True diamond shape is harder with dynamic text.
+                    }
+                }
             }
 
             // Position text inside the rectangle to center it
@@ -1093,13 +1147,6 @@
             group.add(rectKonva);
             group.add(textKonva);
             
-            // Add click event for description (now also handled by tooltip)
-            if (nodeData.description) {
-                group.on('click', () => {
-                    // showToast(`Mô tả: ${nodeData.description}`, 'info'); // This can be removed or kept as a secondary option
-                });
-            }
-
             // Enhanced D3 node data to include text and description for editing
             const d3Node = { 
                 id: nodeData.id, 
@@ -1122,14 +1169,35 @@
          * @returns {object} An object containing the Konva Arrow and Konva Label (if any).
          */
         function createKonvaArrow(sourceD3Node, targetD3Node, connectionData) {
-            // Initial points (will be updated by D3 force)
+            // Main arrow from source to target
             const line = new Konva.Arrow({
                 points: [sourceD3Node.konvaGroup.x(), sourceD3Node.konvaGroup.y(), targetD3Node.konvaGroup.x(), targetD3Node.konvaGroup.y()],
                 stroke: connectionData.color || '#000000',
                 strokeWidth: 2,
                 pointerLength: 10,
                 pointerWidth: 10,
+                id: `link-${sourceD3Node.id}-${targetD3Node.id}` // Add ID for easier management
             });
+
+            let secondLine = null; // For bidirectional arrow
+
+            if (connectionData.connectionType === "dashed") {
+                line.dash([10, 5]); // Dash pattern: 10px line, 5px gap
+            } else if (connectionData.connectionType === "bidirectional") {
+                // Create a second arrow going the opposite direction for bidirectional effect
+                secondLine = new Konva.Arrow({
+                    points: [targetD3Node.konvaGroup.x(), targetD3Node.konvaGroup.y(), sourceD3Node.konvaGroup.x(), sourceD3Node.konvaGroup.y()],
+                    stroke: connectionData.color || '#000000',
+                    strokeWidth: 2,
+                    pointerLength: 10,
+                    pointerWidth: 10,
+                    id: `link-${targetD3Node.id}-${sourceD3Node.id}-rev` // Unique ID for reverse arrow
+                });
+                if (connectionData.color) { // Ensure both arrows have the same color
+                    secondLine.stroke(connectionData.color);
+                }
+                secondLine.strokeWidth(line.strokeWidth()); // Keep thickness consistent
+            }
 
             let labelGroup = null;
             if (connectionData.text) {
@@ -1138,16 +1206,15 @@
                     fontSize: 12,
                     fill: connectionData.color || '#555',
                     fontFamily: 'Inter, Arial, sans-serif',
-                    padding: 3, // Padding for text inside label
+                    padding: 3,
                 });
 
-                // Calculate background size for the label
                 const labelMetrics = labelText.measureSize(connectionData.text);
                 const labelRect = new Konva.Rect({
-                    width: labelMetrics.width + 6, // Add padding
-                    height: labelMetrics.height + 6, // Add padding
-                    fill: '#FFFFFF', // White background
-                    opacity: 0.8, // Slightly transparent
+                    width: labelMetrics.width + 6,
+                    height: labelMetrics.height + 6,
+                    fill: '#FFFFFF',
+                    opacity: 0.8,
                     cornerRadius: 5,
                 });
 
@@ -1155,7 +1222,8 @@
                 labelGroup.add(labelRect);
                 labelGroup.add(labelText);
             }
-            return { konvaLine: line, konvaLabel: labelGroup };
+            // Return both lines if bidirectional, otherwise just the main one.
+            return { konvaLine: line, konvaLabel: labelGroup, konvaSecondLine: secondLine };
         }
 
         /**
@@ -1252,6 +1320,10 @@
                 });
 
                 link.konvaLine.points([startIntersection.x, startIntersection.y, endIntersection.x, endIntersection.y]);
+                
+                if (link.konvaSecondLine) { // Update the second line if it exists (for bidirectional)
+                    link.konvaSecondLine.points([endIntersection.x, endIntersection.y, startIntersection.x, startIntersection.y]);
+                }
 
                 // Update label position if it exists
                 if (link.konvaLabel) {
@@ -1297,11 +1369,10 @@
 
             // 1. Create Konva Nodes and prepare D3 Nodes
             lessonData.nodes.forEach(nodeData => {
-                const { konvaGroup, konvaRect, d3NodeData } = createKonvaNodeGroup(nodeData);
+                const { konvaGroup, konvaRect, d3NodeData } = createKonvaNodeGroup(nodeData, lessonData); // Pass lessonData here
                 
                 // Attach Konva elements to the D3 node data
-                // d3NodeData now includes text and description
-                const d3Node = { ...d3NodeData, konvaGroup, konvaRect }; // Ensure konva elements are attached
+                const d3Node = { ...d3NodeData, konvaGroup, konvaRect }; 
                 d3Nodes.push(d3Node);
                 canvasState.konvaNodesMap.set(d3Node.id, d3Node); // Store D3 node with Konva references
 
@@ -1314,8 +1385,11 @@
                 const targetD3Node = canvasState.konvaNodesMap.get(conn.to);
 
                 if (sourceD3Node && targetD3Node) {
-                    const { konvaLine, konvaLabel } = createKonvaArrow(sourceD3Node, targetD3Node, conn);
+                    const { konvaLine, konvaLabel, konvaSecondLine } = createKonvaArrow(sourceD3Node, targetD3Node, conn);
                     canvasState.layer.add(konvaLine);
+                    if (konvaSecondLine) { // Add the second line for bidirectional
+                        canvasState.layer.add(konvaSecondLine);
+                    }
                     if (konvaLabel) {
                         canvasState.layer.add(konvaLabel);
                     }
@@ -1324,9 +1398,10 @@
                         source: sourceD3Node, 
                         target: targetD3Node, 
                         konvaLine: konvaLine, 
-                        konvaLabel: konvaLabel 
+                        konvaLabel: konvaLabel,
+                        konvaSecondLine: konvaSecondLine // Store the second line reference
                     });
-                    canvasState.konvaLinks.push({ konvaLine: konvaLine, konvaLabel: konvaLabel });
+                    canvasState.konvaLinks.push({ konvaLine: konvaLine, konvaLabel: konvaLabel, konvaSecondLine: konvaSecondLine });
                 }
             });
 
