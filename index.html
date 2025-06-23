@@ -12,6 +12,9 @@
             --scrollbar-thumb-bg: #888;
             --scrollbar-thumb-hover-bg: #555;
             --border-color: #e2e8f0; /* Default light border */
+            --sidebar-width-mobile: 100vw;
+            --sidebar-width-desktop: 400px;
+            --sidebar-collapsed-width-desktop: 60px;
         }
         .dark {
             --scrollbar-track-bg: #2d3748;
@@ -143,44 +146,78 @@
             color: white;
         }
 
-        /* Chat view container states */
-        .chat-view-container {
-            transition: width 0.3s ease-in-out, min-width 0.3s ease-in-out, border-right-width 0.3s ease-in-out;
-            border-right: 1px solid var(--border-color); /* Default border when expanded */
+        /* Sidebar styles */
+        #chat-view-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: var(--sidebar-width-mobile); /* Default to full width on mobile */
+            max-width: var(--sidebar-width-desktop); /* Limit max width for open state on desktop */
+            background-color: #f8fafc; /* Tailwind gray-50 */
+            border-right: 1px solid var(--border-color);
+            z-index: 50;
+            transform: translateX(0); /* Default to open on load */
+            transition: transform 0.3s ease-in-out;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2); /* Add shadow for depth */
+            display: flex; /* Ensure flex properties for its children */
+            flex-direction: column;
         }
 
-        .chat-view-container.is-collapsed {
-            width: 0 !important; /* Force collapse on small screens */
-            min-width: 0 !important;
-            overflow: hidden; /* Hide content */
-            border-right: none !important; /* Remove border */
+        #chat-view-container.is-closed {
+            transform: translateX(-100%); /* Slide out to the left */
+        }
+        
+        #chat-view-container #chat-content-wrapper {
+            display: flex; /* Ensure content is visible when open */
         }
 
-        .chat-view-container.is-collapsed #chat-content-wrapper,
-        .chat-view-container.is-collapsed .p-4:last-child {
-            display: none; /* Hide chat messages and input area when collapsed */
+        /* Main content area (canvas and toggle button when sidebar is closed) */
+        #main-content-area {
+            flex-grow: 1; /* Allow it to take remaining space */
+            margin-left: var(--sidebar-width-mobile); /* Push content by sidebar width on mobile */
+            transition: margin-left 0.3s ease-in-out;
+            height: 100vh; /* Ensure it takes full height */
         }
 
-        @media (min-width: 1024px) { /* lg breakpoint */
-            .chat-view-container:not(.is-collapsed) {
-                width: 33.333333% !important; /* Default expanded width for desktop */
-                min-width: 300px !important;
+        /* Specific styles for desktop (lg breakpoint) */
+        @media (min-width: 1024px) {
+            #chat-view-container {
+                width: var(--sidebar-width-desktop); /* Fixed width for open sidebar on desktop */
             }
-            .chat-view-container.is-collapsed {
-                width: 60px !important; /* Small visible bar with toggle button on desktop */
-                min-width: 60px !important;
+
+            #chat-view-container.is-closed {
+                transform: translateX(calc(-1 * var(--sidebar-width-desktop) + var(--sidebar-collapsed-width-desktop))); /* Show a 60px strip */
             }
-            .chat-view-container.is-collapsed #chat-content-wrapper,
-            .chat-view-container.is-collapsed .p-4:last-child {
-                display: flex; /* Re-enable flex for header elements that are always there */
-                flex-direction: column; /* Ensure header components stack vertically if needed */
-                justify-content: flex-start;
-                align-items: center; /* Center header content */
+
+            #main-content-area {
+                margin-left: var(--sidebar-width-desktop); /* Push content by sidebar width on desktop */
             }
-            /* Explicitly hide chat area and input when collapsed on desktop */
-            .chat-view-container.is-collapsed #chat-container,
-            .chat-view-container.is-collapsed .p-4:last-child > #input-area-wrapper {
-                display: none !important; 
+            
+            #app-container.sidebar-is-closed #main-content-area {
+                margin-left: var(--sidebar-collapsed-width-desktop); /* Adjust for collapsed strip */
+            }
+
+            /* Hide 'AI Học Tập' text and icon in header when collapsed on desktop */
+            #chat-view-container.is-closed #main-header .header-title-group {
+                display: none;
+            }
+        }
+
+        /* Global class on body to control sidebar and main content */
+        body.sidebar-is-closed #chat-view-container {
+            transform: translateX(-100%); /* Full slide out for mobile */
+        }
+        body.sidebar-is-closed #main-content-area {
+            margin-left: 0; /* Reset margin for main content */
+        }
+        /* Specific desktop behavior when sidebar is globally closed */
+        @media (min-width: 1024px) {
+            body.sidebar-is-closed #chat-view-container {
+                transform: translateX(calc(-1 * var(--sidebar-width-desktop) + var(--sidebar-collapsed-width-desktop))); /* Show strip */
+            }
+            body.sidebar-is-closed #main-content-area {
+                margin-left: var(--sidebar-collapsed-width-desktop); /* Account for strip */
             }
         }
     </style>
@@ -188,12 +225,12 @@
 <body class="bg-gray-100 dark:bg-gray-900 font-sans h-screen flex">
 
     <!-- Container chính của ứng dụng -->
-    <div id="app-container" class="flex flex-1 overflow-hidden">
+    <div id="app-container" class="relative flex flex-1 overflow-hidden">
 
-        <!-- Phần Box Chat (Bên trái) -->
-        <div id="chat-view-container" class="flex flex-col h-full bg-gray-50 dark:bg-slate-900 flex-shrink-0">
+        <!-- Sidebar (Chat View Container) -->
+        <div id="chat-view-container" class="flex flex-col h-full bg-gray-50 dark:bg-slate-900 is-open">
             <header id="main-header" class="flex-shrink-0 flex justify-between items-center p-3 sm:p-4 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-3 header-title-group">
                     <span class="text-2xl">📚</span> <!-- Biểu tượng cho chế độ học tập -->
                     <span class="text-lg font-bold text-gray-800 dark:text-gray-100">AI Học Tập</span>
                 </div>
@@ -213,10 +250,10 @@
                     </button>
                     <!-- Nút Toggle Chat -->
                     <button id="toggle-chat-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Thu gọn/Mở rộng Chat">
-                        <!-- Icon cho trạng thái mở rộng -->
-                        <svg id="toggle-chat-open-icon" class="w-6 h-6 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 4.5l7.5 7.5-7.5 7.5m-6-15l7.5 7.5-7.5 7.5" /></svg>
-                        <!-- Icon cho trạng thái thu gọn -->
-                        <svg id="toggle-chat-close-icon" class="hidden w-6 h-6 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12.75 19.5l-7.5-7.5 7.5-7.5m6 15l-7.5-7.5 7.5-7.5" /></svg>
+                        <!-- Icon mũi tên trái (ẩn khi mở) -->
+                        <svg id="toggle-chat-close-icon" class="w-6 h-6 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5l-7.5-7.5 7.5-7.5" /></svg>
+                        <!-- Icon mũi tên phải (ẩn khi đóng) -->
+                        <svg id="toggle-chat-open-icon" class="hidden w-6 h-6 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
                     </button>
                 </div>
             </header>
@@ -255,9 +292,9 @@
             </div> <!-- End chat-content-wrapper -->
         </div>
 
-        <!-- Phần Canvas (Bên phải) -->
-        <div id="canvas-container" class="flex-1 h-full bg-white dark:bg-gray-800 overflow-auto relative">
-            <div id="learning-canvas" class="w-full h-full">
+        <!-- Main Content Area (Canvas Container) -->
+        <div id="main-content-area" class="flex-1 h-full flex flex-col">
+            <div id="canvas-container" class="flex-1 h-full bg-white dark:bg-gray-800 overflow-auto relative">
                 <!-- Nội dung canvas sẽ được render tại đây bởi Konva.js -->
                 <div id="canvas-placeholder" class="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-600 text-center p-4">
                     <p class="max-w-md">Chào mừng bạn đến với AI Học Tập! <br> Hãy nhập câu hỏi hoặc yêu cầu một chủ đề (ví dụ: "giải thích HTML", "cấu trúc dữ liệu", "khái niệm Vật lý lượng tử") để bắt đầu bài học được trực quan hóa tại đây.</p>
@@ -327,14 +364,16 @@
             D3_SIMULATION_INITIAL_ALPHA: 1, // Initial alpha for simulation restart
             D3_SIMULATION_STOP_TIMEOUT: 4000, // Tăng thời gian chạy simulation ban đầu
             TOAST_DISPLAY_TIME: 4000, // Time in ms for toast messages to display
-            CHAT_SCROLL_THRESHOLD: 0.5 // Percentage of chat height to scroll before showing "scroll to top" button
+            CHAT_SCROLL_THRESHOLD: 0.5, // Percentage of chat height to scroll before showing "scroll to top" button
+            SIDEBAR_WIDTH_DESKTOP: 400, // Width of sidebar when open on desktop
+            SIDEBAR_COLLAPSED_WIDTH_DESKTOP: 60, // Width of sidebar when collapsed on desktop (showing strip)
         };
 
         // Global state variables
         let localHistory = []; // Stores the full conversation history (text-only for AI)
         let isRecording = false; // Speech recording state
         let activeSpeech = null; // Tracks current speech synthesis utterance
-        let isChatCollapsed = false; // State for chatbox (false = expanded, true = collapsed)
+        let isSidebarOpen = true; // State for sidebar (true = open, false = closed)
 
         // Canvas state management object
         const canvasState = {
@@ -350,7 +389,7 @@
         const appContainer = document.getElementById('app-container');
         const chatViewContainer = document.getElementById('chat-view-container');
         const mainHeader = document.getElementById('main-header');
-        const chatContentWrapper = document.getElementById('chat-content-wrapper'); // New wrapper for toggling
+        const chatContentWrapper = document.getElementById('chat-content-wrapper'); // Wrapper for toggling chat content
         const themeToggle = document.getElementById('theme-toggle');
         const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
         const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
@@ -368,8 +407,9 @@
         const clearCanvasBtn = document.getElementById('clear-canvas-btn');
         const activateForceLayoutBtn = document.getElementById('activate-force-layout-btn');
         const toggleChatBtn = document.getElementById('toggle-chat-btn'); 
-        const toggleChatOpenIcon = document.getElementById('toggle-chat-open-icon');
-        const toggleChatCloseIcon = document.getElementById('toggle-chat-close-icon');
+        const toggleChatOpenIcon = document.getElementById('toggle-chat-open-icon'); // Icon to open (right arrow)
+        const toggleChatCloseIcon = document.getElementById('toggle-chat-close-icon'); // Icon to close (left arrow)
+        const mainContentArea = document.getElementById('main-content-area'); // New element to push content
 
         // Term modal elements
         const termModal = document.getElementById('term-modal');
@@ -575,9 +615,8 @@
                 document.documentElement.style.setProperty('--border-color', '#e2e8f0'); /* Set light border for chatbox */
             }
             // Reapply border style to chatViewContainer based on current state
-            if (!isChatCollapsed) { // Only if chat is expanded
-                chatViewContainer.style.borderRight = `1px solid var(--border-color)`;
-            }
+            // Border is now part of the sidebar fixed position, so apply directly
+            chatViewContainer.style.borderRight = `1px solid var(--border-color)`;
         };
         themeToggle.addEventListener('click', () => {
             document.documentElement.classList.toggle('dark');
@@ -873,6 +912,14 @@
 
         /** Handles resizing the canvas and restarting D3 simulation. */
         function handleCanvasResize() {
+            // Adjust main content area margin based on sidebar state
+            if (window.innerWidth < 1024) { // Mobile
+                mainContentArea.style.marginLeft = isSidebarOpen ? 'var(--sidebar-width-mobile)' : '0';
+            } else { // Desktop
+                mainContentArea.style.marginLeft = isSidebarOpen ? `var(--sidebar-width-desktop)` : `var(--sidebar-collapsed-width-desktop)`;
+            }
+
+            // Update Konva stage size
             canvasState.stage.width(canvasContainer.offsetWidth);
             canvasState.stage.height(canvasContainer.offsetHeight);
             drawGrid(); // Redraw grid on resize
@@ -1306,8 +1353,7 @@
                 e.preventDefault(); 
                 sendMessage(promptInput.value); 
             } 
-        }
-        );
+        });
         promptInput.addEventListener('input', adjustInputHeight);
 
         // Click handler for chat container to handle dynamic links/buttons
@@ -1418,42 +1464,59 @@
             }
         });
 
-        // --- TOGGLE CHATBOX LOGIC ---
-        /** Toggles the visibility/width of the chatbox. */
+        // --- TOGGLE SIDEBAR LOGIC ---
+        /** Toggles the visibility/width of the sidebar. */
         function toggleChatbox() {
-            isChatCollapsed = !isChatCollapsed;
+            isSidebarOpen = !isSidebarOpen;
             
-            if (isChatCollapsed) {
-                chatViewContainer.classList.add('is-collapsed');
-                toggleChatOpenIcon.classList.add('hidden');
-                toggleChatCloseIcon.classList.remove('hidden');
-                // Hide specific content elements within the chatbox
-                chatContentWrapper.style.display = 'none'; 
-                chatViewContainer.style.borderRight = 'none'; // Explicitly remove border
+            if (isSidebarOpen) {
+                chatViewContainer.classList.remove('is-closed');
+                chatViewContainer.classList.add('is-open');
+                toggleChatCloseIcon.classList.remove('hidden'); // Show left arrow (to close)
+                toggleChatOpenIcon.classList.add('hidden');    // Hide right arrow (to open)
             } else {
-                chatViewContainer.classList.remove('is-collapsed');
-                toggleChatOpenIcon.classList.remove('hidden');
-                toggleChatCloseIcon.classList.add('hidden');
-                // Show specific content elements within the chatbox
-                chatContentWrapper.style.display = 'flex'; // Re-enable flex for its children
-                chatViewContainer.style.borderRight = `1px solid var(--border-color)`; // Re-add border
+                chatViewContainer.classList.remove('is-open');
+                chatViewContainer.classList.add('is-closed');
+                toggleChatCloseIcon.classList.add('hidden');     // Hide left arrow (to close)
+                toggleChatOpenIcon.classList.remove('hidden');  // Show right arrow (to open)
             }
 
-            // Trigger a canvas resize to make the mindmap re-arrange
-            // Use setTimeout to allow CSS transitions to complete before getting new dimensions
+            // Adjust main content area margin immediately for smooth transition
+            handleCanvasResize();
+            
+            // Re-render canvas after sidebar transition is complete
             setTimeout(() => {
-                handleCanvasResize();
+                if (canvasState.d3Simulation) {
+                    canvasState.d3Simulation.alpha(CONSTANTS.D3_SIMULATION_INITIAL_ALPHA).restart();
+                    setTimeout(() => {
+                        canvasState.d3Simulation.alphaTarget(0);
+                    }, CONSTANTS.D3_SIMULATION_STOP_TIMEOUT);
+                }
+                canvasState.layer.batchDraw();
+                canvasState.gridLayer.batchDraw();
             }, 350); // A bit longer than the CSS transition (0.3s)
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Initial setup for chatbox state (expanded by default)
-            isChatCollapsed = false; // Ensure it starts expanded
-            chatViewContainer.classList.remove('is-collapsed');
-            toggleChatOpenIcon.classList.remove('hidden');
-            toggleChatCloseIcon.classList.add('hidden');
-            chatContentWrapper.style.display = 'flex'; // Ensure content is visible initially
-            chatViewContainer.style.borderRight = `1px solid var(--border-color)`; // Initial border
+            // Initial setup for sidebar state (open by default)
+            isSidebarOpen = true; // Ensure it starts open
+            chatViewContainer.classList.add('is-open');
+            chatViewContainer.classList.remove('is-closed');
+            toggleChatCloseIcon.classList.remove('hidden'); // Show left arrow (to close)
+            toggleChatOpenIcon.classList.add('hidden');    // Hide right arrow (to open)
+            
+            // Set initial margin for main content area based on sidebar state
+            if (window.innerWidth < 1024) { // Mobile
+                mainContentArea.style.marginLeft = 'var(--sidebar-width-mobile)';
+            } else { // Desktop
+                mainContentArea.style.marginLeft = `var(--sidebar-width-desktop)`;
+            }
+
+            // Set initial CSS variables
+            document.documentElement.style.setProperty('--sidebar-width-mobile', '100vw');
+            document.documentElement.style.setProperty('--sidebar-width-desktop', `${CONSTANTS.SIDEBAR_WIDTH_DESKTOP}px`);
+            document.documentElement.style.setProperty('--sidebar-collapsed-width-desktop', `${CONSTANTS.SIDEBAR_COLLAPSED_WIDTH_DESKTOP}px`);
+
 
             if (chatContainer) {
                 chatContainer.addEventListener("scroll", toggleScrollToTopButton);
