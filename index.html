@@ -703,8 +703,14 @@
 
             // Vô hiệu hóa menu ngữ cảnh mặc định của trình duyệt trên stage Konva
             stage.content.oncontextmenu = (e) => e.preventDefault();
-            // Ẩn menu ngữ cảnh tùy chỉnh khi click chuột trái vào bất kỳ đâu trên cửa sổ
-            window.addEventListener('click', hideNodeContextMenu);
+            
+            // Modified: Hide context menu when clicking anywhere *outside* the menu
+            document.body.addEventListener('click', (e) => {
+                // Check if the click target is outside the context menu
+                if (nodeContextMenu.classList.contains('hidden') || !nodeContextMenu.contains(e.target)) {
+                    hideNodeContextMenu();
+                }
+            });
             // Ẩn menu ngữ cảnh tùy chỉnh khi cuộn trang
             window.addEventListener('scroll', hideNodeContextMenu, true); // Use capture phase
 
@@ -1187,7 +1193,8 @@
 
             // Gán sự kiện cho nút "Mở rộng vấn đề" trong menu ngữ cảnh
             if (expandTopicBtn) {
-                expandTopicBtn.addEventListener('click', () => {
+                expandTopicBtn.addEventListener('click', (e) => { // Added 'e' parameter
+                    e.stopPropagation(); // Stop propagation to prevent window click from hiding menu immediately
                     hideNodeContextMenu(); // Ẩn menu
                     if (clickedNodeData) {
                         const promptToAI = `Mở rộng chi tiết về chủ đề: "${clickedNodeData.text}". Vui lòng cung cấp giải thích sâu hơn, các ví dụ minh họa và thông tin liên quan.`;
@@ -1199,7 +1206,7 @@
                 });
             }
 
-            // Fix: Stop propagation for clicks on the context menu itself
+            // Fix: Stop propagation for clicks on the context menu itself (this was already there)
             if (nodeContextMenu) {
                 nodeContextMenu.addEventListener('click', (e) => {
                     e.stopPropagation();
