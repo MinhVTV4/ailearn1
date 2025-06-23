@@ -11,16 +11,11 @@
             --scrollbar-track-bg: #f1f1f1;
             --scrollbar-thumb-bg: #888;
             --scrollbar-thumb-hover-bg: #555;
-            --border-color: #e2e8f0; /* Default light border */
-            --sidebar-width-mobile: 100vw;
-            --sidebar-width-desktop: 400px;
-            --sidebar-collapsed-width-desktop: 60px;
         }
         .dark {
             --scrollbar-track-bg: #2d3748;
             --scrollbar-thumb-bg: #718096;
             --scrollbar-thumb-hover-bg: #a0aec0;
-            --border-color: #334155; /* Default dark border */
         }
         body {
             overflow: hidden; /* Ngăn cuộn toàn bộ trang */
@@ -103,23 +98,20 @@
             top: 0;
             width: 100%; /* Full width */
             height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
             background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
-            justify-content: center; /* Center horizontally */
-            align-items: center; /* Center vertically */
+            align-items: center;
+            justify-content: center;
         }
         .modal-content {
             background-color: #fefefe;
+            margin: auto;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
             width: 90%;
             max-width: 500px;
             position: relative;
-            animation: slideIn 0.3s ease-out forwards;
-        }
-        @keyframes slideIn {
-            from { transform: translateY(-50px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
         }
         .dark .modal-content {
             background-color: #2d3748;
@@ -145,92 +137,17 @@
         .dark .close-button:focus {
             color: white;
         }
-
-        /* Sidebar styles */
-        #chat-view-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 100vh;
-            width: var(--sidebar-width-mobile); /* Default to full width on mobile */
-            max-width: var(--sidebar-width-desktop); /* Limit max width for open state on desktop */
-            background-color: #f8fafc; /* Tailwind gray-50 */
-            border-right: 1px solid var(--border-color);
-            z-index: 50;
-            transform: translateX(0); /* Default to open on load */
-            transition: transform 0.3s ease-in-out;
-            box-shadow: 0 0 15px rgba(0,0,0,0.2); /* Add shadow for depth */
-            display: flex; /* Ensure flex properties for its children */
-            flex-direction: column;
-        }
-
-        #chat-view-container.is-closed {
-            transform: translateX(-100%); /* Slide out to the left */
-        }
-        
-        #chat-view-container #chat-content-wrapper {
-            display: flex; /* Ensure content is visible when open */
-        }
-
-        /* Main content area (canvas and toggle button when sidebar is closed) */
-        #main-content-area {
-            flex-grow: 1; /* Allow it to take remaining space */
-            margin-left: var(--sidebar-width-mobile); /* Push content by sidebar width on mobile */
-            transition: margin-left 0.3s ease-in-out;
-            height: 100vh; /* Ensure it takes full height */
-        }
-
-        /* Specific styles for desktop (lg breakpoint) */
-        @media (min-width: 1024px) {
-            #chat-view-container {
-                width: var(--sidebar-width-desktop); /* Fixed width for open sidebar on desktop */
-            }
-
-            #chat-view-container.is-closed {
-                transform: translateX(calc(-1 * var(--sidebar-width-desktop) + var(--sidebar-collapsed-width-desktop))); /* Show a 60px strip */
-            }
-
-            #main-content-area {
-                margin-left: var(--sidebar-width-desktop); /* Push content by sidebar width on desktop */
-            }
-            
-            #app-container.sidebar-is-closed #main-content-area {
-                margin-left: var(--sidebar-collapsed-width-desktop); /* Adjust for collapsed strip */
-            }
-
-            /* Hide 'AI Học Tập' text and icon in header when collapsed on desktop */
-            #chat-view-container.is-closed #main-header .header-title-group {
-                display: none;
-            }
-        }
-
-        /* Global class on body to control sidebar and main content */
-        body.sidebar-is-closed #chat-view-container {
-            transform: translateX(-100%); /* Full slide out for mobile */
-        }
-        body.sidebar-is-closed #main-content-area {
-            margin-left: 0; /* Reset margin for main content */
-        }
-        /* Specific desktop behavior when sidebar is globally closed */
-        @media (min-width: 1024px) {
-            body.sidebar-is-closed #chat-view-container {
-                transform: translateX(calc(-1 * var(--sidebar-width-desktop) + var(--sidebar-collapsed-width-desktop))); /* Show strip */
-            }
-            body.sidebar-is-closed #main-content-area {
-                margin-left: var(--sidebar-collapsed-width-desktop); /* Account for strip */
-            }
-        }
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 font-sans h-screen flex">
 
     <!-- Container chính của ứng dụng -->
-    <div id="app-container" class="relative flex flex-1 overflow-hidden">
+    <div id="app-container" class="flex flex-1 overflow-hidden">
 
-        <!-- Sidebar (Chat View Container) -->
-        <div id="chat-view-container" class="flex flex-col h-full bg-gray-50 dark:bg-slate-900 is-open">
+        <!-- Phần Box Chat (Bên trái) -->
+        <div id="chat-view-container" class="flex flex-col h-full bg-gray-50 dark:bg-slate-900 w-full lg:w-1/3 flex-shrink-0 border-r border-gray-200 dark:border-slate-700">
             <header id="main-header" class="flex-shrink-0 flex justify-between items-center p-3 sm:p-4 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
-                <div class="flex items-center gap-3 header-title-group">
+                <div class="flex items-center gap-3">
                     <span class="text-2xl">📚</span> <!-- Biểu tượng cho chế độ học tập -->
                     <span class="text-lg font-bold text-gray-800 dark:text-gray-100">AI Học Tập</span>
                 </div>
@@ -248,53 +165,43 @@
                     <button id="activate-force-layout-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Sắp xếp sơ đồ tự động">
                         <svg class="w-6 h-6 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.898 20.572L16.5 21.75l-.398-1.178a3.375 3.375 0 00-2.455-2.456L12.75 18l1.178-.398a3.375 3.375 0 002.455-2.456L16.5 14.25l.398 1.178a3.375 3.375 0 002.456 2.456L20.25 18l-1.178.398a3.375 3.375 0 00-2.456 2.456z" /></svg>
                     </button>
-                    <!-- Nút Toggle Chat -->
-                    <button id="toggle-chat-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Thu gọn/Mở rộng Chat">
-                        <!-- Icon mũi tên trái (ẩn khi mở) -->
-                        <svg id="toggle-chat-close-icon" class="w-6 h-6 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5l-7.5-7.5 7.5-7.5" /></svg>
-                        <!-- Icon mũi tên phải (ẩn khi đóng) -->
-                        <svg id="toggle-chat-open-icon" class="hidden w-6 h-6 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
-                    </button>
                 </div>
             </header>
 
-            <!-- Wrapper cho nội dung chat và input để ẩn/hiện -->
-            <div id="chat-content-wrapper" class="flex flex-col flex-1">
-                <!-- Khu vực hiển thị tin nhắn chat -->
-                <div id="chat-container" class="flex-1 px-4 pt-4 space-y-4 overflow-y-auto relative">
-                    <div id="notification-area" class="hidden sticky bottom-2 w-full flex justify-center">
-                        <div class="bg-blue-100 dark:bg-slate-700 text-blue-800 dark:text-blue-200 text-xs font-semibold px-4 py-2 rounded-full shadow-lg">
-                            Đang tối ưu hóa...
-                        </div>
+            <!-- Khu vực hiển thị tin nhắn chat -->
+            <div id="chat-container" class="flex-1 px-4 pt-4 space-y-4 overflow-y-auto relative">
+                <div id="notification-area" class="hidden sticky bottom-2 w-full flex justify-center">
+                    <div class="bg-blue-100 dark:bg-slate-700 text-blue-800 dark:text-blue-200 text-xs font-semibold px-4 py-2 rounded-full shadow-lg">
+                        Đang tối ưu hóa...
                     </div>
-                    <!-- Nút cuộn lên đầu trang -->
-                    <button id="scrollToTopBtn" title="Cuộn lên đầu">
-                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l7.5-7.5 7.5 7.5m-15 6l7.5-7.5 7.5 7.5" /></svg>
-                    </button>
                 </div>
+                <!-- Nút cuộn lên đầu trang -->
+                <button id="scrollToTopBtn" title="Cuộn lên đầu">
+                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l7.5-7.5 7.5 7.5m-15 6l7.5-7.5 7.5 7.5" /></svg>
+                </button>
+            </div>
 
-                <!-- Vùng nhập liệu chat -->
-                <div class="p-4 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700">
-                    <div id="input-area-wrapper" class="rounded-full">
-                        <div id="input-area" class="flex items-center gap-3 bg-gray-100 dark:bg-slate-700 rounded-full p-2">
-                            <textarea id="prompt-input" rows="1" placeholder="Nhập câu hỏi hoặc yêu cầu học tập..." class="flex-1 bg-transparent px-3 py-2 resize-none focus:outline-none dark:text-gray-200 dark:placeholder-gray-400"></textarea>
-                            <!-- Nút ghi âm -->
-                            <button id="record-btn" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors" title="Ghi âm">
-                                <svg class="w-6 h-6 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
-                            </button>
-                            <!-- Nút gửi -->
-                            <button id="send-btn" class="w-10 h-10 flex items-center justify-center bg-blue-600 rounded-full text-white hover:bg-blue-700 transition-colors disabled:bg-blue-300 dark:disabled:bg-blue-800 disabled:cursor-not-allowed" title="Gửi">
-                                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2 .01 7z"/></svg>
-                            </button>
-                        </div>
+            <!-- Vùng nhập liệu chat -->
+            <div class="p-4 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700">
+                <div id="input-area-wrapper" class="rounded-full">
+                    <div id="input-area" class="flex items-center gap-3 bg-gray-100 dark:bg-slate-700 rounded-full p-2">
+                        <textarea id="prompt-input" rows="1" placeholder="Nhập câu hỏi hoặc yêu cầu học tập..." class="flex-1 bg-transparent px-3 py-2 resize-none focus:outline-none dark:text-gray-200 dark:placeholder-gray-400"></textarea>
+                        <!-- Nút ghi âm -->
+                        <button id="record-btn" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors" title="Ghi âm">
+                            <svg class="w-6 h-6 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+                        </button>
+                        <!-- Nút gửi -->
+                        <button id="send-btn" class="w-10 h-10 flex items-center justify-center bg-blue-600 rounded-full text-white hover:bg-blue-700 transition-colors disabled:bg-blue-300 dark:disabled:bg-blue-800 disabled:cursor-not-allowed" title="Gửi">
+                            <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2 .01 7z"/></svg>
+                        </button>
                     </div>
                 </div>
-            </div> <!-- End chat-content-wrapper -->
+            </div>
         </div>
 
-        <!-- Main Content Area (Canvas Container) -->
-        <div id="main-content-area" class="flex-1 h-full flex flex-col">
-            <div id="canvas-container" class="flex-1 h-full bg-white dark:bg-gray-800 overflow-auto relative">
+        <!-- Phần Canvas (Bên phải) -->
+        <div id="canvas-container" class="flex-1 h-full bg-white dark:bg-gray-800 overflow-auto relative">
+            <div id="learning-canvas" class="w-full h-full">
                 <!-- Nội dung canvas sẽ được render tại đây bởi Konva.js -->
                 <div id="canvas-placeholder" class="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-600 text-center p-4">
                     <p class="max-w-md">Chào mừng bạn đến với AI Học Tập! <br> Hãy nhập câu hỏi hoặc yêu cầu một chủ đề (ví dụ: "giải thích HTML", "cấu trúc dữ liệu", "khái niệm Vật lý lượng tử") để bắt đầu bài học được trực quan hóa tại đây.</p>
@@ -356,24 +263,21 @@
             MIN_NODE_HEIGHT: 60,
             GRID_SIZE: 50, // Distance between grid lines on canvas
             CANVAS_ZOOM_SCALE_FACTOR: 1.1, // Zoom increment factor
-            D3_LINK_DISTANCE: 250, // Tăng khoảng cách giữa các node
-            D3_CHARGE_STRENGTH: -1000, // Tăng lực đẩy giữa các node mạnh hơn nữa
-            D3_COLLIDE_PADDING: 30, // Tăng padding cho va chạm
-            D3_COLLIDE_ITERATIONS: 4, // Tăng số lần lặp lại cho lực va chạm
+            D3_LINK_DISTANCE: 220, // Ideal distance between linked nodes
+            D3_CHARGE_STRENGTH: -800, // Repulsion force between nodes
+            D3_COLLIDE_PADDING: 20, // Padding for collision detection
+            D3_COLLIDE_ITERATIONS: 3, // Iterations for collision force
             D3_SIMULATION_ALPHA_TARGET_DRAG: 0.3, // Alpha target when dragging a node
             D3_SIMULATION_INITIAL_ALPHA: 1, // Initial alpha for simulation restart
-            D3_SIMULATION_STOP_TIMEOUT: 4000, // Tăng thời gian chạy simulation ban đầu
+            D3_SIMULATION_STOP_TIMEOUT: 3000, // Time in ms to run simulation initially
             TOAST_DISPLAY_TIME: 4000, // Time in ms for toast messages to display
-            CHAT_SCROLL_THRESHOLD: 0.5, // Percentage of chat height to scroll before showing "scroll to top" button
-            SIDEBAR_WIDTH_DESKTOP: 400, // Width of sidebar when open on desktop
-            SIDEBAR_COLLAPSED_WIDTH_DESKTOP: 60, // Width of sidebar when collapsed on desktop (showing strip)
+            CHAT_SCROLL_THRESHOLD: 0.5 // Percentage of chat height to scroll before showing "scroll to top" button
         };
 
         // Global state variables
         let localHistory = []; // Stores the full conversation history (text-only for AI)
         let isRecording = false; // Speech recording state
         let activeSpeech = null; // Tracks current speech synthesis utterance
-        let isSidebarOpen = true; // State for sidebar (true = open, false = closed)
 
         // Canvas state management object
         const canvasState = {
@@ -389,13 +293,13 @@
         const appContainer = document.getElementById('app-container');
         const chatViewContainer = document.getElementById('chat-view-container');
         const mainHeader = document.getElementById('main-header');
-        const chatContentWrapper = document.getElementById('chat-content-wrapper'); // Wrapper for toggling chat content
         const themeToggle = document.getElementById('theme-toggle');
         const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
         const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
         const chatContainer = document.getElementById('chat-container');
         const notificationArea = document.getElementById('notification-area');
         const inputAreaWrapper = document.getElementById('input-area-wrapper');
+        const inputArea = document.getElementById('input-area');
         const promptInput = document.getElementById('prompt-input');
         const recordBtn = document.getElementById('record-btn');
         const sendBtn = document.getElementById('send-btn');
@@ -406,10 +310,6 @@
         const canvasPlaceholder = document.getElementById('canvas-placeholder');
         const clearCanvasBtn = document.getElementById('clear-canvas-btn');
         const activateForceLayoutBtn = document.getElementById('activate-force-layout-btn');
-        const toggleChatBtn = document.getElementById('toggle-chat-btn'); 
-        const toggleChatOpenIcon = document.getElementById('toggle-chat-open-icon'); // Icon to open (right arrow)
-        const toggleChatCloseIcon = document.getElementById('toggle-chat-close-icon'); // Icon to close (left arrow)
-        const mainContentArea = document.getElementById('main-content-area'); // New element to push content
 
         // Term modal elements
         const termModal = document.getElementById('term-modal');
@@ -608,15 +508,10 @@
             if (document.documentElement.classList.contains('dark')) {
                 themeToggleDarkIcon.classList.add('hidden');
                 themeToggleLightIcon.classList.remove('hidden');
-                document.documentElement.style.setProperty('--border-color', '#334155'); /* Set dark border for chatbox */
             } else {
                 themeToggleDarkIcon.classList.remove('hidden');
                 themeToggleLightIcon.classList.add('hidden');
-                document.documentElement.style.setProperty('--border-color', '#e2e8f0'); /* Set light border for chatbox */
             }
-            // Reapply border style to chatViewContainer based on current state
-            // Border is now part of the sidebar fixed position, so apply directly
-            chatViewContainer.style.borderRight = `1px solid var(--border-color)`;
         };
         themeToggle.addEventListener('click', () => {
             document.documentElement.classList.toggle('dark');
@@ -725,7 +620,7 @@
             } else {
                 // For term explanation, close modal and show thinking state
                 termModal.style.display = 'none';
-                modalTermExplanation.innerHTML = 'AI sẽ giải thích thuật ngữ này tại đây... <span class="blinking-cursor"></span>'; // Reset and show cursor
+                modalTermExplanation.textContent = 'AI sẽ giải thích thuật ngữ này tại đây...'; // Reset modal
             }
 
             // Hide canvas placeholder when starting chat
@@ -882,7 +777,18 @@
             drawGrid(); // Draw grid initially
 
             // Handle responsive canvas on window resize
-            window.addEventListener('resize', handleCanvasResize);
+            window.addEventListener('resize', () => {
+                canvasState.stage.width(canvasContainer.offsetWidth);
+                canvasState.stage.height(canvasContainer.offsetHeight);
+                drawGrid(); // Redraw grid on resize
+                if (canvasState.d3Simulation) {
+                    // Re-center force layout if active
+                    canvasState.d3Simulation.force("center", d3.forceCenter(canvasState.stage.width() / 2, canvasState.stage.height() / 2));
+                    canvasState.d3Simulation.alpha(CONSTANTS.D3_SIMULATION_ALPHA_TARGET_DRAG).restart(); // Restart simulation for new center
+                }
+                canvasState.layer.batchDraw();
+                canvasState.gridLayer.batchDraw();
+            });
 
             // Implement zoom and pan
             canvasState.stage.on('wheel', (e) => {
@@ -908,29 +814,6 @@
             });
 
             canvasState.stage.draggable(true); // Enable dragging for pan
-        }
-
-        /** Handles resizing the canvas and restarting D3 simulation. */
-        function handleCanvasResize() {
-            // Adjust main content area margin based on sidebar state
-            if (window.innerWidth < 1024) { // Mobile
-                mainContentArea.style.marginLeft = isSidebarOpen ? 'var(--sidebar-width-mobile)' : '0';
-            } else { // Desktop
-                mainContentArea.style.marginLeft = isSidebarOpen ? `var(--sidebar-width-desktop)` : `var(--sidebar-collapsed-width-desktop)`;
-            }
-
-            // Update Konva stage size
-            canvasState.stage.width(canvasContainer.offsetWidth);
-            canvasState.stage.height(canvasContainer.offsetHeight);
-            drawGrid(); // Redraw grid on resize
-            if (canvasState.d3Simulation) {
-                // Re-center force layout if active
-                canvasState.d3Simulation.force("center", d3.forceCenter(canvasState.stage.width() / 2, canvasState.stage.height() / 2));
-                // Restart simulation with a gentle alpha decay to allow nodes to re-settle gracefully
-                canvasState.d3Simulation.alpha(CONSTANTS.D3_SIMULATION_ALPHA_TARGET_DRAG).restart(); 
-            }
-            canvasState.layer.batchDraw();
-            canvasState.gridLayer.batchDraw();
         }
 
         /** Draws a grid on the canvas. */
@@ -1143,7 +1026,6 @@
          * Sets up the D3 force simulation with provided nodes and links.
          * @param {Array<object>} d3Nodes - Array of D3 nodes.
          * @param {Array<object>} d3Links - Array of D3 links.
-         * @param {object} lessonData - The JSON object containing nodes and connections (used for initial Y positioning).
          */
         function setupD3Simulation(d3Nodes, d3Links, lessonData) {
             // Stop any active D3 simulation
@@ -1157,8 +1039,8 @@
                 .force("center", d3.forceCenter(canvasState.stage.width() / 2, canvasState.stage.height() / 2))
                 .force("x", d3.forceX(canvasState.stage.width() / 2).strength(0.3))
                 .force("y", d3.forceY(d => {
-                    // Distribute nodes vertically based on their original order
                     const nodeIndex = lessonData.nodes.findIndex(n => n.id === d.id);
+                    // Distribute nodes vertically based on their original order
                     return canvasState.stage.height() * (0.1 + (nodeIndex / Math.max(1, lessonData.nodes.length -1)) * 0.8);
                 }).strength(1.5)) 
                 .force("collide", d3.forceCollide().radius(d => Math.max(d.konvaRect.width(), d.konvaRect.height()) / 2 + CONSTANTS.D3_COLLIDE_PADDING).iterations(CONSTANTS.D3_COLLIDE_ITERATIONS))
@@ -1442,10 +1324,11 @@
          */
         function showTermModal(term, context) {
             modalTermTitle.textContent = `Giải thích: "${term}"`;
-            modalTermExplanation.innerHTML = `Bạn muốn tôi giải thích rõ hơn về "${term}"? <span class="blinking-cursor"></span>`; // Placeholder and blinking cursor
+            modalTermExplanation.textContent = `Bạn muốn tôi giải thích rõ hơn về "${term}"?`; // Placeholder for now
             termModal.style.display = 'flex'; // Use flex to center the modal
 
             // Event listener for "Ask AI for more details" button inside modal
+            // Ensure this listener is only added once or remove previous before adding
             askAiMoreBtn.onclick = () => {
                 const query = `Giải thích chi tiết về "${term}" trong ngữ cảnh "${context.substring(0, 200)}..."`;
                 sendMessage(query, true); // Send as a term explanation query
@@ -1463,61 +1346,8 @@
                 termModal.style.display = 'none';
             }
         });
-
-        // --- TOGGLE SIDEBAR LOGIC ---
-        /** Toggles the visibility/width of the sidebar. */
-        function toggleChatbox() {
-            isSidebarOpen = !isSidebarOpen;
-            
-            if (isSidebarOpen) {
-                chatViewContainer.classList.remove('is-closed');
-                chatViewContainer.classList.add('is-open');
-                toggleChatCloseIcon.classList.remove('hidden'); // Show left arrow (to close)
-                toggleChatOpenIcon.classList.add('hidden');    // Hide right arrow (to open)
-            } else {
-                chatViewContainer.classList.remove('is-open');
-                chatViewContainer.classList.add('is-closed');
-                toggleChatCloseIcon.classList.add('hidden');     // Hide left arrow (to close)
-                toggleChatOpenIcon.classList.remove('hidden');  // Show right arrow (to open)
-            }
-
-            // Adjust main content area margin immediately for smooth transition
-            handleCanvasResize();
-            
-            // Re-render canvas after sidebar transition is complete
-            setTimeout(() => {
-                if (canvasState.d3Simulation) {
-                    canvasState.d3Simulation.alpha(CONSTANTS.D3_SIMULATION_INITIAL_ALPHA).restart();
-                    setTimeout(() => {
-                        canvasState.d3Simulation.alphaTarget(0);
-                    }, CONSTANTS.D3_SIMULATION_STOP_TIMEOUT);
-                }
-                canvasState.layer.batchDraw();
-                canvasState.gridLayer.batchDraw();
-            }, 350); // A bit longer than the CSS transition (0.3s)
-        }
-
+        
         document.addEventListener('DOMContentLoaded', () => {
-            // Initial setup for sidebar state (open by default)
-            isSidebarOpen = true; // Ensure it starts open
-            chatViewContainer.classList.add('is-open');
-            chatViewContainer.classList.remove('is-closed');
-            toggleChatCloseIcon.classList.remove('hidden'); // Show left arrow (to close)
-            toggleChatOpenIcon.classList.add('hidden');    // Hide right arrow (to open)
-            
-            // Set initial margin for main content area based on sidebar state
-            if (window.innerWidth < 1024) { // Mobile
-                mainContentArea.style.marginLeft = 'var(--sidebar-width-mobile)';
-            } else { // Desktop
-                mainContentArea.style.marginLeft = `var(--sidebar-width-desktop)`;
-            }
-
-            // Set initial CSS variables
-            document.documentElement.style.setProperty('--sidebar-width-mobile', '100vw');
-            document.documentElement.style.setProperty('--sidebar-width-desktop', `${CONSTANTS.SIDEBAR_WIDTH_DESKTOP}px`);
-            document.documentElement.style.setProperty('--sidebar-collapsed-width-desktop', `${CONSTANTS.SIDEBAR_COLLAPSED_WIDTH_DESKTOP}px`);
-
-
             if (chatContainer) {
                 chatContainer.addEventListener("scroll", toggleScrollToTopButton);
             }
@@ -1553,11 +1383,6 @@
                         showToast('Không có sơ đồ để sắp xếp. Hãy tạo một bài học trước.', 'info');
                     }
                 });
-            }
-
-            // Assign event to Toggle Chat button
-            if (toggleChatBtn) {
-                toggleChatBtn.addEventListener('click', toggleChatbox);
             }
         });
 
