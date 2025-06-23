@@ -11,11 +11,13 @@
             --scrollbar-track-bg: #f1f1f1;
             --scrollbar-thumb-bg: #888;
             --scrollbar-thumb-hover-bg: #555;
+            --border-color: #e2e8f0; /* Default light border */
         }
         .dark {
             --scrollbar-track-bg: #2d3748;
             --scrollbar-thumb-bg: #718096;
             --scrollbar-thumb-hover-bg: #a0aec0;
+            --border-color: #334155; /* Default dark border */
         }
         body {
             overflow: hidden; /* Ngăn cuộn toàn bộ trang */
@@ -141,31 +143,44 @@
             color: white;
         }
 
-        /* Responsive chat view container */
+        /* Chat view container states */
         .chat-view-container {
-            transition: width 0.3s ease-in-out, min-width 0.3s ease-in-out;
-            border-right: none; /* Default hidden border, will be added by JS if expanded */
-        }
-        .chat-view-container.expanded {
-            width: 100% !important; /* Take full width on small screens */
-            min-width: 300px !important; /* Minimum width to prevent unreadable content */
-            border-right: 1px solid var(--border-color) !important; /* Dynamic border */
-        }
-        .chat-view-container.collapsed {
-            width: 0 !important; /* Force override Tailwind if present */
-            min-width: 0 !important;
-            overflow: hidden;
-            border-right: none !important; /* Hide border when collapsed */
+            transition: width 0.3s ease-in-out, min-width 0.3s ease-in-out, border-right-width 0.3s ease-in-out;
+            border-right: 1px solid var(--border-color); /* Default border when expanded */
         }
 
-        /* Media query for larger screens */
+        .chat-view-container.is-collapsed {
+            width: 0 !important; /* Force collapse on small screens */
+            min-width: 0 !important;
+            overflow: hidden; /* Hide content */
+            border-right: none !important; /* Remove border */
+        }
+
+        .chat-view-container.is-collapsed #chat-content-wrapper,
+        .chat-view-container.is-collapsed .p-4:last-child {
+            display: none; /* Hide chat messages and input area when collapsed */
+        }
+
         @media (min-width: 1024px) { /* lg breakpoint */
-            .chat-view-container.expanded {
-                width: 33.333333% !important; /* Match lg:w-1/3 on large screens */
+            .chat-view-container:not(.is-collapsed) {
+                width: 33.333333% !important; /* Default expanded width for desktop */
+                min-width: 300px !important;
             }
-            .chat-view-container.collapsed {
-                width: 60px !important; /* Small visible bar with toggle button */
+            .chat-view-container.is-collapsed {
+                width: 60px !important; /* Small visible bar with toggle button on desktop */
                 min-width: 60px !important;
+            }
+            .chat-view-container.is-collapsed #chat-content-wrapper,
+            .chat-view-container.is-collapsed .p-4:last-child {
+                display: flex; /* Re-enable flex for header elements that are always there */
+                flex-direction: column; /* Ensure header components stack vertically if needed */
+                justify-content: flex-start;
+                align-items: center; /* Center header content */
+            }
+            /* Explicitly hide chat area and input when collapsed on desktop */
+            .chat-view-container.is-collapsed #chat-container,
+            .chat-view-container.is-collapsed .p-4:last-child > #input-area-wrapper {
+                display: none !important; 
             }
         }
     </style>
@@ -176,7 +191,7 @@
     <div id="app-container" class="flex flex-1 overflow-hidden">
 
         <!-- Phần Box Chat (Bên trái) -->
-        <div id="chat-view-container" class="flex flex-col h-full bg-gray-50 dark:bg-slate-900 flex-shrink-0 chat-view-container expanded">
+        <div id="chat-view-container" class="flex flex-col h-full bg-gray-50 dark:bg-slate-900 flex-shrink-0">
             <header id="main-header" class="flex-shrink-0 flex justify-between items-center p-3 sm:p-4 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
                 <div class="flex items-center gap-3">
                     <span class="text-2xl">📚</span> <!-- Biểu tượng cho chế độ học tập -->
@@ -206,35 +221,38 @@
                 </div>
             </header>
 
-            <!-- Khu vực hiển thị tin nhắn chat -->
-            <div id="chat-container" class="flex-1 px-4 pt-4 space-y-4 overflow-y-auto relative">
-                <div id="notification-area" class="hidden sticky bottom-2 w-full flex justify-center">
-                    <div class="bg-blue-100 dark:bg-slate-700 text-blue-800 dark:text-blue-200 text-xs font-semibold px-4 py-2 rounded-full shadow-lg">
-                        Đang tối ưu hóa...
+            <!-- Wrapper cho nội dung chat và input để ẩn/hiện -->
+            <div id="chat-content-wrapper" class="flex flex-col flex-1">
+                <!-- Khu vực hiển thị tin nhắn chat -->
+                <div id="chat-container" class="flex-1 px-4 pt-4 space-y-4 overflow-y-auto relative">
+                    <div id="notification-area" class="hidden sticky bottom-2 w-full flex justify-center">
+                        <div class="bg-blue-100 dark:bg-slate-700 text-blue-800 dark:text-blue-200 text-xs font-semibold px-4 py-2 rounded-full shadow-lg">
+                            Đang tối ưu hóa...
+                        </div>
                     </div>
+                    <!-- Nút cuộn lên đầu trang -->
+                    <button id="scrollToTopBtn" title="Cuộn lên đầu">
+                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l7.5-7.5 7.5 7.5m-15 6l7.5-7.5 7.5 7.5" /></svg>
+                    </button>
                 </div>
-                <!-- Nút cuộn lên đầu trang -->
-                <button id="scrollToTopBtn" title="Cuộn lên đầu">
-                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l7.5-7.5 7.5 7.5m-15 6l7.5-7.5 7.5 7.5" /></svg>
-                </button>
-            </div>
 
-            <!-- Vùng nhập liệu chat -->
-            <div class="p-4 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700">
-                <div id="input-area-wrapper" class="rounded-full">
-                    <div id="input-area" class="flex items-center gap-3 bg-gray-100 dark:bg-slate-700 rounded-full p-2">
-                        <textarea id="prompt-input" rows="1" placeholder="Nhập câu hỏi hoặc yêu cầu học tập..." class="flex-1 bg-transparent px-3 py-2 resize-none focus:outline-none dark:text-gray-200 dark:placeholder-gray-400"></textarea>
-                        <!-- Nút ghi âm -->
-                        <button id="record-btn" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors" title="Ghi âm">
-                            <svg class="w-6 h-6 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
-                        </button>
-                        <!-- Nút gửi -->
-                        <button id="send-btn" class="w-10 h-10 flex items-center justify-center bg-blue-600 rounded-full text-white hover:bg-blue-700 transition-colors disabled:bg-blue-300 dark:disabled:bg-blue-800 disabled:cursor-not-allowed" title="Gửi">
-                            <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2 .01 7z"/></svg>
-                        </button>
+                <!-- Vùng nhập liệu chat -->
+                <div class="p-4 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700">
+                    <div id="input-area-wrapper" class="rounded-full">
+                        <div id="input-area" class="flex items-center gap-3 bg-gray-100 dark:bg-slate-700 rounded-full p-2">
+                            <textarea id="prompt-input" rows="1" placeholder="Nhập câu hỏi hoặc yêu cầu học tập..." class="flex-1 bg-transparent px-3 py-2 resize-none focus:outline-none dark:text-gray-200 dark:placeholder-gray-400"></textarea>
+                            <!-- Nút ghi âm -->
+                            <button id="record-btn" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors" title="Ghi âm">
+                                <svg class="w-6 h-6 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+                            </button>
+                            <!-- Nút gửi -->
+                            <button id="send-btn" class="w-10 h-10 flex items-center justify-center bg-blue-600 rounded-full text-white hover:bg-blue-700 transition-colors disabled:bg-blue-300 dark:disabled:bg-blue-800 disabled:cursor-not-allowed" title="Gửi">
+                                <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2 .01 7z"/></svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </div> <!-- End chat-content-wrapper -->
         </div>
 
         <!-- Phần Canvas (Bên phải) -->
@@ -301,13 +319,13 @@
             MIN_NODE_HEIGHT: 60,
             GRID_SIZE: 50, // Distance between grid lines on canvas
             CANVAS_ZOOM_SCALE_FACTOR: 1.1, // Zoom increment factor
-            D3_LINK_DISTANCE: 220, // Ideal distance between linked nodes
-            D3_CHARGE_STRENGTH: -800, // Repulsion force between nodes
-            D3_COLLIDE_PADDING: 20, // Padding for collision detection
-            D3_COLLIDE_ITERATIONS: 3, // Iterations for collision force
+            D3_LINK_DISTANCE: 250, // Tăng khoảng cách giữa các node
+            D3_CHARGE_STRENGTH: -1000, // Tăng lực đẩy giữa các node mạnh hơn nữa
+            D3_COLLIDE_PADDING: 30, // Tăng padding cho va chạm
+            D3_COLLIDE_ITERATIONS: 4, // Tăng số lần lặp lại cho lực va chạm
             D3_SIMULATION_ALPHA_TARGET_DRAG: 0.3, // Alpha target when dragging a node
             D3_SIMULATION_INITIAL_ALPHA: 1, // Initial alpha for simulation restart
-            D3_SIMULATION_STOP_TIMEOUT: 3000, // Time in ms to run simulation initially
+            D3_SIMULATION_STOP_TIMEOUT: 4000, // Tăng thời gian chạy simulation ban đầu
             TOAST_DISPLAY_TIME: 4000, // Time in ms for toast messages to display
             CHAT_SCROLL_THRESHOLD: 0.5 // Percentage of chat height to scroll before showing "scroll to top" button
         };
@@ -316,7 +334,7 @@
         let localHistory = []; // Stores the full conversation history (text-only for AI)
         let isRecording = false; // Speech recording state
         let activeSpeech = null; // Tracks current speech synthesis utterance
-        let isChatExpanded = true; // State for chatbox expansion
+        let isChatCollapsed = false; // State for chatbox (false = expanded, true = collapsed)
 
         // Canvas state management object
         const canvasState = {
@@ -332,13 +350,13 @@
         const appContainer = document.getElementById('app-container');
         const chatViewContainer = document.getElementById('chat-view-container');
         const mainHeader = document.getElementById('main-header');
+        const chatContentWrapper = document.getElementById('chat-content-wrapper'); // New wrapper for toggling
         const themeToggle = document.getElementById('theme-toggle');
         const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
         const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
         const chatContainer = document.getElementById('chat-container');
         const notificationArea = document.getElementById('notification-area');
         const inputAreaWrapper = document.getElementById('input-area-wrapper');
-        const inputArea = document.getElementById('input-area');
         const promptInput = document.getElementById('prompt-input');
         const recordBtn = document.getElementById('record-btn');
         const sendBtn = document.getElementById('send-btn');
@@ -349,7 +367,7 @@
         const canvasPlaceholder = document.getElementById('canvas-placeholder');
         const clearCanvasBtn = document.getElementById('clear-canvas-btn');
         const activateForceLayoutBtn = document.getElementById('activate-force-layout-btn');
-        const toggleChatBtn = document.getElementById('toggle-chat-btn'); // New toggle chat button
+        const toggleChatBtn = document.getElementById('toggle-chat-btn'); 
         const toggleChatOpenIcon = document.getElementById('toggle-chat-open-icon');
         const toggleChatCloseIcon = document.getElementById('toggle-chat-close-icon');
 
@@ -550,9 +568,15 @@
             if (document.documentElement.classList.contains('dark')) {
                 themeToggleDarkIcon.classList.add('hidden');
                 themeToggleLightIcon.classList.remove('hidden');
+                document.documentElement.style.setProperty('--border-color', '#334155'); /* Set dark border for chatbox */
             } else {
                 themeToggleDarkIcon.classList.remove('hidden');
                 themeToggleLightIcon.classList.add('hidden');
+                document.documentElement.style.setProperty('--border-color', '#e2e8f0'); /* Set light border for chatbox */
+            }
+            // Reapply border style to chatViewContainer based on current state
+            if (!isChatCollapsed) { // Only if chat is expanded
+                chatViewContainer.style.borderRight = `1px solid var(--border-color)`;
             }
         };
         themeToggle.addEventListener('click', () => {
@@ -1072,6 +1096,7 @@
          * Sets up the D3 force simulation with provided nodes and links.
          * @param {Array<object>} d3Nodes - Array of D3 nodes.
          * @param {Array<object>} d3Links - Array of D3 links.
+         * @param {object} lessonData - The JSON object containing nodes and connections (used for initial Y positioning).
          */
         function setupD3Simulation(d3Nodes, d3Links, lessonData) {
             // Stop any active D3 simulation
@@ -1085,8 +1110,8 @@
                 .force("center", d3.forceCenter(canvasState.stage.width() / 2, canvasState.stage.height() / 2))
                 .force("x", d3.forceX(canvasState.stage.width() / 2).strength(0.3))
                 .force("y", d3.forceY(d => {
-                    const nodeIndex = lessonData.nodes.findIndex(n => n.id === d.id);
                     // Distribute nodes vertically based on their original order
+                    const nodeIndex = lessonData.nodes.findIndex(n => n.id === d.id);
                     return canvasState.stage.height() * (0.1 + (nodeIndex / Math.max(1, lessonData.nodes.length -1)) * 0.8);
                 }).strength(1.5)) 
                 .force("collide", d3.forceCollide().radius(d => Math.max(d.konvaRect.width(), d.konvaRect.height()) / 2 + CONSTANTS.D3_COLLIDE_PADDING).iterations(CONSTANTS.D3_COLLIDE_ITERATIONS))
@@ -1396,21 +1421,22 @@
         // --- TOGGLE CHATBOX LOGIC ---
         /** Toggles the visibility/width of the chatbox. */
         function toggleChatbox() {
-            isChatExpanded = !isChatExpanded;
-            const borderColor = document.documentElement.classList.contains('dark') ? '#334155' : '#e2e8f0'; // slate-700 or gray-200
-
-            if (isChatExpanded) {
-                chatViewContainer.classList.add('expanded');
-                chatViewContainer.classList.remove('collapsed');
-                chatViewContainer.style.setProperty('--border-color', borderColor); // Set dynamic border color
-                toggleChatOpenIcon.classList.remove('hidden');
-                toggleChatCloseIcon.classList.add('hidden');
-            } else {
-                chatViewContainer.classList.add('collapsed');
-                chatViewContainer.classList.remove('expanded');
-                chatViewContainer.style.setProperty('--border-color', 'transparent'); // No border when collapsed
+            isChatCollapsed = !isChatCollapsed;
+            
+            if (isChatCollapsed) {
+                chatViewContainer.classList.add('is-collapsed');
                 toggleChatOpenIcon.classList.add('hidden');
                 toggleChatCloseIcon.classList.remove('hidden');
+                // Hide specific content elements within the chatbox
+                chatContentWrapper.style.display = 'none'; 
+                chatViewContainer.style.borderRight = 'none'; // Explicitly remove border
+            } else {
+                chatViewContainer.classList.remove('is-collapsed');
+                toggleChatOpenIcon.classList.remove('hidden');
+                toggleChatCloseIcon.classList.add('hidden');
+                // Show specific content elements within the chatbox
+                chatContentWrapper.style.display = 'flex'; // Re-enable flex for its children
+                chatViewContainer.style.borderRight = `1px solid var(--border-color)`; // Re-add border
             }
 
             // Trigger a canvas resize to make the mindmap re-arrange
@@ -1421,21 +1447,13 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Initialize chatbox state based on `isChatExpanded`
-            if (isChatExpanded) {
-                chatViewContainer.classList.add('expanded');
-                chatViewContainer.classList.remove('collapsed');
-                toggleChatOpenIcon.classList.remove('hidden');
-                toggleChatCloseIcon.classList.add('hidden');
-                chatViewContainer.style.setProperty('--border-color', document.documentElement.classList.contains('dark') ? '#334155' : '#e2e8f0');
-            } else {
-                chatViewContainer.classList.add('collapsed');
-                chatViewContainer.classList.remove('expanded');
-                toggleChatOpenIcon.classList.add('hidden');
-                toggleChatCloseIcon.classList.remove('hidden');
-                chatViewContainer.style.setProperty('--border-color', 'transparent');
-            }
-
+            // Initial setup for chatbox state (expanded by default)
+            isChatCollapsed = false; // Ensure it starts expanded
+            chatViewContainer.classList.remove('is-collapsed');
+            toggleChatOpenIcon.classList.remove('hidden');
+            toggleChatCloseIcon.classList.add('hidden');
+            chatContentWrapper.style.display = 'flex'; // Ensure content is visible initially
+            chatViewContainer.style.borderRight = `1px solid var(--border-color)`; // Initial border
 
             if (chatContainer) {
                 chatContainer.addEventListener("scroll", toggleScrollToTopButton);
