@@ -142,27 +142,30 @@
         }
 
         /* Responsive chat view container */
-        .chat-view-container-collapsed {
+        .chat-view-container {
+            transition: width 0.3s ease-in-out, min-width 0.3s ease-in-out;
+            border-right: none; /* Default hidden border, will be added by JS if expanded */
+        }
+        .chat-view-container.expanded {
+            width: 100% !important; /* Take full width on small screens */
+            min-width: 300px !important; /* Minimum width to prevent unreadable content */
+            border-right: 1px solid var(--border-color) !important; /* Dynamic border */
+        }
+        .chat-view-container.collapsed {
             width: 0 !important; /* Force override Tailwind if present */
             min-width: 0 !important;
             overflow: hidden;
-            transition: width 0.3s ease-in-out, min-width 0.3s ease-in-out;
             border-right: none !important; /* Hide border when collapsed */
         }
-        .chat-view-container-expanded {
-            width: 100% !important; /* Take full width on small screens */
-            min-width: 300px !important; /* Minimum width to prevent unreadable content */
-            transition: width 0.3s ease-in-out, min-width 0.3s ease-in-out;
-            /* Border properties handled by Tailwind classes on the element directly */
-        }
 
+        /* Media query for larger screens */
         @media (min-width: 1024px) { /* lg breakpoint */
-            .chat-view-container-collapsed {
+            .chat-view-container.expanded {
+                width: 33.333333% !important; /* Match lg:w-1/3 on large screens */
+            }
+            .chat-view-container.collapsed {
                 width: 60px !important; /* Small visible bar with toggle button */
                 min-width: 60px !important;
-            }
-            .chat-view-container-expanded {
-                width: 33.333333% !important; /* Match lg:w-1/3 on large screens */
             }
         }
     </style>
@@ -173,7 +176,7 @@
     <div id="app-container" class="flex flex-1 overflow-hidden">
 
         <!-- Phần Box Chat (Bên trái) -->
-        <div id="chat-view-container" class="flex flex-col h-full bg-gray-50 dark:bg-slate-900 flex-shrink-0 border-r border-gray-200 dark:border-slate-700 chat-view-container-expanded">
+        <div id="chat-view-container" class="flex flex-col h-full bg-gray-50 dark:bg-slate-900 flex-shrink-0 chat-view-container expanded">
             <header id="main-header" class="flex-shrink-0 flex justify-between items-center p-3 sm:p-4 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
                 <div class="flex items-center gap-3">
                     <span class="text-2xl">📚</span> <!-- Biểu tượng cho chế độ học tập -->
@@ -852,7 +855,8 @@
             if (canvasState.d3Simulation) {
                 // Re-center force layout if active
                 canvasState.d3Simulation.force("center", d3.forceCenter(canvasState.stage.width() / 2, canvasState.stage.height() / 2));
-                canvasState.d3Simulation.alpha(CONSTANTS.D3_SIMULATION_ALPHA_TARGET_DRAG).restart(); // Restart simulation for new center
+                // Restart simulation with a gentle alpha decay to allow nodes to re-settle gracefully
+                canvasState.d3Simulation.alpha(CONSTANTS.D3_SIMULATION_ALPHA_TARGET_DRAG).restart(); 
             }
             canvasState.layer.batchDraw();
             canvasState.gridLayer.batchDraw();
@@ -1393,14 +1397,18 @@
         /** Toggles the visibility/width of the chatbox. */
         function toggleChatbox() {
             isChatExpanded = !isChatExpanded;
+            const borderColor = document.documentElement.classList.contains('dark') ? '#334155' : '#e2e8f0'; // slate-700 or gray-200
+
             if (isChatExpanded) {
-                chatViewContainer.classList.remove('chat-view-container-collapsed');
-                chatViewContainer.classList.add('chat-view-container-expanded');
+                chatViewContainer.classList.add('expanded');
+                chatViewContainer.classList.remove('collapsed');
+                chatViewContainer.style.setProperty('--border-color', borderColor); // Set dynamic border color
                 toggleChatOpenIcon.classList.remove('hidden');
                 toggleChatCloseIcon.classList.add('hidden');
             } else {
-                chatViewContainer.classList.remove('chat-view-container-expanded');
-                chatViewContainer.classList.add('chat-view-container-collapsed');
+                chatViewContainer.classList.add('collapsed');
+                chatViewContainer.classList.remove('expanded');
+                chatViewContainer.style.setProperty('--border-color', 'transparent'); // No border when collapsed
                 toggleChatOpenIcon.classList.add('hidden');
                 toggleChatCloseIcon.classList.remove('hidden');
             }
@@ -1413,6 +1421,22 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            // Initialize chatbox state based on `isChatExpanded`
+            if (isChatExpanded) {
+                chatViewContainer.classList.add('expanded');
+                chatViewContainer.classList.remove('collapsed');
+                toggleChatOpenIcon.classList.remove('hidden');
+                toggleChatCloseIcon.classList.add('hidden');
+                chatViewContainer.style.setProperty('--border-color', document.documentElement.classList.contains('dark') ? '#334155' : '#e2e8f0');
+            } else {
+                chatViewContainer.classList.add('collapsed');
+                chatViewContainer.classList.remove('expanded');
+                toggleChatOpenIcon.classList.add('hidden');
+                toggleChatCloseIcon.classList.remove('hidden');
+                chatViewContainer.style.setProperty('--border-color', 'transparent');
+            }
+
+
             if (chatContainer) {
                 chatContainer.addEventListener("scroll", toggleScrollToTopButton);
             }
