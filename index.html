@@ -892,17 +892,19 @@
                     id: nodeData.id, 
                     konvaGroup: group,
                     konvaRect: rect, // Store reference to rect for getRectIntersectionPoint
-                    isMainTopic: nodeData.isMainTopic || false // Pass main topic flag to D3 node
+                    isMainTopic: nodeData.isMainTopic || false 
                 };
                 d3Nodes.push(d3Node);
                 currentKonvaNodes.push(d3Node); // Store for later access (e.g., force layout activation)
 
-                // Add click event for description
-                if (nodeData.description) {
-                    group.on('click', () => {
-                        showToast(`Description: ${nodeData.description}`, 'info');
-                    });
-                }
+                // Add click event for description - MODIFIED
+                group.on('click', () => {
+                    if (nodeData.description && nodeData.description.trim() !== '') {
+                        addMessage('ai', `**Mô tả chi tiết cho "${nodeData.text}":**\n\n${nodeData.description}`);
+                    } else {
+                        showToast(`Không có mô tả chi tiết cho node "${nodeData.text}".`, 'info');
+                    }
+                });
             });
 
             // Map d3Nodes for easier link creation
