@@ -1175,7 +1175,6 @@
                         layer.destroyChildren();
                         layer.batchDraw();
                         canvasPlaceholder.classList.remove('hidden'); // Hiển thị lại placeholder
-                        // Removed D3.js related logic: if (d3Simulation) { d3Simulation.stop(); }
                     }
                 });
             }
@@ -1197,6 +1196,13 @@
                         sendMessage();
                         clickedNodeData = null; // Xóa dữ liệu node đã lưu
                     }
+                });
+            }
+
+            // Fix: Stop propagation for clicks on the context menu itself
+            if (nodeContextMenu) {
+                nodeContextMenu.addEventListener('click', (e) => {
+                    e.stopPropagation();
                 });
             }
         });
