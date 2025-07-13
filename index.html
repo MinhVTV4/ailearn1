@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Học Tập Tương Tác (v2)</title>
+    <title>AI Học Tập Tương Tác (v3 - Tích hợp Bài tập)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
@@ -84,6 +84,10 @@
                     <span class="text-lg font-bold text-gray-800 dark:text-gray-100">AI Học Tập</span>
                 </div>
                 <div class="flex items-center gap-1 sm:gap-2">
+                    <!-- NÚT MỚI: Tạo Bài tập -->
+                    <button id="create-exercise-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Tạo bài tập kiểm tra">
+                        <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+                    </button>
                     <!-- Nút Lưu Phiên -->
                     <button id="save-session-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Lưu phiên làm việc">
                         <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v12l-5-3-5 3V4z" /></svg>
@@ -92,7 +96,7 @@
                     <button id="load-session-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Tải phiên làm việc đã lưu">
                         <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 2.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
                     </button>
-                    <!-- Nút Phiên Mới (thay thế Xóa Canvas) -->
+                    <!-- Nút Phiên Mới -->
                     <button id="new-session-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Bắt đầu phiên mới (xóa mọi thứ)">
                         <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-10.293a1 1 0 00-1.414-1.414L6 9.586 4.707 8.293a1 1 0 00-1.414 1.414L7.586 11l-2.293 2.293a1 1 0 001.414 1.414L10 12.414l2.293 2.293a1 1 0 001.414-1.414L11.414 11l2.293-2.293a1 1 0 000-1.414z" clip-rule="evenodd" /></svg>
                     </button>
@@ -191,28 +195,27 @@
         const newSessionBtn = document.getElementById('new-session-btn');
         const saveSessionBtn = document.getElementById('save-session-btn');
         const loadSessionBtn = document.getElementById('load-session-btn');
+        const createExerciseBtn = document.getElementById('create-exercise-btn'); // New button
         const nodeContextMenu = document.getElementById('node-context-menu');
         const expandTopicBtn = document.getElementById('expand-topic-btn');
 
         let stage, layer, gridLayer;
 
+        // UPDATED SYSTEM PROMPT
         const LEARNING_SYSTEM_PROMPT = `
-        Bạn là một giáo viên AI chuyên nghiệp. Mục tiêu của bạn là giúp người học hiểu sâu về một chủ đề và tạo ra các thành phần trực quan.
+        Bạn là một giáo viên AI chuyên nghiệp. Mục tiêu của bạn là giúp người học hiểu sâu về một chủ đề, tạo ra các thành phần trực quan và kiểm tra kiến thức của họ.
         
         QUY TẮC CHUNG:
         1.  **Phân tích & Chia nhỏ:** Chia chủ đề thành các phần logic, có cấu trúc phân cấp.
         2.  **Giải thích Chatbox:** Cung cấp giải thích chi tiết, rõ ràng bằng Markdown.
-        3.  **Dữ liệu Canvas (QUAN TRỌNG):** Luôn tạo một đối tượng JSON để vẽ lên Canvas. JSON phải nằm trong khối code \`\`\`json.
-            - Phân bổ các node một cách có tổ chức trên canvas (giả định kích thước 800x600), cố gắng tránh chồng chéo ban đầu.
-            - Node đầu tiên trong mảng 'nodes' phải là node chủ đề chính, đánh dấu bằng "isMainTopic": true.
-            - Mỗi node phải có "description" đầy đủ.
+        3.  **Dữ liệu JSON (QUAN TRỌNG):** Luôn tạo một đối tượng JSON để ứng dụng xử lý. JSON phải nằm trong khối code \`\`\`json.
         
         QUY TẮC XỬ LÝ YÊU CẦU:
 
         A. NẾU YÊU CẦU LÀ MỘT CHỦ ĐỀ MỚI (ví dụ: "giải thích quang hợp"):
            - Hãy tạo một bài học hoàn chỉnh từ đầu.
-           - JSON của bạn phải chứa đầy đủ các node và kết nối cho toàn bộ chủ đề.
-           - Ví dụ JSON cho chủ đề mới:
+           - JSON của bạn phải là loại "lesson_data", chứa đầy đủ các node và kết nối cho toàn bộ chủ đề.
+           - Ví dụ JSON:
              \`\`\`json
              {
                "type": "lesson_data",
@@ -225,26 +228,48 @@
              }
              \`\`\`
 
-        B. NẾU YÊU CẦU BẮT ĐẦU BẰNG "ExpandTopic:", (ví dụ: "ExpandTopic: node2 - Chi tiết 1"):
+        B. NẾU YÊU CẦU BẮT ĐẦU BẰNG "ExpandTopic:":
            - Đây là yêu cầu mở rộng một node ĐÃ CÓ trên canvas.
-           - **CHỈ tạo ra các node và kết nối MỚI** liên quan đến node cha đó.
-           - **KHÔNG được tạo lại các node đã có.**
-           - Các kết nối mới phải xuất phát từ node cha (ví dụ: "from": "node2").
-           - Ví dụ JSON cho yêu cầu mở rộng:
+           - JSON của bạn phải là loại "lesson_expansion", CHỈ chứa các node và kết nối MỚI.
+           - Ví dụ JSON:
              \`\`\`json
              {
                "type": "lesson_expansion",
                "title": "Mở rộng: Chi tiết 1",
-               "nodes": [
-                 { "id": "node2_sub1", "type": "example", "text": "Ví dụ cho Chi tiết 1", "description": "...", "x": 450, "y": 100, "color": "#DDA0DD" },
-                 { "id": "node2_sub2", "type": "sub-concept", "text": "Khái niệm con", "description": "...", "x": 450, "y": 200, "color": "#DDA0DD" }
-               ],
-               "connections": [
-                 { "from": "node2", "to": "node2_sub1" },
-                 { "from": "node2", "to": "node2_sub2" }
-               ]
+               "nodes": [ { "id": "node2_sub1", "type": "example", "text": "Ví dụ", "description": "...", "x": 450, "y": 100, "color": "#DDA0DD" } ],
+               "connections": [ { "from": "node2", "to": "node2_sub1" } ]
              }
              \`\`\`
+
+        C. NẾU YÊU CẦU LÀ TẠO BÀI TẬP (ví dụ: "tạo bài tập", "kiểm tra tôi"):
+           - Phân tích chủ đề từ lịch sử trò chuyện hoặc yêu cầu.
+           - Tạo một đối tượng JSON DUY NHẤT loại "exercise_data".
+           - KHÔNG cung cấp lời giải thích hay đáp án trong phần văn bản chat. Chỉ đưa ra một lời dẫn ngắn gọn như "Hãy thử sức với bài tập này nhé!".
+           - Ví dụ JSON:
+             \`\`\`json
+             {
+               "type": "exercise_data",
+               "title": "Bài tập về [Chủ đề]",
+               "exercise_id": "ex_${Date.now()}",
+               "question_type": "mcq",
+               "question_text": "Câu hỏi chính ở đây là gì?",
+               "options": [
+                 { "id": "A", "text": "Lựa chọn A" },
+                 { "id": "B", "text": "Lựa chọn B" },
+                 { "id": "C", "text": "Lựa chọn C" }
+               ],
+               "evaluation_criteria": {
+                 "correct_answer_id": "B",
+                 "explanation": "Giải thích chi tiết tại sao đáp án này lại đúng, và tại sao các đáp án khác sai."
+               }
+             }
+             \`\`\`
+
+        D. NẾU YÊU CẦU LÀ CHẤM ĐIỂM (định dạng "EvaluateAnswer: {...}"):
+           - Dựa vào đối tượng JSON được cung cấp chứa câu hỏi, câu trả lời của người dùng và tiêu chí đánh giá.
+           - So sánh câu trả lời của người dùng với đáp án đúng.
+           - Cung cấp một phản hồi thân thiện, mang tính xây dựng.
+           - Nếu sai, hãy giải thích rõ ràng dựa trên "explanation". Nếu đúng, hãy khen ngợi và củng cố kiến thức.
         `;
 
         // --- HÀM TIỆN ÍCH ---
@@ -306,7 +331,13 @@
             chatHistory = savedSession.chatHistory || [];
             sessionCanvasData = savedSession.canvasData || [];
 
-            chatHistory.forEach(msg => addMessage(msg.role, msg.parts[0].text, false));
+            chatHistory.forEach(msg => {
+                if (msg.role === 'exercise') {
+                    addMessage('exercise', msg.data, false);
+                } else {
+                    addMessage(msg.role, msg.parts[0].text, false);
+                }
+            });
             chatContainer.scrollTop = chatContainer.scrollHeight;
 
             if (isCanvasInitialized) {
@@ -347,7 +378,7 @@
                 if (savedSessionJSON) {
                     loadSession();
                 } else {
-                    addMessage('ai', 'Chào mừng! Hãy bắt đầu bằng cách hỏi một chủ đề.');
+                    addMessage('model', 'Chào mừng! Hãy bắt đầu bằng cách hỏi một chủ đề.');
                 }
             } else {
                 try {
@@ -383,26 +414,63 @@
         updateThemeIcon();
 
         // --- LOGIC CHAT ---
-        function addMessage(role, text, shouldScroll = true) {
+        function addMessage(role, data, shouldScroll = true) {
             const messageWrapper = document.createElement('div');
-            let contentElem, statusElem, actionsContainer = null;
+            let contentElem, statusElem;
 
-            if (role === 'ai' || role === 'model') {
+            if (role === 'exercise') {
                 messageWrapper.className = 'w-full space-y-2';
-                messageWrapper.innerHTML = `<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full flex-shrink-0 bg-gradient-to-tr from-purple-400 to-indigo-500 flex items-center justify-center"><svg class="w-4 h-4 text-white" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor"><path d="M12 6c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6 2.69-6 6-6m0-2c-4.42 0-8 3.58-8 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8z"/><path d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg></div><span class="font-semibold text-gray-800 dark:text-gray-200">AI Học Tập</span></div><div class="ai-status text-xs text-gray-500"></div></div><div class="message-content text-gray-800 dark:text-gray-200"></div><div class="message-actions mt-1 flex justify-end items-center gap-2"></div>`;
+                let exerciseHtml = `
+                    <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-full flex-shrink-0 bg-gradient-to-tr from-green-400 to-cyan-500 flex items-center justify-center">
+                            <svg class="w-4 h-4 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+                        </div>
+                        <span class="font-semibold text-gray-800 dark:text-gray-200">Bài tập</span>
+                    </div>
+                    <div class="message-content p-4 border dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-slate-800/50">
+                        <p class="font-bold mb-2">${data.title}</p>
+                        <p class="mb-4">${data.question_text}</p>
+                        <form id="form-${data.exercise_id}">
+                            <div class="space-y-2">
+                                ${data.options.map(opt => `
+                                    <label class="flex items-center p-3 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors">
+                                        <input type="radio" name="answer" value="${opt.id}" class="mr-3 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                                        <span>${opt.text}</span>
+                                    </label>
+                                `).join('')}
+                            </div>
+                            <button type="submit" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">Nộp bài</button>
+                        </form>
+                    </div>`;
+                messageWrapper.innerHTML = exerciseHtml;
+                chatContainer.appendChild(messageWrapper);
+                document.getElementById(`form-${data.exercise_id}`).addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const userAnswerId = new FormData(e.target).get('answer');
+                    if (userAnswerId) {
+                        handleExerciseSubmission(data, userAnswerId);
+                    } else {
+                        showToast("Bạn chưa chọn đáp án!", "error");
+                    }
+                });
+                chatHistory.push({ role: 'exercise', data: data });
+            } else if (role === 'model' || role === 'ai') {
+                messageWrapper.className = 'w-full space-y-2';
+                messageWrapper.innerHTML = `<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full flex-shrink-0 bg-gradient-to-tr from-purple-400 to-indigo-500 flex items-center justify-center"><svg class="w-4 h-4 text-white" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor"><path d="M12 6c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6 2.69-6 6-6m0-2c-4.42 0-8 3.58-8 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8z"/><path d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg></div><span class="font-semibold text-gray-800 dark:text-gray-200">AI Học Tập</span></div><div class="ai-status text-xs text-gray-500"></div></div><div class="message-content text-gray-800 dark:text-gray-200"></div>`;
                 contentElem = messageWrapper.querySelector('.message-content');
                 statusElem = messageWrapper.querySelector('.ai-status');
-                actionsContainer = messageWrapper.querySelector('.message-actions');
-            } else {
+                contentElem.innerHTML = DOMPurify.sanitize(marked.parse(data));
+                chatContainer.appendChild(messageWrapper);
+            } else { // user
                 messageWrapper.className = 'flex justify-end';
                 messageWrapper.innerHTML = `<div class="message-content px-4 py-2 rounded-2xl bg-blue-600 dark:bg-blue-700 text-white max-w-xs sm:max-w-md lg:max-w-2xl"></div>`;
                 contentElem = messageWrapper.querySelector('.message-content');
+                contentElem.innerHTML = DOMPurify.sanitize(marked.parse(data));
+                chatContainer.appendChild(messageWrapper);
             }
             
-            contentElem.innerHTML = DOMPurify.sanitize(marked.parse(text));
-            chatContainer.appendChild(messageWrapper);
             if (shouldScroll) chatContainer.scrollTop = chatContainer.scrollHeight;
-            return { messageWrapper, contentElem, statusElem, actionsContainer };
+            return { messageWrapper, contentElem, statusElem };
         }
         
         async function sendMessage() {
@@ -414,7 +482,6 @@
                 const topicName = promptText.split(" - ")[1] || "chủ đề";
                 addMessage('user', `(Mở rộng về: ${topicName})`);
             } else {
-                sessionCanvasData = [];
                 addMessage('user', promptText);
             }
 
@@ -425,11 +492,11 @@
 
             chatHistory.push({ role: 'user', parts: [{ text: promptText }] });
 
-            const { contentElem, statusElem } = addMessage('ai', '<span class="blinking-cursor"></span>');
+            const { contentElem, statusElem } = addMessage('model', '<span class="blinking-cursor"></span>');
             if (statusElem) statusElem.textContent = 'Đang nghĩ...';
 
             try {
-                const historyForApiModel = chatHistory.map(msg => ({ role: msg.role, parts: msg.parts }));
+                const historyForApiModel = chatHistory.filter(msg => msg.role !== 'exercise').map(msg => ({ role: msg.role === 'ai' ? 'model' : msg.role, parts: msg.parts }));
                 const chatSession = model.startChat({ history: historyForApiModel.slice(0, -1) });
                 const result = await chatSession.sendMessageStream(LEARNING_SYSTEM_PROMPT + "\nUser request: " + promptText);
 
@@ -453,19 +520,61 @@
                 const jsonStringMatch = fullResponseText.match(/```json\n([\s\S]*?)\n```/);
                 if (jsonStringMatch && jsonStringMatch[1]) {
                     try {
-                        const newCanvasData = JSON.parse(jsonStringMatch[1]);
-                        sessionCanvasData.push(newCanvasData);
-                        renderFullCanvasFromSession();
+                        const parsedData = JSON.parse(jsonStringMatch[1]);
+                        if (parsedData.type === 'lesson_data' || parsedData.type === 'lesson_expansion') {
+                            sessionCanvasData.push(parsedData);
+                            renderFullCanvasFromSession();
+                        } else if (parsedData.type === 'exercise_data') {
+                            addMessage('exercise', parsedData);
+                        }
                     } catch (e) {
-                        showToast("AI trả về dữ liệu canvas không hợp lệ.", "error");
+                        console.error("JSON Parse Error:", e);
+                        showToast("AI trả về dữ liệu không hợp lệ.", "error");
                     }
                 }
 
             } catch (error) {
+                console.error("Send Message Error:", error);
                 contentElem.innerHTML = `**Lỗi:** ${error.message}`;
                 showToast(`Lỗi gửi tin nhắn: ${error.message}`, 'error');
             } finally {
                 sendBtn.disabled = false;
+            }
+        }
+
+        async function handleExerciseSubmission(exerciseData, userAnswerId) {
+            const form = document.getElementById(`form-${exerciseData.exercise_id}`);
+            form.querySelectorAll('input, button').forEach(el => el.disabled = true);
+
+            const userAnswerText = exerciseData.options.find(o => o.id === userAnswerId).text;
+            addMessage('user', `(Câu trả lời của tôi: ${userAnswerText})`);
+
+            const { contentElem, statusElem } = addMessage('model', '<span class="blinking-cursor"></span>');
+            if (statusElem) statusElem.textContent = 'Đang chấm bài...';
+
+            const evaluationPrompt = `EvaluateAnswer: ${JSON.stringify({
+                question_text: exerciseData.question_text,
+                options: exerciseData.options,
+                user_answer_id: userAnswerId,
+                evaluation_criteria: exerciseData.evaluation_criteria
+            })}`;
+
+            try {
+                const chatSession = model.startChat({ history: chatHistory.filter(msg => msg.role !== 'exercise').map(msg => ({ role: msg.role === 'ai' ? 'model' : msg.role, parts: msg.parts })) });
+                const result = await chatSession.sendMessage(evaluationPrompt);
+                const response = await result.response;
+                const feedbackText = response.text();
+
+                contentElem.innerHTML = DOMPurify.sanitize(marked.parse(feedbackText));
+                if (statusElem) statusElem.classList.add('hidden');
+
+                chatHistory.push({ role: 'user', parts: [{ text: `(Đã trả lời bài tập ${exerciseData.exercise_id})` }] });
+                chatHistory.push({ role: 'model', parts: [{ text: feedbackText }] });
+
+            } catch (error) {
+                console.error("Evaluation Error:", error);
+                contentElem.innerHTML = `**Lỗi:** Có sự cố khi chấm bài của bạn.`;
+                showToast("Lỗi khi gửi bài tập để chấm điểm.", "error");
             }
         }
 
@@ -488,6 +597,7 @@
         }
         
         // --- LOGIC CANVAS (Konva.js) ---
+        // (Không thay đổi các hàm của Konva.js)
         function initOrUpdateCanvas(width, height) {
             if (!stage) {
                 stage = new Konva.Stage({ container: 'learning-canvas', width: width, height: height });
@@ -587,7 +697,6 @@
             });
         }
         
-        // NEW: Function to handle node repulsion
         function startRepulsionAnimation() {
             if (repulsionAnimation) {
                 repulsionAnimation.stop();
@@ -596,7 +705,7 @@
             repulsionAnimation = new Konva.Animation((frame) => {
                 let overlapping = false;
                 const nodes = layer.find('Group');
-                const PADDING = 10; // Extra space between nodes
+                const PADDING = 10;
 
                 for (let i = 0; i < nodes.length; i++) {
                     for (let j = i + 1; j < nodes.length; j++) {
@@ -612,13 +721,11 @@
                         )) {
                             overlapping = true;
                             
-                            // Calculate repulsion vector
                             const dx = rect2.x - rect1.x;
                             const dy = rect2.y - rect1.y;
                             const distance = Math.sqrt(dx * dx + dy * dy);
                             
-                            // Move nodes apart
-                            const moveX = (dx / distance) * 1; // Move 1 pixel per frame
+                            const moveX = (dx / distance) * 1;
                             const moveY = (dy / distance) * 1;
 
                             node1.x(node1.x() - moveX);
@@ -698,7 +805,7 @@
                 group.on('click', (e) => {
                     if (e.evt.button === 0) {
                         e.cancelBubble = true; 
-                        addMessage('ai', `**Chi tiết cho "${nodeData.text}":**\n\n${nodeData.description || 'Không có mô tả.'}`);
+                        addMessage('model', `**Chi tiết cho "${nodeData.text}":**\n\n${nodeData.description || 'Không có mô tả.'}`);
                     }
                 });
                 group.on('contextmenu', (e) => {
@@ -707,7 +814,6 @@
                     showNodeContextMenu(e.evt.clientX, e.evt.clientY);
                 });
                 group.on('dragmove', () => updateLinksForNode(group));
-                // NEW: Trigger repulsion after dragging
                 group.on('dragend', () => startRepulsionAnimation());
             });
 
@@ -722,8 +828,6 @@
 
             layer.find('Group').forEach(group => updateLinksForNode(group));
             layer.batchDraw();
-
-            // NEW: Trigger repulsion after initial render
             startRepulsionAnimation();
         }
 
@@ -736,6 +840,11 @@
         saveSessionBtn.addEventListener('click', saveSession);
         loadSessionBtn.addEventListener('click', loadSession);
         loadFromPlaceholderBtn.addEventListener('click', loadSession);
+
+        createExerciseBtn.addEventListener('click', () => {
+            promptInput.value = "Tạo một bài tập về chủ đề chúng ta đang thảo luận";
+            sendMessage();
+        });
 
         expandTopicBtn.addEventListener('click', (e) => {
             e.stopPropagation();
