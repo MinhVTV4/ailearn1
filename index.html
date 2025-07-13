@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Học Tập Tương Tác</title>
+    <title>AI Học Tập Tương Tác (v2)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Phong cách cuộn tùy chỉnh */
         :root {
             --scrollbar-track-bg: #f1f1f1;
             --scrollbar-thumb-bg: #888;
@@ -18,9 +17,8 @@
             --scrollbar-thumb-hover-bg: #a0aec0;
         }
         body {
-            overflow: hidden; /* Ngăn cuộn toàn bộ trang */
+            overflow: hidden;
         }
-        /* Style cho thanh cuộn của chat và canvas */
         #chat-container::-webkit-scrollbar, #canvas-container::-webkit-scrollbar {
             width: 6px;
         }
@@ -34,8 +32,6 @@
         #chat-container::-webkit-scrollbar-thumb:hover, #canvas-container::-webkit-scrollbar-thumb:hover {
             background: var(--scrollbar-thumb-hover-bg);
         }
-
-        /* Phong cách hiển thị Markdown */
         .message-content pre { background-color: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; font-family: 'Courier New', Courier, monospace; }
         .dark .message-content pre { background-color: #0f172a; }
         .message-content code:not(pre > code) { background-color: #e2e8f0; color: #1e293b; padding: 0.2em 0.4em; margin: 0; font-size: 85%; border-radius: 3px; }
@@ -53,43 +49,14 @@
         .dark .message-content a { color: #60a5fa; }
         .message-content blockquote { border-left: 4px solid #d1d5db; padding-left: 1rem; margin: 1rem 0; color: #4b5563; font-style: italic; }
         .dark .message-content blockquote { border-left-color: #4b5563; color: #9ca3af; }
-        
-        /* Hiệu ứng nhấp nháy cho con trỏ AI */
         .blinking-cursor { display: inline-block; width: 8px; height: 1.2em; background-color: #333; animation: blink 1s step-end infinite; vertical-align: text-bottom; }
         .dark .blinking-cursor { background-color: #ccc; }
         @keyframes blink { from, to { background-color: transparent; } 50% { background-color: inherit; } }
-
-        /* Animation cho nút ghi âm */
         #record-btn.recording { animation: pulse-red 1s infinite; background-color: #ef4444; color: white; }
         @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); transform: scale(1); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); transform: scale(1.05); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); transform: scale(1); } }
-
-        /* Style cho vùng nhập liệu */
-        .p-4 > #input-area-wrapper { box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); border-radius: 9999px; padding: 4px; background-color: white; transition: box-shadow 0.2s ease-in-out; }
-        .p-4 > #input-area-wrapper:focus-within { box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08); }
-        .dark .p-4 > #input-area-wrapper { background-color: #1f2937; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); }
-        .dark .p-4 > #input-area-wrapper:focus-within { box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); }
-        
-        /* Animation quay cho loading */
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .animate-spin { animation: spin 1s linear infinite; }
-        
-        /* Phong cách thông báo Toast */
         .toast { transition: all 0.4s ease-in-out; opacity: 0; transform: translateX(100%); }
         .toast.show { opacity: 1; transform: translateX(0); }
         .toast.hide { opacity: 0; transform: translateX(120%); }
-        
-        /* Nút cuộn lên đầu trang */
-        #scrollToTopBtn {
-            display: none; position: absolute; bottom: 20px; right: 20px; z-index: 99; border: none; outline: none;
-            background-color: #3b82f6; color: white; cursor: pointer; padding: 10px 15px; border-radius: 50%; font-size: 18px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: background-color 0.3s, opacity 0.3s; opacity: 0;
-        }
-        #scrollToTopBtn:hover { background-color: #2563eb; }
-        #scrollToTopBtn.show { opacity: 1; display: block; }
-        .dark #scrollToTopBtn { background-color: #60a5fa; }
-        .dark #scrollToTopBtn:hover { background-color: #3b82f6; }
-
-        /* Custom Context Menu Styles */
         #node-context-menu {
             border: 1px solid #e2e8f0;
             background-color: white;
@@ -100,7 +67,7 @@
             background-color: #2d3748;
         }
         #node-context-menu button {
-            white-space: nowrap; /* Prevent text wrapping */
+            white-space: nowrap;
         }
     </style>
 </head>
@@ -113,53 +80,45 @@
         <div id="chat-view-container" class="flex flex-col h-full bg-gray-50 dark:bg-slate-900 w-full lg:w-1/3 flex-shrink-0 border-r border-gray-200 dark:border-slate-700">
             <header id="main-header" class="flex-shrink-0 flex justify-between items-center p-3 sm:p-4 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
                 <div class="flex items-center gap-3">
-                    <span class="text-2xl">📚</span> <!-- Biểu tượng cho chế độ học tập -->
+                    <span class="text-2xl">📚</span>
                     <span class="text-lg font-bold text-gray-800 dark:text-gray-100">AI Học Tập</span>
                 </div>
                 <div class="flex items-center gap-1 sm:gap-2">
+                    <!-- Nút Lưu Phiên -->
+                    <button id="save-session-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Lưu phiên làm việc">
+                        <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v12l-5-3-5 3V4z" /></svg>
+                    </button>
+                    <!-- Nút Tải Phiên -->
+                    <button id="load-session-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Tải phiên làm việc đã lưu">
+                        <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 2.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                    </button>
+                    <!-- Nút Phiên Mới (thay thế Xóa Canvas) -->
+                    <button id="new-session-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Bắt đầu phiên mới (xóa mọi thứ)">
+                        <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-10.293a1 1 0 00-1.414-1.414L6 9.586 4.707 8.293a1 1 0 00-1.414 1.414L7.586 11l-2.293 2.293a1 1 0 001.414 1.414L10 12.414l2.293 2.293a1 1 0 001.414-1.414L11.414 11l2.293-2.293a1 1 0 000-1.414z" clip-rule="evenodd" /></svg>
+                    </button>
                     <!-- Nút chuyển đổi chế độ Sáng/Tối -->
                     <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Chuyển chế độ Sáng/Tối">
                         <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
                         <svg id="theme-toggle-light-icon" class="hidden w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 14.95a1 1 0 010-1.414l.707-.707a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414 0zM3 11a1 1 0 100-2H2a1 1 0 100 2h1z" clip-rule="evenodd"></path></svg>
-                    </button>
-                    <!-- Nút Xóa Canvas -->
-                    <button id="clear-canvas-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Xóa Canvas">
-                        <svg class="w-6 h-6 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.67-.114 1.022-.165m-1.022.165L5.41 19.673a2.25 2.25 0 002.244 2.077h7.212a2.25 2.25 0 002.244-2.077L19.25 5.79m0 0h-.008v.008H19.25z" /></svg>
-                    </button>
-                    <!-- Nút Kích hoạt Sắp xếp Lực (Không còn chức năng sau khi loại bỏ D3.js) -->
-                    <button id="activate-force-layout-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Sắp xếp sơ đồ tự động (Chức năng này không còn hoạt động)">
-                        <svg class="w-6 h-6 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.898 20.572L16.5 21.75l-.398-1.178a3.375 3.375 0 00-2.455-2.456L12.75 18l1.178-.398a3.375 3.375 0 002.455-2.456L16.5 14.25l.398 1.178a3.375 3.375 0 002.456 2.456L20.25 18l-1.178.398a3.375 3.375 0 00-2.456 2.456z" /></svg>
                     </button>
                 </div>
             </header>
 
             <!-- Khu vực hiển thị tin nhắn chat -->
             <div id="chat-container" class="flex-1 px-4 pt-4 space-y-4 overflow-y-auto relative">
-                <div id="notification-area" class="hidden sticky bottom-2 w-full flex justify-center">
-                    <div class="bg-blue-100 dark:bg-slate-700 text-blue-800 dark:text-blue-200 text-xs font-semibold px-4 py-2 rounded-full shadow-lg">
-                        Đang tối ưu hóa...
-                    </div>
-                </div>
-                <!-- Nút cuộn lên đầu trang -->
-                <button id="scrollToTopBtn" title="Cuộn lên đầu">
-                    <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l7.5-7.5 7.5 7.5m-15 6l7.5-7.5 7.5 7.5" /></svg>
-                </button>
+                 <!-- Tin nhắn sẽ được chèn vào đây -->
             </div>
 
             <!-- Vùng nhập liệu chat -->
             <div class="p-4 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700">
-                <div id="input-area-wrapper" class="rounded-full">
-                    <div id="input-area" class="flex items-center gap-3 bg-gray-100 dark:bg-slate-700 rounded-full p-2">
-                        <textarea id="prompt-input" rows="1" placeholder="Nhập câu hỏi hoặc yêu cầu học tập..." class="flex-1 bg-transparent px-3 py-2 resize-none focus:outline-none dark:text-gray-200 dark:placeholder-gray-400"></textarea>
-                        <!-- Nút ghi âm -->
-                        <button id="record-btn" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors" title="Ghi âm">
-                            <svg class="w-6 h-6 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
-                        </button>
-                        <!-- Nút gửi -->
-                        <button id="send-btn" class="w-10 h-10 flex items-center justify-center bg-blue-600 rounded-full text-white hover:bg-blue-700 transition-colors disabled:bg-blue-300 dark:disabled:bg-blue-800 disabled:cursor-not-allowed" title="Gửi">
-                            <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2 .01 7z"/></svg>
-                        </button>
-                    </div>
+                <div class="flex items-center gap-3 bg-gray-100 dark:bg-slate-700 rounded-full p-2">
+                    <textarea id="prompt-input" rows="1" placeholder="Nhập câu hỏi hoặc yêu cầu học tập..." class="flex-1 bg-transparent px-3 py-2 resize-none focus:outline-none dark:text-gray-200 dark:placeholder-gray-400"></textarea>
+                    <button id="record-btn" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors" title="Ghi âm">
+                        <svg class="w-6 h-6 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+                    </button>
+                    <button id="send-btn" class="w-10 h-10 flex items-center justify-center bg-blue-600 rounded-full text-white hover:bg-blue-700 transition-colors disabled:bg-blue-300 dark:disabled:bg-blue-800 disabled:cursor-not-allowed" title="Gửi">
+                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2 .01 7z"/></svg>
+                    </button>
                 </div>
             </div>
         </div>
@@ -167,9 +126,8 @@
         <!-- Phần Canvas (Bên phải) -->
         <div id="canvas-container" class="flex-1 h-full bg-white dark:bg-gray-800 overflow-auto relative">
             <div id="learning-canvas" class="w-full h-full">
-                <!-- Nội dung canvas sẽ được render tại đây bởi Konva.js -->
                 <div id="canvas-placeholder" class="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-600 text-center p-4">
-                    <p class="max-w-md">Chào mừng bạn đến với AI Học Tập! <br> Hãy nhập câu hỏi hoặc yêu cầu một chủ đề (ví dụ: "giải thích HTML", "cấu trúc dữ liệu", "khái niệm Vật lý lượng tử") để bắt đầu bài học được trực quan hóa tại đây.</p>
+                    <p class="max-w-md">Chào mừng bạn đến với AI Học Tập! <br> Hãy nhập câu hỏi, hoặc <button id="load-from-placeholder-btn" class="text-blue-500 hover:underline">tải lại phiên làm việc trước</button> nếu có, để bắt đầu.</p>
                 </div>
             </div>
         </div>
@@ -183,22 +141,17 @@
         <button id="expand-topic-btn" class="block w-full text-left px-4 py-2 text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-600">
             Mở rộng vấn đề
         </button>
-        <!-- Thêm các mục menu ngữ cảnh khác tại đây nếu cần -->
     </div>
 
-    <!-- Các thẻ script được chuyển xuống cuối body -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@2.3.6/dist/purify.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/konva@8.x.x/konva.min.js"></script>
-    <!-- Removed D3.js: <script src="https://d3js.org/d3.v7.min.js"></script> -->
     
     <script type="module">
-        // Import các module Firebase từ CDN
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
         import { getAI, getGenerativeModel } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-ai.js";
         
-        // Khởi tạo Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyDDp2ugpgSbqtkQMFLHSNsL0cFMxYBdyng",
             authDomain: "ailearn-e8cc0.firebaseapp.com",
@@ -211,227 +164,222 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const ai = getAI(app);
-        const model = getGenerativeModel(ai, { model: "gemini-2.5-flash" }); // Main AI model
+        const model = getGenerativeModel(ai, { model: "gemini-1.5-flash" });
 
         // Global state variables
-        let localHistory = []; // Stores the full conversation history (text-only for AI)
-        let isRecording = false; // Speech recording state
-        let activeSpeech = null; // Tracks current speech synthesis utterance
-        let konvaNodesData = []; // Stores Konva node groups and their original data
-        let konvaLinksData = []; // Stores Konva link arrows and references to source/target nodes
-        let clickedNodeData = null; // Stores data of the node that was right-clicked
+        let chatHistory = [];
+        let sessionCanvasData = []; // Stores all canvas data objects for the current session
+        let isRecording = false;
+        let activeSpeech = null;
+        let clickedNodeData = null;
+        let isCanvasInitialized = false;
 
         // Cached DOM elements
-        const appContainer = document.getElementById('app-container');
-        const chatViewContainer = document.getElementById('chat-view-container');
-        const mainHeader = document.getElementById('main-header');
         const themeToggle = document.getElementById('theme-toggle');
         const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
         const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
         const chatContainer = document.getElementById('chat-container');
-        const notificationArea = document.getElementById('notification-area');
-        const inputAreaWrapper = document.getElementById('input-area-wrapper');
-        const inputArea = document.getElementById('input-area');
         const promptInput = document.getElementById('prompt-input');
         const recordBtn = document.getElementById('record-btn');
         const sendBtn = document.getElementById('send-btn');
-        const scrollToTopBtn = document.getElementById("scrollToTopBtn");
         const toastContainer = document.getElementById('toast-container');
         const canvasContainer = document.getElementById('canvas-container');
         const learningCanvas = document.getElementById('learning-canvas');
         const canvasPlaceholder = document.getElementById('canvas-placeholder');
-        const clearCanvasBtn = document.getElementById('clear-canvas-btn');
-        const activateForceLayoutBtn = document.getElementById('activate-force-layout-btn'); // This button's function is now deprecated
-        const nodeContextMenu = document.getElementById('node-context-menu'); // Custom context menu
-        const expandTopicBtn = document.getElementById('expand-topic-btn'); // "Expand Topic" button in context menu
+        const loadFromPlaceholderBtn = document.getElementById('load-from-placeholder-btn');
+        const newSessionBtn = document.getElementById('new-session-btn');
+        const saveSessionBtn = document.getElementById('save-session-btn');
+        const loadSessionBtn = document.getElementById('load-session-btn');
+        const nodeContextMenu = document.getElementById('node-context-menu');
+        const expandTopicBtn = document.getElementById('expand-topic-btn');
 
-        let stage, layer; // Konva Stage and Layer objects
-        let gridLayer; // Optional: Separate layer for grid
+        let stage, layer, gridLayer;
 
-        // System prompt for AI to generate learning content and canvas data
         const LEARNING_SYSTEM_PROMPT = `
-        Bạn là một giáo viên AI chuyên nghiệp và tận tâm. Mục tiêu của bạn là giúp người học hiểu sâu về một chủ đề thông qua giải thích, ví dụ, và tạo ra các thành phần trực quan trên canvas.
-        Khi người dùng yêu cầu một chủ đề học, hãy:
-        1.  **Phân tích và Chia nhỏ:** Chia chủ đề thành các phần nhỏ, logic, theo một **trình tự logic và cấu trúc phân cấp (ví dụ: từ tổng quan đến chi tiết, hoặc từng bước)**.
-        2.  **Giải thích Chatbox:** Cung cấp giải thích chi tiết, rõ ràng cho từng phần trong chatbox, sử dụng Markdown (tiêu đề, danh sách, in đậm, code block).
-        3.  **Dữ liệu Canvas:** **QUAN TRỌNG:** Đồng thời, tạo ra một đối tượng JSON DỮ LIỆU CẦU TRÚC để tôi có thể vẽ trên Canvas. JSON này phải tuân thủ định dạng sau.
-            **Hãy đảm bảo các node được phân bổ một cách có tổ chức, tránh chồng chéo tối đa, và thể hiện rõ ràng dòng chảy thông tin hoặc cấu trúc phân cấp (ví dụ: các node tổng quan ở trên, các node chi tiết ở dưới).**
-            **Sử dụng các tọa độ X, Y ban đầu để phân tán các node đều khắp canvas (giả định kích thước canvas là 800x600 để định vị sơ bộ).**
-            **Node đầu tiên trong mảng 'nodes' phải là node chủ đề chính hoặc node khởi đầu. Đánh dấu node chủ đề chính bằng "isMainTopic": true.**
-            **Mỗi node nên có một "description" đầy đủ và hữu ích, không nên để trống.**
-            \`\`\`json
-            {
-              "type": "lesson_data",
-              "title": "Tên Chủ Đề Chính",
-              "nodes": [
-                {
-                  "id": "node1",
-                  "type": "concept", // hoặc "step", "example", "summary", "question"
-                  "text": "Nội dung ngắn gọn của node",
-                  "description": "Mô tả chi tiết hơn về nội dung của node này.",
-                  "x": 100, // Tọa độ X trên canvas
-                  "y": 100, // Tọa độ Y trên canvas
-                  "color": "#FFDDC1", // Màu nền cho node (hex color)
-                  "image": "url_to_image_if_any", // URL hình ảnh (tùy chọn)
-                  "isMainTopic": true // Đánh dấu node chủ đề chính
-                },
-                {
-                  "id": "node2",
-                  "type": "step",
-                  "text": "Bước 2",
-                  "description": "Giải thích chi tiết về bước này.",
-                  "x": 250,
-                  "y": 150,
-                  "color": "#C1FFDD"
-                }
-              ],
-              "connections": [
-                {
-                  "from": "node1",
-                  "to": "node2"
-                }
-              ]
-            }
-            \`\`\`
-        4.  **Luôn bắt đầu và kết thúc với Markdown trong chatbox.** Đối tượng JSON phải được đặt **sau** nội dung Markdown trong phản hồi của bạn, và nằm trong một khối code block với chỉ định ngôn ngữ là \`json\`.
-        5.  **Ví dụ phản hồi mong muốn (để bạn hiểu):**
-            \`\`\`
-            Chào mừng bạn đến với bài học về **Javascript cơ bản**!
-            Javascript là ngôn ngữ lập trình phổ biến nhất thế giới để phát triển web. Nó giúp trang web của bạn trở nên động và tương tác hơn.
-            ### 1. Biến và Kiểu dữ liệu
-            Trong Javascript, bạn có thể khai báo biến với \`var\`, \`let\`, và \`const\`. Mỗi loại có phạm vi và cách sử dụng khác nhau.
-            * \`var\`: Phạm vi hàm, có thể khai báo lại và gán lại.
-            * \`let\`: Phạm vi khối, có thể gán lại nhưng không khai báo lại.
-            * \`const\`: Phạm vi khối, không thể gán lại (hằng số).
-            \`\`\`json
-            {
-              "type": "lesson_data",
-              "title": "Javascript Cơ bản",
-              "nodes": [
-                { "id": "intro", "type": "concept", "text": "Javascript là gì?", "description": "Ngôn ngữ lập trình cho web động, tạo ra tương tác trên trang web.", "x": 100, "y": 100, "color": "#FFC0CB", "isMainTopic": true },
-                { "id": "vars", "type": "concept", "text": "Biến & Kiểu dữ liệu", "description": "Cách khai báo và sử dụng các loại biến khác nhau trong Javascript.", "x": 300, "y": 100, "color": "#ADD8E6" },
-                { "id": "var_exp", "type": "example", "text": "Ví dụ var", "description": "Sử dụng var để khai báo biến có phạm vi hàm.", "x": 200, "y": 250, "color": "#DDA0DD" },
-                { "id": "let_exp", "type": "example", "description": "Sử dụng let để khai báo biến có phạm vi khối.", "x": 400, "y": 250, "color": "#DDA0DD" }
-              ],
-              "connections": [
-                { "from": "intro", "to": "vars" },
-                { "from": "vars", "to": "var_exp" },
-                { "from": "vars", "to": "let_exp" }
-              ]
-            }
-            \`\`\`
+        Bạn là một giáo viên AI chuyên nghiệp. Mục tiêu của bạn là giúp người học hiểu sâu về một chủ đề và tạo ra các thành phần trực quan.
+        
+        QUY TẮC CHUNG:
+        1.  **Phân tích & Chia nhỏ:** Chia chủ đề thành các phần logic, có cấu trúc phân cấp.
+        2.  **Giải thích Chatbox:** Cung cấp giải thích chi tiết, rõ ràng bằng Markdown.
+        3.  **Dữ liệu Canvas (QUAN TRỌNG):** Luôn tạo một đối tượng JSON để vẽ lên Canvas. JSON phải nằm trong khối code \`\`\`json.
+            - Phân bổ các node một cách có tổ chức trên canvas (giả định kích thước 800x600).
+            - Node đầu tiên trong mảng 'nodes' phải là node chủ đề chính, đánh dấu bằng "isMainTopic": true.
+            - Mỗi node phải có "description" đầy đủ.
+        
+        QUY TẮC XỬ LÝ YÊU CẦU:
+
+        A. NẾU YÊU CẦU LÀ MỘT CHỦ ĐỀ MỚI (ví dụ: "giải thích quang hợp"):
+           - Hãy tạo một bài học hoàn chỉnh từ đầu.
+           - JSON của bạn phải chứa đầy đủ các node và kết nối cho toàn bộ chủ đề.
+           - Ví dụ JSON cho chủ đề mới:
+             \`\`\`json
+             {
+               "type": "lesson_data",
+               "title": "Chủ Đề Mới",
+               "nodes": [
+                 { "id": "node1", "type": "concept", "text": "Khái niệm chính", "description": "...", "x": 100, "y": 100, "color": "#FFDDC1", "isMainTopic": true },
+                 { "id": "node2", "type": "detail", "text": "Chi tiết 1", "description": "...", "x": 300, "y": 150, "color": "#C1FFDD" }
+               ],
+               "connections": [ { "from": "node1", "to": "node2" } ]
+             }
+             \`\`\`
+
+        B. NẾU YÊU CẦU BẮT ĐẦU BẰNG "ExpandTopic:", (ví dụ: "ExpandTopic: node2 - Chi tiết 1"):
+           - Đây là yêu cầu mở rộng một node ĐÃ CÓ trên canvas.
+           - **CHỈ tạo ra các node và kết nối MỚI** liên quan đến node cha đó.
+           - **KHÔNG được tạo lại các node đã có.**
+           - Các kết nối mới phải xuất phát từ node cha (ví dụ: "from": "node2").
+           - Ví dụ JSON cho yêu cầu mở rộng:
+             \`\`\`json
+             {
+               "type": "lesson_expansion",
+               "title": "Mở rộng: Chi tiết 1",
+               "nodes": [
+                 { "id": "node2_sub1", "type": "example", "text": "Ví dụ cho Chi tiết 1", "description": "...", "x": 450, "y": 100, "color": "#DDA0DD" },
+                 { "id": "node2_sub2", "type": "sub-concept", "text": "Khái niệm con", "description": "...", "x": 450, "y": 200, "color": "#DDA0DD" }
+               ],
+               "connections": [
+                 { "from": "node2", "to": "node2_sub1" },
+                 { "from": "node2", "to": "node2_sub2" }
+               ]
+             }
+             \`\`\`
         `;
 
         // --- HÀM TIỆN ÍCH ---
-        /**
-         * Hiển thị thông báo toast cho người dùng.
-         * @param {string} message - Nội dung tin nhắn.
-         * @param {'info'|'success'|'error'} type - Loại thông báo (quyết định màu sắc và biểu tượng).
-         */
         function showToast(message, type = 'info') {
-            const toastContainer = document.getElementById('toast-container');
-            if (!toastContainer) return;
             const toast = document.createElement('div');
-            
             let bgColor, textColor, icon;
-
             switch (type) {
                 case 'success':
-                    bgColor = 'bg-green-100 dark:bg-green-900';
-                    textColor = 'text-green-700 dark:text-green-200';
+                    bgColor = 'bg-green-100 dark:bg-green-900'; textColor = 'text-green-700 dark:text-green-200';
                     icon = `<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>`;
                     break;
                 case 'error':
-                    bgColor = 'bg-red-100 dark:bg-red-900';
-                    textColor = 'text-red-700 dark:text-red-200';
+                    bgColor = 'bg-red-100 dark:bg-red-900'; textColor = 'text-red-700 dark:text-red-200';
                     icon = `<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>`;
                     break;
-                default: // info
-                    bgColor = 'bg-blue-100 dark:bg-blue-900';
-                    textColor = 'text-blue-700 dark:text-blue-200';
+                default:
+                    bgColor = 'bg-blue-100 dark:bg-blue-900'; textColor = 'text-blue-700 dark:text-blue-200';
                     icon = `<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>`;
                     break;
             }
-
             toast.className = `toast max-w-xs w-full ${bgColor} ${textColor} p-4 rounded-lg shadow-lg flex items-center space-x-3`;
-            toast.innerHTML = `
-                <div class="flex-shrink-0">${icon}</div>
-                <div class="flex-1 text-sm font-medium">${message}</div>
-            `;
-
+            toast.innerHTML = `<div class="flex-shrink-0">${icon}</div><div class="flex-1 text-sm font-medium">${message}</div>`;
             toastContainer.appendChild(toast);
-            
-            requestAnimationFrame(() => {
-                toast.classList.add('show');
-            });
-
+            requestAnimationFrame(() => toast.classList.add('show'));
             const hideToast = () => {
                 toast.classList.remove('show');
                 toast.classList.add('hide');
-                toast.addEventListener('transitionend', () => {
-                    if (toast.parentNode) {
-                        toast.remove();
-                    }
-                }, { once: true });
+                toast.addEventListener('transitionend', () => toast.remove(), { once: true });
             };
-
             toast.addEventListener('click', hideToast);
             setTimeout(hideToast, 4000);
         }
-        
-        /**
-         * Sao chép văn bản vào clipboard.
-         * @param {string} text - Văn bản cần sao chép.
-         */
+
         function copyToClipboard(text) {
             const textarea = document.createElement('textarea');
             textarea.value = text;
-            textarea.style.position = 'absolute';
-            textarea.style.left = '-9999px';
             document.body.appendChild(textarea);
             textarea.select();
             try {
                 document.execCommand('copy');
-                showToast('Đã sao chép vào bộ nhớ đệm!', 'success');
+                showToast('Đã sao chép!', 'success');
             } catch (err) {
                 showToast('Không thể sao chép.', 'error');
             }
             document.body.removeChild(textarea);
         }
 
-        /**
-         * Tiền xử lý văn bản từ phản hồi AI để xử lý Markdown và các liên kết tương tác.
-         * @param {string} text - Văn bản thô từ phản hồi AI.
-         * @returns {string} Chuỗi HTML với các liên kết tương tác.
-         */
-        function preprocessText(text) {
-            // Loại bỏ các khối JSON khỏi hiển thị chatbox
-            const markdownOnly = text.split('```json')[0];
-            const termLinkRegex = /\[([^\]]+?)\]/g; // Regex cho các thuật ngữ trong dấu ngoặc vuông
-            return markdownOnly.replace(termLinkRegex, `<a href="#" class="term-link" data-term="$1">$1</a>`);
+        // --- QUẢN LÝ PHIÊN ---
+        function saveSession() {
+            if (chatHistory.length === 0 && sessionCanvasData.length === 0) {
+                showToast("Không có gì để lưu.", "info");
+                return;
+            }
+            const session = {
+                chatHistory: chatHistory,
+                canvasData: sessionCanvasData,
+                timestamp: new Date().toISOString()
+            };
+            localStorage.setItem('aiLearningSession', JSON.stringify(session));
+            showToast("Đã lưu phiên làm việc!", "success");
         }
 
-        // --- XÁC THỰC (Đăng nhập ẩn danh) ---
+        function loadSession() {
+            const savedSessionJSON = localStorage.getItem('aiLearningSession');
+            if (!savedSessionJSON) {
+                showToast("Không tìm thấy phiên đã lưu.", "info");
+                return;
+            }
+            const savedSession = JSON.parse(savedSessionJSON);
+            
+            newSession(false); // Clear current state without showing toast
+
+            chatHistory = savedSession.chatHistory || [];
+            sessionCanvasData = savedSession.canvasData || [];
+
+            // Re-render chat
+            chatHistory.forEach(msg => {
+                addMessage(msg.role, msg.parts[0].text, false);
+            });
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            // Re-render canvas if it's ready
+            if (isCanvasInitialized) {
+                renderFullCanvasFromSession();
+            }
+            
+            showToast("Đã tải phiên làm việc!", "success");
+        }
+
+        function newSession(showToastMsg = true) {
+            chatHistory = [];
+            sessionCanvasData = [];
+            chatContainer.innerHTML = '';
+            if (layer) {
+                layer.destroyChildren();
+                layer.batchDraw();
+            }
+            canvasPlaceholder.classList.remove('hidden');
+            if (showToastMsg) {
+                showToast("Bắt đầu phiên làm việc mới.", "info");
+            }
+        }
+
+        // --- XÁC THỰC & KHỞI TẠO ---
         onAuthStateChanged(auth, async user => {
-            if (!user) {
-                // Đăng nhập ẩn danh nếu không có người dùng nào được xác thực
+            if (user) {
+                // FIX: Use ResizeObserver to robustly initialize and resize the canvas
+                const resizeObserver = new ResizeObserver(entries => {
+                    for (let entry of entries) {
+                        // Use contentRect for accurate dimensions
+                        const { width, height } = entry.contentRect;
+                        if (width > 0 && height > 0) {
+                            initOrUpdateCanvas(width, height);
+                        }
+                    }
+                });
+                resizeObserver.observe(canvasContainer);
+
+                // Load session data. The observer will trigger the first render when the canvas is ready.
+                const savedSessionJSON = localStorage.getItem('aiLearningSession');
+                if (savedSessionJSON) {
+                    loadSession(); // This will populate data; render is handled by the observer callback
+                } else {
+                    addMessage('ai', 'Chào mừng! Hãy bắt đầu bằng cách hỏi một chủ đề.');
+                }
+            } else {
                 try {
                     await signInAnonymously(auth);
-                    console.log("Đã đăng nhập ẩn danh.");
                 } catch (error) {
-                    console.error("Đăng nhập ẩn danh thất bại:", error);
-                    showToast("Đăng nhập thất bại. Vui lòng thử lại.", "error");
-                    return; 
+                    console.error("Lỗi đăng nhập ẩn danh:", error);
+                    showToast("Lỗi kết nối. Vui lòng tải lại trang.", "error");
                 }
             }
-            // Khởi tạo Konva Stage và Layer sau khi người dùng được xác thực
-            initCanvas();
-            // Hiển thị thông báo chào mừng trong chatbox
-            addMessage('ai', 'Chào mừng bạn đến với AI Học Tập! Hãy nhập câu hỏi hoặc yêu cầu một chủ đề (ví dụ: "giải thích HTML", "cấu trúc dữ liệu", "khái niệm Vật lý lượng tử") để bắt đầu bài học được trực quan hóa tại đây.');
         });
 
-        // --- CHUYỂN ĐỔI CHẾ ĐỘ SÁNG/TỐI ---
-        /** Cập nhật biểu tượng chuyển đổi chủ đề dựa trên chủ đề hiện tại. */
+        // --- CHẾ ĐỘ SÁNG/TỐI ---
         const updateThemeIcon = () => {
             if (document.documentElement.classList.contains('dark')) {
                 themeToggleDarkIcon.classList.add('hidden');
@@ -443,794 +391,356 @@
         };
         themeToggle.addEventListener('click', () => {
             document.documentElement.classList.toggle('dark');
-            localStorage.setItem('color-theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
             updateThemeIcon();
+            if (gridLayer) drawGrid(); // Redraw grid with new theme color
         });
-        updateThemeIcon(); 
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+        updateThemeIcon();
 
         // --- LOGIC CHAT ---
-        /**
-         * Thêm các nút hành động (sao chép, đọc) vào một tin nhắn.
-         * @param {HTMLElement} actionsContainer - Container cho các nút hành động.
-         * @param {string} rawText - Nội dung văn bản thô của tin nhắn.
-         */
         function addMessageActions(actionsContainer, rawText) {
-             if (!actionsContainer || !rawText || rawText.includes('blinking-cursor')) return;
-            
-            actionsContainer.innerHTML = ''; 
-
-            // Nút sao chép
+            if (!actionsContainer || !rawText || rawText.includes('blinking-cursor')) return;
+            actionsContainer.innerHTML = '';
             const copyBtn = document.createElement('button');
-            copyBtn.className = 'copy-btn p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-full transition-colors';
+            copyBtn.className = 'p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-full';
             copyBtn.innerHTML = `<svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" /></svg>`;
-            copyBtn.title = 'Sao chép nội dung';
-            copyBtn.dataset.text = rawText; 
+            copyBtn.title = 'Sao chép';
+            copyBtn.onclick = () => copyToClipboard(rawText);
             actionsContainer.appendChild(copyBtn);
-            
-            // Nút đọc
-            const speakBtn = document.createElement('button');
-            speakBtn.className = 'speak-btn p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-full transition-colors';
-            speakBtn.innerHTML = '🔊';
-            speakBtn.title = 'Đọc văn bản';
-            speakBtn.dataset.text = rawText; 
-            speakBtn.dataset.state = 'idle'; 
-            actionsContainer.appendChild(speakBtn);
         }
 
-        /**
-         * Thêm tin nhắn vào hiển thị chat.
-         * @param {'user'|'ai'|'model'} role - Vai trò của người gửi tin nhắn.
-         * @param {string} text - Nội dung của tin nhắn.
-         * @param {boolean} [shouldScroll=true] - Có nên cuộn chat xuống cuối sau khi thêm tin nhắn hay không.
-         * @returns {{messageWrapper: HTMLElement, contentElem: HTMLElement, statusElem?: HTMLElement, actionsContainer?: HTMLElement}}
-         */
         function addMessage(role, text, shouldScroll = true) {
             const messageWrapper = document.createElement('div');
-            let contentElem;
-            let statusElem;
-            let actionsContainer = null;
+            let contentElem, statusElem, actionsContainer = null;
 
             if (role === 'ai' || role === 'model') {
                 messageWrapper.className = 'w-full space-y-2';
-                messageWrapper.innerHTML = `
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <div class="w-7 h-7 rounded-full flex-shrink-0 bg-gradient-to-tr from-purple-400 to-indigo-500 flex items-center justify-center">
-                               <svg class="w-4 h-4 text-white" xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor"><path d="M12 6c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6 2.69-6 6-6m0-2c-4.42 0-8 3.58-8 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8z"/><path d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
-                            </div>
-                            <span class="font-semibold text-gray-800 dark:text-gray-200">AI Học Tập</span>
-                        </div>
-                        <div class="ai-status"></div>
-                    </div>
-                    <div class="message-content text-gray-800 dark:text-gray-200" data-raw-text="${text.replace(/"/g, '&quot;')}"></div>
-                    <div class="message-actions mt-1 flex justify-end items-center gap-2"></div>`;
+                messageWrapper.innerHTML = `<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full flex-shrink-0 bg-gradient-to-tr from-purple-400 to-indigo-500 flex items-center justify-center"><svg class="w-4 h-4 text-white" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor"><path d="M12 6c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6 2.69-6 6-6m0-2c-4.42 0-8 3.58-8 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8z"/><path d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg></div><span class="font-semibold text-gray-800 dark:text-gray-200">AI Học Tập</span></div><div class="ai-status text-xs text-gray-500"></div></div><div class="message-content text-gray-800 dark:text-gray-200"></div><div class="message-actions mt-1 flex justify-end items-center gap-2"></div>`;
                 contentElem = messageWrapper.querySelector('.message-content');
                 statusElem = messageWrapper.querySelector('.ai-status');
                 actionsContainer = messageWrapper.querySelector('.message-actions');
-            } else if (role === 'user') {
+            } else { // user
                 messageWrapper.className = 'flex justify-end';
                 messageWrapper.innerHTML = `<div class="message-content px-4 py-2 rounded-2xl bg-blue-600 dark:bg-blue-700 text-white max-w-xs sm:max-w-md lg:max-w-2xl"></div>`;
                 contentElem = messageWrapper.querySelector('.message-content');
             }
             
-            // Xử lý Markdown và các liên kết tương tác (chỉ các liên kết thuật ngữ)
-            const preprocessedText = preprocessText(text);
-            contentElem.innerHTML = DOMPurify.sanitize(marked.parse(preprocessedText), { ADD_ATTR: ['target', 'data-term'] });
-
-            if (actionsContainer) {
-                addMessageActions(actionsContainer, preprocessedText); 
-            }
-
-            chatContainer.insertBefore(messageWrapper, notificationArea);
-            if (shouldScroll) {
-                chatContainer.scrollTop = chatContainer.scrollHeight;
-            }
-
+            contentElem.innerHTML = DOMPurify.sanitize(marked.parse(text));
+            chatContainer.appendChild(messageWrapper);
+            if (shouldScroll) chatContainer.scrollTop = chatContainer.scrollHeight;
             return { messageWrapper, contentElem, statusElem, actionsContainer };
         }
         
-        /**
-         * Gửi tin nhắn đến mô hình AI, hiển thị phản hồi và render trên canvas.
-         */
         async function sendMessage() {
             const promptText = promptInput.value.trim();
             if (!promptText) return;
 
+            const isExpansion = promptText.startsWith("ExpandTopic:");
+            if (isExpansion) {
+                const topicName = promptText.split(" - ")[1] || "chủ đề";
+                addMessage('user', `(Mở rộng về: ${topicName})`);
+            } else {
+                sessionCanvasData = [];
+                addMessage('user', promptText);
+            }
+
             promptInput.value = '';
             adjustInputHeight();
             sendBtn.disabled = true;
+            canvasPlaceholder.classList.add('hidden');
 
-            // Ẩn placeholder canvas khi bắt đầu chat
-            if (canvasPlaceholder) {
-                canvasPlaceholder.classList.add('hidden');
-            }
+            chatHistory.push({ role: 'user', parts: [{ text: promptText }] });
 
-            addMessage('user', promptText);
-            localHistory.push({ role: 'user', parts: [{ text: promptText }] });
-
-            const { messageWrapper, contentElem, statusElem, actionsContainer } = addMessage('ai', '<span class="blinking-cursor"></span>');
-            if (statusElem) statusElem.textContent = 'Thinking...';
+            const { contentElem, statusElem, actionsContainer } = addMessage('ai', '<span class="blinking-cursor"></span>');
+            if (statusElem) statusElem.textContent = 'Đang nghĩ...';
 
             try {
-                // Chuẩn bị lịch sử trò chuyện để gửi đến mô hình AI (chỉ văn bản, không có JSON)
-                const historyForApiModel = localHistory.map(msg => {
-                    if (msg.role === 'model') {
-                        // Tách phần văn bản và phần JSON (nếu có)
-                        const parts = msg.parts[0].text.split('```json');
-                        return { role: 'model', parts: [{ text: parts[0].trim() }] };
-                    }
-                    return msg;
-                });
-                
-                const chatSession = model.startChat({ history: historyForApiModel });
+                const historyForApiModel = chatHistory.map(msg => ({ role: msg.role, parts: msg.parts }));
+                const chatSession = model.startChat({ history: historyForApiModel.slice(0, -1) });
                 const result = await chatSession.sendMessageStream(LEARNING_SYSTEM_PROMPT + "\nUser request: " + promptText);
 
                 let fullResponseText = "";
-                let jsonResponse = null;
-                let isFirstChunk = true;
+                if (statusElem) statusElem.textContent = 'Đang viết...';
 
                 for await (const chunk of result.stream) {
-                    if (isFirstChunk) {
-                        if (statusElem) statusElem.textContent = 'Writing...';
-                        isFirstChunk = false;
-                    }
                     fullResponseText += chunk.text();
-                    
-                    // Trích xuất JSON từ Markdown trong quá trình streaming
-                    const jsonStringMatch = fullResponseText.match(/```json\n([\s\S]*?)\n```/);
-                    if (jsonStringMatch && jsonStringMatch[1]) {
-                        try {
-                            const tempJson = JSON.parse(jsonStringMatch[1]);
-                            // Chỉ cập nhật jsonResponse nếu được phân tích cú pháp thành công và là dữ liệu mới
-                            if (JSON.stringify(tempJson) !== JSON.stringify(jsonResponse)) {
-                                jsonResponse = tempJson;
-                                renderContentOnCanvas(jsonResponse); // Render trên canvas ngay lập tức
-                            }
-                        } catch (e) {
-                            // console.warn("Partial JSON, waiting for full response:", e);
-                        }
-                    }
-
-                    // Cập nhật nội dung chatbox với con trỏ nhấp nháy
                     const markdownPartForDisplay = fullResponseText.split('```json')[0];
-                    const processedChunk = preprocessText(markdownPartForDisplay + '<span class="blinking-cursor"></span>');
-                    contentElem.innerHTML = DOMPurify.sanitize(marked.parse(processedChunk), {ADD_ATTR: ['target', 'data-term']});
+                    contentElem.innerHTML = DOMPurify.sanitize(marked.parse(markdownPartForDisplay + '<span class="blinking-cursor"></span>'));
                     chatContainer.scrollTop = chatContainer.scrollHeight;
                 }
                 
                 if (statusElem) statusElem.classList.add('hidden');
                 
-                // Render cuối cùng không có con trỏ nhấp nháy và lưu văn bản thô
                 const finalMarkdownPart = fullResponseText.split('```json')[0].trim();
-                contentElem.innerHTML = DOMPurify.sanitize(marked.parse(preprocessText(finalMarkdownPart)), {ADD_ATTR: ['target', 'data-term']}); // Re-preprocess final text
-                contentElem.dataset.rawText = finalMarkdownPart;
+                contentElem.innerHTML = DOMPurify.sanitize(marked.parse(finalMarkdownPart));
+                addMessageActions(actionsContainer, finalMarkdownPart);
 
-                addMessageActions(actionsContainer, finalMarkdownPart); // Thêm nút sao chép/đọc
+                chatHistory.push({ role: 'model', parts: [{ text: fullResponseText }] });
 
-                // Lưu toàn bộ phản hồi (cả Markdown và JSON) vào localHistory
-                localHistory.push({ role: 'model', parts: [{ text: fullResponseText }] });
+                const jsonStringMatch = fullResponseText.match(/```json\n([\s\S]*?)\n```/);
+                if (jsonStringMatch && jsonStringMatch[1]) {
+                    try {
+                        const newCanvasData = JSON.parse(jsonStringMatch[1]);
+                        sessionCanvasData.push(newCanvasData);
+                        renderFullCanvasFromSession();
+                    } catch (e) {
+                        console.error("Lỗi phân tích JSON:", e);
+                        showToast("AI trả về dữ liệu canvas không hợp lệ.", "error");
+                    }
+                }
 
             } catch (error) {
-                console.error("Lỗi trong sendMessage:", error);
+                console.error("Lỗi sendMessage:", error);
                 contentElem.innerHTML = `**Lỗi:** ${error.message}`;
-                // Xóa tin nhắn cuối cùng (nếu có) để tránh lịch sử bị hỏng
-                if (localHistory.length > 0) {
-                    localHistory.pop();
-                }
                 showToast(`Lỗi gửi tin nhắn: ${error.message}`, 'error');
-
             } finally {
-                sendBtn.disabled = false; // Bật lại nút gửi
+                sendBtn.disabled = false;
             }
         }
 
-        /** Điều chỉnh chiều cao của textarea input prompt dựa trên nội dung của nó. */
         function adjustInputHeight() {
             promptInput.style.height = 'auto';
             promptInput.style.height = promptInput.scrollHeight + 'px';
         }
         
-        // --- NHẬN DIỆN GIỌNG NÓI ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if(SpeechRecognition) {
             const recognition = new SpeechRecognition();
-            recognition.continuous = false; 
-            recognition.lang = 'vi-VN'; 
-            recognition.interimResults = false; 
-
-            recognition.onstart = () => { 
-                isRecording = true; 
-                recordBtn.classList.add('recording'); 
-                promptInput.placeholder = 'Đang nghe...'; 
-            };
-            recognition.onend = () => { 
-                isRecording = false; 
-                recordBtn.classList.remove('recording'); 
-                promptInput.placeholder = 'Nhập câu hỏi của bạn...'; 
-            };
-            recognition.onresult = (event) => { 
-                promptInput.value = event.results[event.results.length - 1][0].transcript.trim(); 
-                adjustInputHeight(); 
-                sendMessage(); 
-            };
-            recognition.onerror = (event) => { 
-                showToast(`Lỗi ghi âm: ${event.error}`, 'error'); 
-                console.error("Lỗi nhận dạng giọng nói:", event.error);
-            };
-            recordBtn.addEventListener('click', () => { 
-                isRecording ? recognition.stop() : recognition.start(); 
-            });
+            recognition.continuous = false; recognition.lang = 'vi-VN'; recognition.interimResults = false;
+            recognition.onstart = () => { isRecording = true; recordBtn.classList.add('recording'); promptInput.placeholder = 'Đang nghe...'; };
+            recognition.onend = () => { isRecording = false; recordBtn.classList.remove('recording'); promptInput.placeholder = 'Nhập câu hỏi...'; };
+            recognition.onresult = (event) => { promptInput.value = event.results[event.results.length - 1][0].transcript.trim(); adjustInputHeight(); sendMessage(); };
+            recognition.onerror = (event) => { showToast(`Lỗi ghi âm: ${event.error}`, 'error'); };
+            recordBtn.addEventListener('click', () => { isRecording ? recognition.stop() : recognition.start(); });
         } else { 
-            recordBtn.classList.add('hidden'); // Ẩn nút ghi âm nếu API không được hỗ trợ
+            recordBtn.classList.add('hidden');
         }
         
-        /** Đặt lại trạng thái của nút tổng hợp giọng nói đang hoạt động. */
-        function resetActiveSpeechButton() {
-            if (activeSpeech && activeSpeech.button) {
-                activeSpeech.button.innerHTML = '🔊';
-                activeSpeech.button.dataset.state = 'idle';
-                activeSpeech.button.title = 'Đọc văn bản';
-            }
-        }
+        // --- LOGIC CANVAS (Konva.js) ---
+        function initOrUpdateCanvas(width, height) {
+            if (!stage) {
+                // First time initialization
+                stage = new Konva.Stage({
+                    container: 'learning-canvas',
+                    width: width,
+                    height: height,
+                });
+                gridLayer = new Konva.Layer();
+                layer = new Konva.Layer();
+                stage.add(gridLayer, layer);
+                
+                // Add event listeners only once
+                stage.content.oncontextmenu = (e) => e.preventDefault();
+                stage.on('click', (e) => { if (e.target === stage || e.target === gridLayer) hideNodeContextMenu(); });
+                window.addEventListener('scroll', hideNodeContextMenu, true);
+                const scaleBy = 1.1;
+                stage.on('wheel', (e) => {
+                    e.evt.preventDefault();
+                    const oldScale = stage.scaleX();
+                    const pointer = stage.getPointerPosition();
+                    const mousePointTo = { x: (pointer.x - stage.x()) / oldScale, y: (pointer.y - stage.y()) / oldScale, };
+                    const newScale = e.evt.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy;
+                    stage.scale({ x: newScale, y: newScale });
+                    const newPos = { x: pointer.x - mousePointTo.x * newScale, y: pointer.y - mousePointTo.y * newScale, };
+                    stage.position(newPos);
+                });
+                stage.draggable(true);
+                
+                isCanvasInitialized = true;
+                console.log(`Canvas initialized with size: ${width}x${height}`);
 
-        // --- LOGIC CANVAS (Konva.js Only) ---
-
-        /** Khởi tạo Konva.js stage và layer. */
-        function initCanvas() {
-            stage = new Konva.Stage({
-                container: 'learning-canvas',
-                width: canvasContainer.offsetWidth,
-                height: canvasContainer.offsetHeight,
-            });
-            layer = new Konva.Layer();
-            stage.add(layer);
-
-            // Thêm một layer riêng biệt cho lưới để tránh vẽ lại với các node
-            gridLayer = new Konva.Layer();
-            stage.add(gridLayer);
-            drawGrid(); // Vẽ lưới ban đầu
-
-            // Xử lý canvas responsive khi thay đổi kích thước cửa sổ
-            window.addEventListener('resize', () => {
-                stage.width(canvasContainer.offsetWidth);
-                stage.height(canvasContainer.offsetHeight);
-                drawGrid(); // Vẽ lại lưới khi thay đổi kích thước
-                layer.batchDraw();
-                gridLayer.batchDraw();
-            });
-
-            // Vô hiệu hóa menu ngữ cảnh mặc định của trình duyệt trên stage Konva
-            stage.content.oncontextmenu = (e) => e.preventDefault();
-            
-            // Hide context menu when clicking anywhere *on the stage* (not covered by a node or menu itself)
-            stage.on('click', (e) => {
-                // Kiểm tra xem click có phải là trên một node hay không. 
-                // Nếu e.target là stage hoặc layer (không phải một shape trong layer)
-                // Hoặc nếu clickedNodeData rỗng, có nghĩa là không có menu nào được mở từ node
-                // thì ẩn menu
-                if (e.target === stage || e.target === layer) {
-                     hideNodeContextMenu();
+                // After initializing, try to render any loaded data
+                if (sessionCanvasData.length > 0) {
+                    renderFullCanvasFromSession();
                 }
-            });
-
-            // Ẩn menu ngữ cảnh tùy chỉnh khi cuộn trang
-            window.addEventListener('scroll', hideNodeContextMenu, true); // Use capture phase
-
-            // Triển khai zoom và pan
-            const scaleBy = 1.1;
-            stage.on('wheel', (e) => {
-                e.evt.preventDefault();
-                const oldScale = stage.scaleX();
-                const pointer = stage.getPointerPosition();
-
-                const mousePointTo = {
-                    x: (pointer.x - stage.x()) / oldScale,
-                    y: (pointer.y - stage.y()) / oldScale,
-                };
-
-                const newScale = e.evt.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy;
-
-                stage.scale({ x: newScale, y: newScale });
-
-                const newPos = {
-                    x: pointer.x - mousePointTo.x * newScale,
-                    y: pointer.y - mousePointTo.y * newScale,
-                };
-                stage.position(newPos);
-                stage.draw();
-            });
-
-            stage.draggable(true); // Cho phép kéo để pan
+            } else {
+                // Just update size on resize
+                stage.width(width);
+                stage.height(height);
+            }
+            drawGrid();
         }
 
-        /** Vẽ lưới trên canvas. */
         function drawGrid() {
-            gridLayer.destroyChildren(); // Xóa lưới hiện có
-            const gridSize = 50; // Khoảng cách giữa các đường lưới
-            const stageWidth = stage.width();
-            const stageHeight = stage.height();
-            const strokeColor = document.documentElement.classList.contains('dark') ? '#4a5568' : '#e2e8f0'; // Tailwind gray-700 / gray-200
-
-            // Vẽ các đường dọc
+            if (!stage) return;
+            gridLayer.destroyChildren();
+            const gridSize = 50;
+            const stageWidth = stage.width() / stage.scaleX() + 100;
+            const stageHeight = stage.height() / stage.scaleY() + 100;
+            const strokeColor = document.documentElement.classList.contains('dark') ? '#4a5568' : '#e2e8f0';
             for (let i = 0; i * gridSize < stageWidth; i++) {
-                gridLayer.add(new Konva.Line({
-                    points: [i * gridSize, 0, i * gridSize, stageHeight],
-                    stroke: strokeColor,
-                    strokeWidth: 0.5,
-                }));
+                gridLayer.add(new Konva.Line({ points: [i * gridSize, 0, i * gridSize, stageHeight], stroke: strokeColor, strokeWidth: 0.5, listening: false }));
             }
-
-            // Vẽ các đường ngang
             for (let i = 0; i * gridSize < stageHeight; i++) {
-                gridLayer.add(new Konva.Line({
-                    points: [0, i * gridSize, stageWidth, i * gridSize],
-                    stroke: strokeColor,
-                    strokeWidth: 0.5,
-                }));
+                gridLayer.add(new Konva.Line({ points: [0, i * gridSize, stageWidth, i * gridSize], stroke: strokeColor, strokeWidth: 0.5, listening: false }));
             }
-            gridLayer.batchDraw();
         }
 
-        /**
-         * Hàm trợ giúp để tính toán điểm giao nhau của một đường thẳng với một hình chữ nhật.
-         * Điều này giúp các liên kết bắt đầu/kết thúc chính xác tại cạnh của các node.
-         * @param {{x: number, y: number}} p1 - Điểm bắt đầu của đường thẳng (thường là tâm node nguồn).
-         * @param {{x: number, y: number}} p2 - Điểm kết thúc của đường thẳng (thường là tâm node đích).
-         * @param {{x: number, y: number, width: number, height: number}} r - Hình chữ nhật (node đích hoặc nguồn).
-         * @returns {{x: number, y: number}} Điểm giao nhau.
-         */
-        function getRectIntersectionPoint(p1, p2, r) {
-            const dx = p2.x - p1.x;
-            const dy = p2.y - p1.y;
+        function getLineRectIntersection(p1, p2, rect) {
+            const { x, y, width, height } = rect;
+            const min = { x: x, y: y };
+            const max = { x: x + width, y: y + height };
+            const d = { x: p2.x - p1.x, y: p2.y - p1.y };
+            let tmin = 0.0;
+            let tmax = 1.0;
 
-            const rx = r.x;
-            const ry = r.y;
-            const rw = r.width;
-            const rh = r.height;
-
-            let t = Infinity; 
-
-            // Cạnh trái
-            if (dx !== 0) {
-                const t1 = (rx - p1.x) / dx;
-                if (t1 >= 0 && t1 <= 1) {
-                    const y = p1.y + t1 * dy;
-                    if (y >= ry && y <= ry + rh) {
-                        t = Math.min(t, t1);
-                    }
+            for (const axis of ['x', 'y']) {
+                if (Math.abs(d[axis]) < 1e-6) {
+                    if (p1[axis] < min[axis] || p1[axis] > max[axis]) return null;
+                } else {
+                    const ood = 1.0 / d[axis];
+                    let t1 = (min[axis] - p1[axis]) * ood;
+                    let t2 = (max[axis] - p1[axis]) * ood;
+                    if (t1 > t2) [t1, t2] = [t2, t1];
+                    tmin = Math.max(tmin, t1);
+                    tmax = Math.min(tmax, t2);
+                    if (tmin > tmax) return null;
                 }
             }
-
-            // Cạnh phải
-            if (dx !== 0) {
-                const t2 = (rx + rw - p1.x) / dx;
-                if (t2 >= 0 && t2 <= 1) {
-                    const y = p1.y + t2 * dy;
-                    if (y >= ry && y <= ry + rh) {
-                        t = Math.min(t, t2);
-                    }
-                    if (y >= ry && y <= ry + rh) {
-                        t = Math.min(t, t2);
-                    }
-                }
-            }
-
-            // Cạnh trên
-            if (dy !== 0) {
-                const t3 = (ry - p1.y) / dy;
-                if (t3 >= 0 && t3 <= 1) {
-                    const x = p1.x + t3 * dx;
-                    if (x >= rx && x <= rx + rw) {
-                        t = Math.min(t, t3);
-                    }
-                }
-            }
-
-            // Cạnh dưới
-            if (dy !== 0) {
-                const t4 = (ry + rh - p1.y) / dy;
-                if (t4 >= 0 && t4 <= 1) {
-                    const x = p1.x + t4 * dx;
-                    if (x >= rx && x <= rx + rw) {
-                        t = Math.min(t, t4);
-                    }
-                }
-            }
-
-            if (t === Infinity) {
-                return p2; 
-            }
-            return {
-                x: p1.x + t * dx,
-                y: p1.y + t * dy
-            };
+            return { x: p1.x + d.x * tmin, y: p1.y + d.y * tmin };
         }
 
-        /**
-         * Cập nhật vị trí của tất cả các đường nối (mũi tên) được kết nối với một node cụ thể.
-         * @param {Konva.Group} movedNodeGroup - Nhóm Konva của node vừa di chuyển.
-         */
         function updateLinksForNode(movedNodeGroup) {
-            konvaLinksData.forEach(linkData => {
-                const sourceNodeGroup = linkData.sourceNodeGroup;
-                const targetNodeGroup = linkData.targetNodeGroup;
-                const konvaLine = linkData.konvaLine;
-                const sourceNodeRect = sourceNodeGroup.children[0]; // Konva.Rect is the first child
-                const targetNodeRect = targetNodeGroup.children[0]; // Konva.Rect is the first child
+            const movedNodeId = movedNodeGroup.getAttr('nodeId');
+            layer.find('Arrow').forEach(arrow => {
+                const sourceId = arrow.getAttr('sourceNodeId');
+                const targetId = arrow.getAttr('targetNodeId');
+                if (sourceId === movedNodeId || targetId === movedNodeId) {
+                    const sourceNodeGroup = layer.findOne(`#${sourceId}`);
+                    const targetNodeGroup = layer.findOne(`#${targetId}`);
+                    if (!sourceNodeGroup || !targetNodeGroup) return;
 
-                // Only update if this link is connected to the moved node
-                if (sourceNodeGroup === movedNodeGroup || targetNodeGroup === movedNodeGroup) {
-                    const p1 = {
-                        x: sourceNodeGroup.x() + sourceNodeRect.width() / 2,
-                        y: sourceNodeGroup.y() + sourceNodeRect.height() / 2,
-                    };
-                    const p2 = {
-                        x: targetNodeGroup.x() + targetNodeRect.width() / 2,
-                        y: targetNodeGroup.y() + targetNodeRect.height() / 2,
-                    };
+                    const sourceRectShape = sourceNodeGroup.findOne('Rect');
+                    const targetRectShape = targetNodeGroup.findOne('Rect');
+                    if (!sourceRectShape || !targetRectShape) return;
 
-                    const startIntersection = getRectIntersectionPoint(p1, p2, {
-                        x: sourceNodeGroup.x(), y: sourceNodeGroup.y(),
-                        width: sourceNodeRect.width(), height: sourceNodeRect.height()
-                    });
-                    const endIntersection = getRectIntersectionPoint(p2, p1, {
-                        x: targetNodeGroup.x(), y: targetNodeGroup.y(),
-                        width: targetNodeRect.width(), height: targetNodeRect.height()
-                    });
+                    const sourceRect = sourceNodeGroup.getClientRect();
+                    const targetRect = targetNodeGroup.getClientRect();
 
-                    konvaLine.points([startIntersection.x, startIntersection.y, endIntersection.x, endIntersection.y]);
+                    const p1 = { x: sourceRect.x + sourceRect.width / 2, y: sourceRect.y + sourceRect.height / 2 };
+                    const p2 = { x: targetRect.x + targetRect.width / 2, y: targetRect.y + targetRect.height / 2 };
+                    
+                    const start = getLineRectIntersection(p2, p1, sourceRect);
+                    const end = getLineRectIntersection(p1, p2, targetRect);
+                    
+                    if (start && end) {
+                        arrow.points([start.x, start.y, end.x, end.y]);
+                    }
                 }
             });
-            layer.batchDraw();
         }
 
-
-        /**
-         * Hiển thị menu ngữ cảnh tùy chỉnh tại vị trí được chỉ định.
-         * @param {number} x - Tọa độ X của chuột.
-         * @param {number} y - Tọa độ Y của chuột.
-         */
         function showNodeContextMenu(x, y) {
             nodeContextMenu.style.left = `${x}px`;
             nodeContextMenu.style.top = `${y}px`;
             nodeContextMenu.classList.remove('hidden');
         }
 
-        /** Ẩn menu ngữ cảnh tùy chỉnh. */
         function hideNodeContextMenu() {
             nodeContextMenu.classList.add('hidden');
-            clickedNodeData = null; // Xóa dữ liệu node đã lưu
+            clickedNodeData = null;
         }
+        
+        function renderFullCanvasFromSession() {
+            if (!isCanvasInitialized) {
+                console.warn("Canvas not ready, render call deferred.");
+                return;
+            }
+            layer.destroyChildren();
+            canvasPlaceholder.classList.add('hidden');
 
+            const masterData = { nodes: [], connections: [] };
+            const nodeIds = new Set();
+            sessionCanvasData.forEach(dataPart => {
+                if (dataPart.nodes) {
+                    dataPart.nodes.forEach(node => {
+                        if (!nodeIds.has(node.id)) {
+                            masterData.nodes.push(node);
+                            nodeIds.add(node.id);
+                        }
+                    });
+                }
+                if (dataPart.connections) {
+                    masterData.connections.push(...dataPart.connections);
+                }
+            });
 
-        /**
-         * Render nội dung trên canvas Konva dựa trên dữ liệu JSON đã phân tích cú pháp.
-         * @param {object} lessonData - Đối tượng JSON chứa các node và kết nối.
-         */
-        function renderContentOnCanvas(lessonData) {
-            if (!stage || !layer) {
-                console.error("Konva stage hoặc layer chưa được khởi tạo.");
+            if (masterData.nodes.length === 0) {
+                canvasPlaceholder.classList.remove('hidden');
                 return;
             }
 
-            layer.destroyChildren(); // Xóa các phần tử hiện có trên canvas
-            canvasPlaceholder.classList.add('hidden'); // Ẩn placeholder khi có nội dung
-
-            konvaNodesData = []; // Reset node data
-            konvaLinksData = []; // Reset link data
-
-            const PADDING = 20; // Padding nội bộ cho các node
-
-            // Tạo bản đồ các node để dễ dàng tìm kiếm khi tạo liên kết
+            const PADDING = 20;
             const nodesMap = new Map();
 
-            // 1. Tạo Node Konva và lưu trữ dữ liệu
-            lessonData.nodes.forEach(nodeData => {
-                const group = new Konva.Group({
-                    x: nodeData.x,
-                    y: nodeData.y,
-                    draggable: true, 
-                });
-
-                const text = new Konva.Text({
-                    text: nodeData.text,
-                    fontSize: 16,
-                    fontFamily: 'Inter, Arial, sans-serif',
-                    fill: '#333',
-                    align: 'center',
-                    verticalAlign: 'middle',
-                    padding: PADDING / 2, 
-                    wrap: 'word',
-                });
-                
-                // Tính toán kích thước văn bản thực tế để điều chỉnh kích thước hình chữ nhật
+            masterData.nodes.forEach(nodeData => {
+                const group = new Konva.Group({ x: nodeData.x, y: nodeData.y, draggable: true, id: nodeData.id, nodeId: nodeData.id });
+                const text = new Konva.Text({ text: nodeData.text, fontSize: 16, fontFamily: 'Inter, sans-serif', fill: '#333', padding: PADDING / 2, wrap: 'word' });
                 const textMetrics = text.measureSize(nodeData.text);
                 const rectWidth = Math.max(120, textMetrics.width + PADDING); 
-                const rectHeight = Math.max(60, textMetrics.height + PADDING); 
+                const rectHeight = Math.max(60, textMetrics.height + PADDING);
+                const rect = new Konva.Rect({ width: rectWidth, height: rectHeight, fill: nodeData.color || '#E0E0E0', cornerRadius: 10, shadowBlur: 5, shadowOpacity: 0.2, stroke: '#AAAAAA', strokeWidth: 1 });
+                if (nodeData.isMainTopic) { rect.stroke("#FF0000"); rect.strokeWidth(3); }
+                text.position({ x: 0, y: (rectHeight - textMetrics.height) / 2 });
+                text.width(rectWidth);
+                text.align('center');
 
-                const rect = new Konva.Rect({
-                    width: rectWidth,
-                    height: rectHeight,
-                    fill: nodeData.color || '#E0E0E0',
-                    cornerRadius: 10,
-                    shadowBlur: 5,
-                    shadowOpacity: 0.2,
-                    stroke: '#AAAAAA',
-                    strokeWidth: 1,
-                });
-
-                // Áp dụng kiểu dáng đặc biệt cho node chủ đề chính
-                if (nodeData.isMainTopic) {
-                    rect.stroke("#FF0000"); // Viền đỏ cho chủ đề chính
-                    rect.strokeWidth(3);
-                }
-
-                // Định vị văn bản bên trong hình chữ nhật để căn giữa
-                text.position({
-                    x: (rect.width() - textMetrics.width) / 2 - PADDING/2, 
-                    y: (rect.height() - textMetrics.height) / 2 - PADDING/2,
-                });
-
-                group.add(rect);
-                group.add(text);
+                group.add(rect, text);
                 layer.add(group);
+                nodesMap.set(nodeData.id, group);
 
-                // Store Konva group and original node data
-                konvaNodesData.push({ konvaGroup: group, nodeData: nodeData });
-                nodesMap.set(nodeData.id, { konvaGroup: group, konvaRect: rect, nodeData: nodeData });
-
-                // Thêm sự kiện click để hiển thị mô tả
                 group.on('click', (e) => {
-                    // Đảm bảo đây là click chuột trái và không phải là sự kiện contextmenu được kích hoạt cùng lúc
-                    if (e.evt.button === 0) { // e.evt.button === 0 là chuột trái
-                        // Ngăn chặn sự kiện lan truyền trong Konva để tránh xung đột
+                    if (e.evt.button === 0) {
                         e.cancelBubble = true; 
-                        if (nodeData.description && nodeData.description.trim() !== '') {
-                            addMessage('ai', `**Mô tả chi tiết cho "${nodeData.text}":**\n\n${nodeData.description}`);
-                        } else {
-                            showToast(`Không có mô tả chi tiết cho node "${nodeData.text}".`, 'info');
-                        }
+                        addMessage('ai', `**Chi tiết cho "${nodeData.text}":**\n\n${nodeData.description || 'Không có mô tả.'}`);
                     }
                 });
-
-                // Thêm sự kiện click chuột phải (contextmenu) cho node mở rộng
                 group.on('contextmenu', (e) => {
-                    e.evt.preventDefault(); // Ngăn chặn menu ngữ cảnh mặc định của trình duyệt
-                    e.cancelBubble = true; // Ngăn chặn sự kiện lan truyền trong Konva
-                    clickedNodeData = nodeData; // Lưu dữ liệu của node được click
+                    e.evt.preventDefault(); e.cancelBubble = true;
+                    clickedNodeData = nodeData;
                     showNodeContextMenu(e.evt.clientX, e.evt.clientY);
                 });
-
-                // Thêm sự kiện kéo thả cho node
-                group.on('dragmove', (e) => {
-                    // Cập nhật vị trí các liên kết khi node di chuyển
-                    updateLinksForNode(group);
-                });
-                group.on('dragend', (e) => {
-                    // Đảm bảo các liên kết được cập nhật lần cuối sau khi kéo xong
-                    updateLinksForNode(group);
-                });
+                group.on('dragmove', () => updateLinksForNode(group));
             });
 
-            // 2. Tạo Kết nối Konva
-            lessonData.connections.forEach(conn => {
+            masterData.connections.forEach(conn => {
                 const sourceNode = nodesMap.get(conn.from);
                 const targetNode = nodesMap.get(conn.to);
-
                 if (sourceNode && targetNode) {
-                    // Initial points (will be updated by updateLinksForNode)
-                    const line = new Konva.Arrow({
-                        points: [
-                            sourceNode.konvaGroup.x() + sourceNode.konvaRect.width() / 2, 
-                            sourceNode.konvaGroup.y() + sourceNode.konvaRect.height() / 2, 
-                            targetNode.konvaGroup.x() + targetNode.konvaRect.width() / 2, 
-                            targetNode.konvaGroup.y() + targetNode.konvaRect.height() / 2
-                        ],
-                        stroke: conn.color || '#000000',
-                        strokeWidth: 2,
-                        pointerLength: 10,
-                        pointerWidth: 10,
-                    });
-                    layer.add(line);
-
-                    // Lưu thông tin liên kết để cập nhật sau này
-                    konvaLinksData.push({ 
-                        konvaLine: line, 
-                        sourceNodeGroup: sourceNode.konvaGroup,
-                        sourceNodeRect: sourceNode.konvaRect, // Store rect for intersection calculation
-                        targetNodeGroup: targetNode.konvaGroup,
-                        targetNodeRect: targetNode.konvaRect, // Store rect for intersection calculation
-                    });
+                    const arrow = new Konva.Arrow({ stroke: '#000', strokeWidth: 2, pointerLength: 10, pointerWidth: 10, sourceNodeId: conn.from, targetNodeId: conn.to });
+                    layer.add(arrow);
                 }
             });
 
-            layer.batchDraw(); 
-            centerMindMap(); // Căn giữa sau khi vẽ ban đầu
-
-            // Sau khi tất cả các node và liên kết đã được tạo, cập nhật tất cả các liên kết
-            // để đảm bảo chúng bám chính xác vào các cạnh node
-            konvaNodesData.forEach(node => {
-                updateLinksForNode(node.konvaGroup);
-            });
-        }
-
-        // Hàm để căn giữa toàn bộ sơ đồ tư duy trên canvas
-        function centerMindMap() {
-            if (!stage || !layer || layer.children.length === 0) return;
-
-            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-
-            // Tính toán giới hạn của tất cả các đối tượng trên layer
-            layer.children.forEach(child => {
-                // Konva Group's getClientRect already accounts for its children (rect and text)
-                const bbox = child.getClientRect(); 
-                minX = Math.min(minX, bbox.x);
-                minY = Math.min(minY, bbox.y);
-                maxX = Math.max(maxX, bbox.x + bbox.width);
-                maxY = Math.max(maxY, bbox.y + bbox.height);
-            });
-
-            const contentWidth = maxX - minX;
-            const contentHeight = maxY - minY;
-
-            const stageCenterX = stage.width() / 2;
-            const stageCenterY = stage.height() / 2;
-
-            const currentMapCenterX = minX + contentWidth / 2;
-            const currentMapCenterY = minY + contentHeight / 2;
-
-            const offsetX = stageCenterX - currentMapCenterX;
-            const offsetY = stageCenterY - currentMapCenterY;
-
-            // Di chuyển layer để căn giữa nội dung
-            // Điều này áp dụng offset cho tất cả các children trên layer
-            layer.x(layer.x() + offsetX);
-            layer.y(layer.y() + offsetY);
-
+            layer.find('Group').forEach(group => updateLinksForNode(group));
             layer.batchDraw();
         }
 
         // --- GLOBAL EVENT LISTENERS ---
         sendBtn.addEventListener('click', sendMessage);
-        promptInput.addEventListener('keydown', e => { 
-            if (e.key === 'Enter' && !e.shiftKey) { 
-                e.preventDefault(); 
-                sendMessage(); 
-            } 
-        });
+        promptInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
         promptInput.addEventListener('input', adjustInputHeight);
+        
+        newSessionBtn.addEventListener('click', () => newSession());
+        saveSessionBtn.addEventListener('click', saveSession);
+        loadSessionBtn.addEventListener('click', loadSession);
+        loadFromPlaceholderBtn.addEventListener('click', loadSession);
 
-        // Click handler for chat container to handle dynamic links/buttons
-        chatContainer.addEventListener('click', async (e) => {
-            const link = e.target.closest('a');
-            const button = e.target.closest('button');
-
-            if (link) {
-                e.preventDefault();
-                e.stopPropagation();
-                if (link.classList.contains('term-link')) {
-                    const term = link.dataset.term;
-                    const messageContentElement = link.closest('.message-content');
-                    const context = messageContentElement ? messageContentElement.dataset.rawText : '';
-                    showToast(`Giải thích thuật ngữ: "${term}" (ngữ cảnh: "${context.substring(0, 50)}...")`, 'info');
-                }
-            } else if (button) {
-                 if (button.classList.contains('copy-btn')) {
-                    e.preventDefault(); e.stopPropagation();
-                    copyToClipboard(button.dataset.text);
-                 } else if (button.classList.contains('speak-btn')) {
-                    e.preventDefault(); e.stopPropagation();
-                    if (speechSynthesis.speaking || speechSynthesis.paused) {
-                        if (activeSpeech && activeSpeech.button === button) {
-                            const currentState = button.dataset.state;
-                            if (currentState === 'paused') {
-                                speechSynthesis.resume();
-                                button.innerHTML = '⏸️'; button.dataset.state = 'playing'; button.title = 'Tạm dừng';
-                                return;
-                            }
-                            if (currentState === 'playing') {
-                                speechSynthesis.pause();
-                                button.innerHTML = '▶️'; button.dataset.state = 'Tiếp tục';
-                                return;
-                            }
-                        }
-                        speechSynthesis.cancel(); 
-                    }
-
-                    const utterance = new SpeechSynthesisUtterance(button.dataset.text);
-                    utterance.lang = 'vi-VN'; 
-                    utterance.onstart = () => {
-                        resetActiveSpeechButton(); 
-                        activeSpeech = { utterance, button: button }; 
-                        button.innerHTML = '⏸️'; button.dataset.state = 'playing'; button.title = 'Tạm dừng';
-                    };
-                    utterance.onend = () => { resetActiveSpeechButton(); activeSpeech = null; };
-                    utterance.onerror = (event) => { 
-                        console.error("Lỗi SpeechSynthesisUtterance:", event);
-                        showToast(`Lỗi giọng nói: ${event.error}`, 'error');
-                        resetActiveSpeechButton(); 
-                        activeSpeech = null; 
-                    };
-                    speechSynthesis.speak(utterance);
-                 }
+        expandTopicBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            hideNodeContextMenu();
+            if (clickedNodeData) {
+                const promptToAI = `ExpandTopic: ${clickedNodeData.id} - ${clickedNodeData.text}`;
+                promptInput.value = promptToAI;
+                sendMessage();
             }
         });
-        
-        // --- LOGIC NÚT CUỘN LÊN ĐẦU TRANG ---
-        /** Hàm để hiển thị/ẩn nút cuộn lên đầu trang. */
-        function toggleScrollToTopButton() {
-            if (!scrollToTopBtn || !chatContainer) return; 
-
-            if (chatContainer.scrollTop > chatContainer.clientHeight * 0.5) { 
-                scrollToTopBtn.classList.add('show');
-            } else {
-                scrollToTopBtn.classList.remove('show');
-            }
-        }
-
-        /** Hàm để cuộn lên đầu chat container. */
-        function scrollToTop() {
-            if (chatContainer) {
-                chatContainer.scrollTo({
-                    top: 0,
-                    behavior: "smooth" 
-                });
-            }
-        }
-        
-        document.addEventListener('DOMContentLoaded', () => {
-            if (chatContainer) {
-                chatContainer.addEventListener("scroll", toggleScrollToTopButton);
-            }
-            if (scrollToTopBtn) { 
-                scrollToTopBtn.addEventListener("click", scrollToTop);
-            }
-            // Gán sự kiện cho nút Xóa Canvas
-            if (clearCanvasBtn) {
-                clearCanvasBtn.addEventListener('click', () => {
-                    if (layer) {
-                        layer.destroyChildren();
-                        layer.batchDraw();
-                        canvasPlaceholder.classList.remove('hidden'); // Hiển thị lại placeholder
-                    }
-                });
-            }
-            // Gán sự kiện cho nút Kích hoạt Bố cục Lực (Chức năng này không còn hoạt động)
-            if (activateForceLayoutBtn) {
-                activateForceLayoutBtn.addEventListener('click', () => {
-                    showToast('Chức năng "Sắp xếp sơ đồ tự động" không khả dụng khi không sử dụng D3.js.', 'info');
-                });
-            }
-
-            // Gán sự kiện cho nút "Mở rộng vấn đề" trong menu ngữ cảnh
-            if (expandTopicBtn) {
-                expandTopicBtn.addEventListener('click', (e) => {
-                    e.stopPropagation(); // Ngăn chặn sự kiện lan truyền để tránh window click ẩn menu ngay lập tức
-                    console.log("Nút 'Mở rộng vấn đề' đã được nhấn!"); // LOG: Kiểm tra nút đã được nhấn
-                    console.log("Dữ liệu clickedNodeData:", clickedNodeData); // LOG: Kiểm tra dữ liệu node
-                    hideNodeContextMenu(); // Ẩn menu
-                    if (clickedNodeData) {
-                        const promptToAI = `Mở rộng chi tiết về chủ đề: "${clickedNodeData.text}". Vui lòng cung cấp giải thích sâu hơn, các ví dụ minh họa và thông tin liên quan.`;
-                        console.log("Prompt được tạo:", promptToAI); // LOG: Kiểm tra prompt
-                        // Mô phỏng người dùng nhập và gửi prompt này
-                        promptInput.value = promptToAI;
-                        sendBtn.disabled = false; // Đảm bảo nút gửi được bật
-                        sendMessage(); // Gọi hàm gửi tin nhắn
-                        clickedNodeData = null; // Xóa dữ liệu node đã lưu
-                    } else {
-                        showToast('Không tìm thấy dữ liệu node để mở rộng.', 'error');
-                        console.log("Lỗi: clickedNodeData rỗng khi nhấn 'Mở rộng vấn đề'."); // LOG: Lỗi nếu dữ liệu rỗng
-                    }
-                });
-            }
-
-            // Fix: Ngăn chặn sự lan truyền sự kiện click trên chính menu ngữ cảnh (đã có)
-            if (nodeContextMenu) {
-                nodeContextMenu.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                });
-            }
-        });
+        nodeContextMenu.addEventListener('click', e => e.stopPropagation());
 
     </script>
 </body>
