@@ -164,15 +164,16 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const ai = getAI(app);
-        const model = getGenerativeModel(ai, { model: "gemini-2.5-flash" });
+        const model = getGenerativeModel(ai, { model: "gemini-1.5-flash" });
 
         // Global state variables
         let chatHistory = [];
-        let sessionCanvasData = []; // Stores all canvas data objects for the current session
+        let sessionCanvasData = [];
         let isRecording = false;
         let activeSpeech = null;
         let clickedNodeData = null;
         let isCanvasInitialized = false;
+        let repulsionAnimation = null;
 
         // Cached DOM elements
         const themeToggle = document.getElementById('theme-toggle');
@@ -202,7 +203,7 @@
         1.  **Phân tích & Chia nhỏ:** Chia chủ đề thành các phần logic, có cấu trúc phân cấp.
         2.  **Giải thích Chatbox:** Cung cấp giải thích chi tiết, rõ ràng bằng Markdown.
         3.  **Dữ liệu Canvas (QUAN TRỌNG):** Luôn tạo một đối tượng JSON để vẽ lên Canvas. JSON phải nằm trong khối code \`\`\`json.
-            - Phân bổ các node một cách có tổ chức trên canvas (giả định kích thước 800x600).
+            - Phân bổ các node một cách có tổ chức trên canvas (giả định kích thước 800x600), cố gắng tránh chồng chéo ban đầu.
             - Node đầu tiên trong mảng 'nodes' phải là node chủ đề chính, đánh dấu bằng "isMainTopic": true.
             - Mỗi node phải có "description" đầy đủ.
         
@@ -277,20 +278,6 @@
             setTimeout(hideToast, 4000);
         }
 
-        function copyToClipboard(text) {
-            const textarea = document.createElement('textarea');
-            textarea.value = text;
-            document.body.appendChild(textarea);
-            textarea.select();
-            try {
-                document.execCommand('copy');
-                showToast('Đã sao chép!', 'success');
-            } catch (err) {
-                showToast('Không thể sao chép.', 'error');
-            }
-            document.body.removeChild(textarea);
-        }
-
         // --- QUẢN LÝ PHIÊN ---
         function saveSession() {
             if (chatHistory.length === 0 && sessionCanvasData.length === 0) {
@@ -314,18 +301,14 @@
             }
             const savedSession = JSON.parse(savedSessionJSON);
             
-            newSession(false); // Clear current state without showing toast
+            newSession(false);
 
             chatHistory = savedSession.chatHistory || [];
             sessionCanvasData = savedSession.canvasData || [];
 
-            // Re-render chat
-            chatHistory.forEach(msg => {
-                addMessage(msg.role, msg.parts[0].text, false);
-            });
+            chatHistory.forEach(msg => addMessage(msg.role, msg.parts[0].text, false));
             chatContainer.scrollTop = chatContainer.scrollHeight;
 
-            // Re-render canvas if it's ready
             if (isCanvasInitialized) {
                 renderFullCanvasFromSession();
             }
@@ -350,10 +333,8 @@
         // --- XÁC THỰC & KHỞI TẠO ---
         onAuthStateChanged(auth, async user => {
             if (user) {
-                // FIX: Use ResizeObserver to robustly initialize and resize the canvas
                 const resizeObserver = new ResizeObserver(entries => {
                     for (let entry of entries) {
-                        // Use contentRect for accurate dimensions
                         const { width, height } = entry.contentRect;
                         if (width > 0 && height > 0) {
                             initOrUpdateCanvas(width, height);
@@ -362,10 +343,9 @@
                 });
                 resizeObserver.observe(canvasContainer);
 
-                // Load session data. The observer will trigger the first render when the canvas is ready.
                 const savedSessionJSON = localStorage.getItem('aiLearningSession');
                 if (savedSessionJSON) {
-                    loadSession(); // This will populate data; render is handled by the observer callback
+                    loadSession();
                 } else {
                     addMessage('ai', 'Chào mừng! Hãy bắt đầu bằng cách hỏi một chủ đề.');
                 }
@@ -393,7 +373,7 @@
             document.documentElement.classList.toggle('dark');
             localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
             updateThemeIcon();
-            if (gridLayer) drawGrid(); // Redraw grid with new theme color
+            if (gridLayer) drawGrid();
         });
         if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
@@ -403,17 +383,6 @@
         updateThemeIcon();
 
         // --- LOGIC CHAT ---
-        function addMessageActions(actionsContainer, rawText) {
-            if (!actionsContainer || !rawText || rawText.includes('blinking-cursor')) return;
-            actionsContainer.innerHTML = '';
-            const copyBtn = document.createElement('button');
-            copyBtn.className = 'p-1.5 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-full';
-            copyBtn.innerHTML = `<svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" /></svg>`;
-            copyBtn.title = 'Sao chép';
-            copyBtn.onclick = () => copyToClipboard(rawText);
-            actionsContainer.appendChild(copyBtn);
-        }
-
         function addMessage(role, text, shouldScroll = true) {
             const messageWrapper = document.createElement('div');
             let contentElem, statusElem, actionsContainer = null;
@@ -424,7 +393,7 @@
                 contentElem = messageWrapper.querySelector('.message-content');
                 statusElem = messageWrapper.querySelector('.ai-status');
                 actionsContainer = messageWrapper.querySelector('.message-actions');
-            } else { // user
+            } else {
                 messageWrapper.className = 'flex justify-end';
                 messageWrapper.innerHTML = `<div class="message-content px-4 py-2 rounded-2xl bg-blue-600 dark:bg-blue-700 text-white max-w-xs sm:max-w-md lg:max-w-2xl"></div>`;
                 contentElem = messageWrapper.querySelector('.message-content');
@@ -456,7 +425,7 @@
 
             chatHistory.push({ role: 'user', parts: [{ text: promptText }] });
 
-            const { contentElem, statusElem, actionsContainer } = addMessage('ai', '<span class="blinking-cursor"></span>');
+            const { contentElem, statusElem } = addMessage('ai', '<span class="blinking-cursor"></span>');
             if (statusElem) statusElem.textContent = 'Đang nghĩ...';
 
             try {
@@ -478,7 +447,6 @@
                 
                 const finalMarkdownPart = fullResponseText.split('```json')[0].trim();
                 contentElem.innerHTML = DOMPurify.sanitize(marked.parse(finalMarkdownPart));
-                addMessageActions(actionsContainer, finalMarkdownPart);
 
                 chatHistory.push({ role: 'model', parts: [{ text: fullResponseText }] });
 
@@ -489,13 +457,11 @@
                         sessionCanvasData.push(newCanvasData);
                         renderFullCanvasFromSession();
                     } catch (e) {
-                        console.error("Lỗi phân tích JSON:", e);
                         showToast("AI trả về dữ liệu canvas không hợp lệ.", "error");
                     }
                 }
 
             } catch (error) {
-                console.error("Lỗi sendMessage:", error);
                 contentElem.innerHTML = `**Lỗi:** ${error.message}`;
                 showToast(`Lỗi gửi tin nhắn: ${error.message}`, 'error');
             } finally {
@@ -524,17 +490,11 @@
         // --- LOGIC CANVAS (Konva.js) ---
         function initOrUpdateCanvas(width, height) {
             if (!stage) {
-                // First time initialization
-                stage = new Konva.Stage({
-                    container: 'learning-canvas',
-                    width: width,
-                    height: height,
-                });
+                stage = new Konva.Stage({ container: 'learning-canvas', width: width, height: height });
                 gridLayer = new Konva.Layer();
                 layer = new Konva.Layer();
                 stage.add(gridLayer, layer);
                 
-                // Add event listeners only once
                 stage.content.oncontextmenu = (e) => e.preventDefault();
                 stage.on('click', (e) => { if (e.target === stage || e.target === gridLayer) hideNodeContextMenu(); });
                 window.addEventListener('scroll', hideNodeContextMenu, true);
@@ -552,14 +512,10 @@
                 stage.draggable(true);
                 
                 isCanvasInitialized = true;
-                console.log(`Canvas initialized with size: ${width}x${height}`);
-
-                // After initializing, try to render any loaded data
                 if (sessionCanvasData.length > 0) {
                     renderFullCanvasFromSession();
                 }
             } else {
-                // Just update size on resize
                 stage.width(width);
                 stage.height(height);
             }
@@ -615,10 +571,6 @@
                     const targetNodeGroup = layer.findOne(`#${targetId}`);
                     if (!sourceNodeGroup || !targetNodeGroup) return;
 
-                    const sourceRectShape = sourceNodeGroup.findOne('Rect');
-                    const targetRectShape = targetNodeGroup.findOne('Rect');
-                    if (!sourceRectShape || !targetRectShape) return;
-
                     const sourceRect = sourceNodeGroup.getClientRect();
                     const targetRect = targetNodeGroup.getClientRect();
 
@@ -634,6 +586,60 @@
                 }
             });
         }
+        
+        // NEW: Function to handle node repulsion
+        function startRepulsionAnimation() {
+            if (repulsionAnimation) {
+                repulsionAnimation.stop();
+            }
+            
+            repulsionAnimation = new Konva.Animation((frame) => {
+                let overlapping = false;
+                const nodes = layer.find('Group');
+                const PADDING = 10; // Extra space between nodes
+
+                for (let i = 0; i < nodes.length; i++) {
+                    for (let j = i + 1; j < nodes.length; j++) {
+                        const node1 = nodes[i];
+                        const node2 = nodes[j];
+                        
+                        const rect1 = node1.getClientRect();
+                        const rect2 = node2.getClientRect();
+
+                        if (Konva.Util.haveIntersection(
+                           {x: rect1.x - PADDING, y: rect1.y - PADDING, width: rect1.width + 2 * PADDING, height: rect1.height + 2 * PADDING}, 
+                           rect2
+                        )) {
+                            overlapping = true;
+                            
+                            // Calculate repulsion vector
+                            const dx = rect2.x - rect1.x;
+                            const dy = rect2.y - rect1.y;
+                            const distance = Math.sqrt(dx * dx + dy * dy);
+                            
+                            // Move nodes apart
+                            const moveX = (dx / distance) * 1; // Move 1 pixel per frame
+                            const moveY = (dy / distance) * 1;
+
+                            node1.x(node1.x() - moveX);
+                            node1.y(node1.y() - moveY);
+                            node2.x(node2.x() + moveX);
+                            node2.y(node2.y() + moveY);
+
+                            updateLinksForNode(node1);
+                            updateLinksForNode(node2);
+                        }
+                    }
+                }
+
+                if (!overlapping) {
+                    repulsionAnimation.stop();
+                }
+            }, layer);
+
+            repulsionAnimation.start();
+        }
+
 
         function showNodeContextMenu(x, y) {
             nodeContextMenu.style.left = `${x}px`;
@@ -647,10 +653,7 @@
         }
         
         function renderFullCanvasFromSession() {
-            if (!isCanvasInitialized) {
-                console.warn("Canvas not ready, render call deferred.");
-                return;
-            }
+            if (!isCanvasInitialized) return;
             layer.destroyChildren();
             canvasPlaceholder.classList.add('hidden');
 
@@ -676,7 +679,6 @@
             }
 
             const PADDING = 20;
-            const nodesMap = new Map();
 
             masterData.nodes.forEach(nodeData => {
                 const group = new Konva.Group({ x: nodeData.x, y: nodeData.y, draggable: true, id: nodeData.id, nodeId: nodeData.id });
@@ -692,7 +694,6 @@
 
                 group.add(rect, text);
                 layer.add(group);
-                nodesMap.set(nodeData.id, group);
 
                 group.on('click', (e) => {
                     if (e.evt.button === 0) {
@@ -706,11 +707,13 @@
                     showNodeContextMenu(e.evt.clientX, e.evt.clientY);
                 });
                 group.on('dragmove', () => updateLinksForNode(group));
+                // NEW: Trigger repulsion after dragging
+                group.on('dragend', () => startRepulsionAnimation());
             });
 
             masterData.connections.forEach(conn => {
-                const sourceNode = nodesMap.get(conn.from);
-                const targetNode = nodesMap.get(conn.to);
+                const sourceNode = layer.findOne(`#${conn.from}`);
+                const targetNode = layer.findOne(`#${conn.to}`);
                 if (sourceNode && targetNode) {
                     const arrow = new Konva.Arrow({ stroke: '#000', strokeWidth: 2, pointerLength: 10, pointerWidth: 10, sourceNodeId: conn.from, targetNodeId: conn.to });
                     layer.add(arrow);
@@ -719,6 +722,9 @@
 
             layer.find('Group').forEach(group => updateLinksForNode(group));
             layer.batchDraw();
+
+            // NEW: Trigger repulsion after initial render
+            startRepulsionAnimation();
         }
 
         // --- GLOBAL EVENT LISTENERS ---
