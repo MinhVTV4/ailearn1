@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Học Tập Tương Tác (v3 - Tích hợp Bài tập)</title>
+    <title>AI Học Tập Tương Tác (v4 - Nhiều dạng bài tập)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
@@ -16,22 +16,11 @@
             --scrollbar-thumb-bg: #718096;
             --scrollbar-thumb-hover-bg: #a0aec0;
         }
-        body {
-            overflow: hidden;
-        }
-        #chat-container::-webkit-scrollbar, #canvas-container::-webkit-scrollbar {
-            width: 6px;
-        }
-        #chat-container::-webkit-scrollbar-track, #canvas-container::-webkit-scrollbar-track {
-            background: var(--scrollbar-track-bg);
-        }
-        #chat-container::-webkit-scrollbar-thumb, #canvas-container::-webkit-scrollbar-thumb {
-            background: var(--scrollbar-thumb-bg);
-            border-radius: 6px;
-        }
-        #chat-container::-webkit-scrollbar-thumb:hover, #canvas-container::-webkit-scrollbar-thumb:hover {
-            background: var(--scrollbar-thumb-hover-bg);
-        }
+        body { overflow: hidden; }
+        #chat-container::-webkit-scrollbar, #canvas-container::-webkit-scrollbar { width: 6px; }
+        #chat-container::-webkit-scrollbar-track, #canvas-container::-webkit-scrollbar-track { background: var(--scrollbar-track-bg); }
+        #chat-container::-webkit-scrollbar-thumb, #canvas-container::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb-bg); border-radius: 6px; }
+        #chat-container::-webkit-scrollbar-thumb:hover, #canvas-container::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover-bg); }
         .message-content pre { background-color: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; font-family: 'Courier New', Courier, monospace; }
         .dark .message-content pre { background-color: #0f172a; }
         .message-content code:not(pre > code) { background-color: #e2e8f0; color: #1e293b; padding: 0.2em 0.4em; margin: 0; font-size: 85%; border-radius: 3px; }
@@ -57,17 +46,31 @@
         .toast { transition: all 0.4s ease-in-out; opacity: 0; transform: translateX(100%); }
         .toast.show { opacity: 1; transform: translateX(0); }
         .toast.hide { opacity: 0; transform: translateX(120%); }
-        #node-context-menu {
-            border: 1px solid #e2e8f0;
-            background-color: white;
-            padding: 0;
+        #node-context-menu { border: 1px solid #e2e8f0; background-color: white; padding: 0; }
+        .dark #node-context-menu { border: 1px solid #4a5568; background-color: #2d3748; }
+        #node-context-menu button { white-space: nowrap; }
+
+        /* Styles for Ordering Question Type */
+        .ordering-item {
+            cursor: grab;
+            transition: background-color 0.2s, box-shadow 0.2s, transform 0.2s ease-in-out;
+            user-select: none;
         }
-        .dark #node-context-menu {
-            border: 1px solid #4a5568;
-            background-color: #2d3748;
+        .ordering-item:active {
+            cursor: grabbing;
+            background-color: #e0e7ff; /* indigo-100 */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transform: scale(1.02);
         }
-        #node-context-menu button {
-            white-space: nowrap;
+        .dark .ordering-item:active {
+            background-color: #4338ca; /* indigo-700 */
+        }
+        .ordering-item.over {
+            background-color: #dbeafe; /* blue-100 */
+            transform: scale(1.01);
+        }
+        .dark .ordering-item.over {
+            background-color: #1e40af; /* blue-800 */
         }
     </style>
 </head>
@@ -84,36 +87,29 @@
                     <span class="text-lg font-bold text-gray-800 dark:text-gray-100">AI Học Tập</span>
                 </div>
                 <div class="flex items-center gap-1 sm:gap-2">
-                    <!-- NÚT MỚI: Tạo Bài tập -->
                     <button id="create-exercise-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Tạo bài tập kiểm tra">
                         <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
                     </button>
-                    <!-- Nút Lưu Phiên -->
                     <button id="save-session-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Lưu phiên làm việc">
                         <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v12l-5-3-5 3V4z" /></svg>
                     </button>
-                    <!-- Nút Tải Phiên -->
                     <button id="load-session-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Tải phiên làm việc đã lưu">
                         <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 2.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
                     </button>
-                    <!-- Nút Phiên Mới -->
                     <button id="new-session-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Bắt đầu phiên mới (xóa mọi thứ)">
                         <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-10.293a1 1 0 00-1.414-1.414L6 9.586 4.707 8.293a1 1 0 00-1.414 1.414L7.586 11l-2.293 2.293a1 1 0 001.414 1.414L10 12.414l2.293 2.293a1 1 0 001.414-1.414L11.414 11l2.293-2.293a1 1 0 000-1.414z" clip-rule="evenodd" /></svg>
                     </button>
-                    <!-- Nút chuyển đổi chế độ Sáng/Tối -->
                     <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Chuyển chế độ Sáng/Tối">
                         <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
-                        <svg id="theme-toggle-light-icon" class="hidden w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 14.95a1 1 0 010-1.414l.707-.707a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414 0zM3 11a1 1 0 100-2H2a1 1 0 100 2h1z" clip-rule="evenodd"></path></svg>
+                        <svg id="theme-toggle-light-icon" class="hidden w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 14.95a1 1 0 010-1.414l.707-.707a1 1 0 011.414 1.414l-.707-.707a1 1 0 01-1.414 0zM3 11a1 1 0 100-2H2a1 1 0 100 2h1z" clip-rule="evenodd"></path></svg>
                     </button>
                 </div>
             </header>
 
-            <!-- Khu vực hiển thị tin nhắn chat -->
             <div id="chat-container" class="flex-1 px-4 pt-4 space-y-4 overflow-y-auto relative">
                  <!-- Tin nhắn sẽ được chèn vào đây -->
             </div>
 
-            <!-- Vùng nhập liệu chat -->
             <div class="p-4 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700">
                 <div class="flex items-center gap-3 bg-gray-100 dark:bg-slate-700 rounded-full p-2">
                     <textarea id="prompt-input" rows="1" placeholder="Nhập câu hỏi hoặc yêu cầu học tập..." class="flex-1 bg-transparent px-3 py-2 resize-none focus:outline-none dark:text-gray-200 dark:placeholder-gray-400"></textarea>
@@ -178,6 +174,7 @@
         let clickedNodeData = null;
         let isCanvasInitialized = false;
         let repulsionAnimation = null;
+        let draggedItem = null;
 
         // Cached DOM elements
         const themeToggle = document.getElementById('theme-toggle');
@@ -195,15 +192,15 @@
         const newSessionBtn = document.getElementById('new-session-btn');
         const saveSessionBtn = document.getElementById('save-session-btn');
         const loadSessionBtn = document.getElementById('load-session-btn');
-        const createExerciseBtn = document.getElementById('create-exercise-btn'); // New button
+        const createExerciseBtn = document.getElementById('create-exercise-btn');
         const nodeContextMenu = document.getElementById('node-context-menu');
         const expandTopicBtn = document.getElementById('expand-topic-btn');
 
         let stage, layer, gridLayer;
 
-        // UPDATED SYSTEM PROMPT
+        // *** UPDATED SYSTEM PROMPT (v4) ***
         const LEARNING_SYSTEM_PROMPT = `
-        Bạn là một giáo viên AI chuyên nghiệp. Mục tiêu của bạn là giúp người học hiểu sâu về một chủ đề, tạo ra các thành phần trực quan và kiểm tra kiến thức của họ.
+        Bạn là một giáo viên AI chuyên nghiệp. Mục tiêu của bạn là giúp người học hiểu sâu về một chủ đề, tạo ra các thành phần trực quan và kiểm tra kiến thức của họ thông qua nhiều dạng bài tập.
         
         QUY TẮC CHUNG:
         1.  **Phân tích & Chia nhỏ:** Chia chủ đề thành các phần logic, có cấu trúc phân cấp.
@@ -218,8 +215,7 @@
            - Ví dụ JSON:
              \`\`\`json
              {
-               "type": "lesson_data",
-               "title": "Chủ Đề Mới",
+               "type": "lesson_data", "title": "Chủ Đề Mới",
                "nodes": [
                  { "id": "node1", "type": "concept", "text": "Khái niệm chính", "description": "...", "x": 100, "y": 100, "color": "#FFDDC1", "isMainTopic": true },
                  { "id": "node2", "type": "detail", "text": "Chi tiết 1", "description": "...", "x": 300, "y": 150, "color": "#C1FFDD" }
@@ -234,8 +230,7 @@
            - Ví dụ JSON:
              \`\`\`json
              {
-               "type": "lesson_expansion",
-               "title": "Mở rộng: Chi tiết 1",
+               "type": "lesson_expansion", "title": "Mở rộng: Chi tiết 1",
                "nodes": [ { "id": "node2_sub1", "type": "example", "text": "Ví dụ", "description": "...", "x": 450, "y": 100, "color": "#DDA0DD" } ],
                "connections": [ { "from": "node2", "to": "node2_sub1" } ]
              }
@@ -243,27 +238,67 @@
 
         C. NẾU YÊU CẦU LÀ TẠO BÀI TẬP (ví dụ: "tạo bài tập", "kiểm tra tôi"):
            - Phân tích chủ đề từ lịch sử trò chuyện hoặc yêu cầu.
+           - Chọn một trong các loại câu hỏi sau: "mcq" (trắc nghiệm), "fill_in_the_blank" (điền vào chỗ trống), "ordering" (sắp xếp), "short_answer" (trả lời ngắn).
            - Tạo một đối tượng JSON DUY NHẤT loại "exercise_data".
-           - KHÔNG cung cấp lời giải thích hay đáp án trong phần văn bản chat. Chỉ đưa ra một lời dẫn ngắn gọn như "Hãy thử sức với bài tập này nhé!".
-           - Ví dụ JSON:
-             \`\`\`json
-             {
-               "type": "exercise_data",
-               "title": "Bài tập về [Chủ đề]",
-               "exercise_id": "ex_${Date.now()}",
-               "question_type": "mcq",
-               "question_text": "Câu hỏi chính ở đây là gì?",
-               "options": [
-                 { "id": "A", "text": "Lựa chọn A" },
-                 { "id": "B", "text": "Lựa chọn B" },
-                 { "id": "C", "text": "Lựa chọn C" }
-               ],
-               "evaluation_criteria": {
-                 "correct_answer_id": "B",
-                 "explanation": "Giải thích chi tiết tại sao đáp án này lại đúng, và tại sao các đáp án khác sai."
-               }
-             }
-             \`\`\`
+           - KHÔNG cung cấp lời giải thích hay đáp án trong phần văn bản chat. Chỉ đưa ra một lời dẫn ngắn gọn.
+           - Cấu trúc JSON cho từng loại:
+
+           1. Trắc nghiệm (mcq):
+              \`\`\`json
+              {
+                "type": "exercise_data", "title": "Bài tập về [Chủ đề]", "exercise_id": "ex_...",
+                "question_type": "mcq",
+                "question_text": "Câu hỏi chính là gì?",
+                "options": [ { "id": "A", "text": "Lựa chọn A" }, { "id": "B", "text": "Lựa chọn B" } ],
+                "evaluation_criteria": { "correct_answer_id": "B", "explanation": "Giải thích..." }
+              }
+              \`\`\`
+
+           2. Điền vào chỗ trống (fill_in_the_blank):
+              - Dùng [___] để chỉ chỗ trống trong question_text.
+              \`\`\`json
+              {
+                "type": "exercise_data", "title": "Bài tập về [Chủ đề]", "exercise_id": "ex_...",
+                "question_type": "fill_in_the_blank",
+                "question_text": "Mặt trời mọc ở hướng [___] và lặn ở hướng [___].",
+                "evaluation_criteria": {
+                  "correct_answers": [ ["đông", "tây"], ["east", "west"] ],
+                  "explanation": "Giải thích về sự tự quay của Trái Đất..."
+                }
+              }
+              \`\`\`
+
+           3. Sắp xếp (ordering):
+              - 'items' là danh sách các mục cần sắp xếp (đã bị xáo trộn).
+              \`\`\`json
+              {
+                "type": "exercise_data", "title": "Bài tập về [Chủ đề]", "exercise_id": "ex_...",
+                "question_type": "ordering",
+                "question_text": "Hãy sắp xếp các hành tinh sau theo thứ tự khoảng cách từ Mặt Trời, từ gần nhất đến xa nhất.",
+                "items": [
+                  { "id": "item3", "text": "Trái Đất" }, { "id": "item1", "text": "Sao Thủy" },
+                  { "id": "item4", "text": "Sao Hỏa" }, { "id": "item2", "text": "Sao Kim" }
+                ],
+                "evaluation_criteria": {
+                  "correct_order": ["item1", "item2", "item3", "item4"],
+                  "explanation": "Giải thích về thứ tự các hành tinh trong Hệ Mặt Trời."
+                }
+              }
+              \`\`\`
+
+           4. Trả lời ngắn (short_answer):
+              - Đánh giá sẽ do AI thực hiện dựa trên 'guidelines'.
+              \`\`\`json
+              {
+                "type": "exercise_data", "title": "Bài tập về [Chủ đề]", "exercise_id": "ex_...",
+                "question_type": "short_answer",
+                "question_text": "Quang hợp là gì và tại sao nó quan trọng đối với sự sống trên Trái Đất?",
+                "evaluation_criteria": {
+                  "guidelines": "Câu trả lời đúng cần đề cập đến: quá trình cây xanh sử dụng ánh sáng mặt trời, CO2 và nước để tạo ra glucose (năng lượng) và oxy. Nhấn mạnh vai trò của oxy đối với động vật và vai trò của quang hợp trong chu trình carbon.",
+                  "explanation": "Giải thích chi tiết về quá trình quang hợp..."
+                }
+              }
+              \`\`\`
 
         D. NẾU YÊU CẦU LÀ CHẤM ĐIỂM (định dạng "EvaluateAnswer: {...}"):
            - Dựa vào đối tượng JSON được cung cấp chứa câu hỏi, câu trả lời của người dùng và tiêu chí đánh giá.
@@ -413,47 +448,82 @@
         }
         updateThemeIcon();
 
-        // --- LOGIC CHAT ---
+        // --- LOGIC CHAT & BÀI TẬP ---
         function addMessage(role, data, shouldScroll = true) {
             const messageWrapper = document.createElement('div');
             let contentElem, statusElem;
 
             if (role === 'exercise') {
                 messageWrapper.className = 'w-full space-y-2';
+                let exerciseBodyHtml = '';
+
+                switch (data.question_type) {
+                    case 'mcq':
+                        exerciseBodyHtml = `
+                            <div class="space-y-2">
+                                ${data.options.map(opt => `
+                                    <label class="flex items-center p-3 rounded-md hover:bg-gray-200 dark:hover:bg-slate-700 cursor-pointer transition-colors">
+                                        <input type="radio" name="answer" value="${opt.id}" class="mr-3 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                                        <span>${opt.text}</span>
+                                    </label>
+                                `).join('')}
+                            </div>`;
+                        break;
+                    
+                    case 'fill_in_the_blank':
+                        const questionWithInputs = data.question_text.replace(/\[___\]/g, () => 
+                            `<input type="text" name="answer" class="inline-block w-32 mx-1 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500">`
+                        );
+                        exerciseBodyHtml = `<div class="space-y-2">${questionWithInputs}</div>`;
+                        break;
+
+                    case 'ordering':
+                        exerciseBodyHtml = `
+                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Kéo và thả để sắp xếp.</p>
+                            <ul class="space-y-2" id="ordering-list-${data.exercise_id}">
+                                ${data.items.map(item => `
+                                    <li class="ordering-item flex items-center p-3 rounded-md bg-gray-100 dark:bg-slate-700 border border-gray-200 dark:border-slate-600" draggable="true" data-id="${item.id}">
+                                        <svg class="w-5 h-5 mr-3 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" /></svg>
+                                        <span>${item.text}</span>
+                                    </li>
+                                `).join('')}
+                            </ul>`;
+                        break;
+
+                    case 'short_answer':
+                        exerciseBodyHtml = `
+                            <textarea name="answer" rows="4" placeholder="Nhập câu trả lời của bạn..." class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-50 dark:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>`;
+                        break;
+                }
+
                 let exerciseHtml = `
                     <div class="flex items-center gap-2">
                         <div class="w-7 h-7 rounded-full flex-shrink-0 bg-gradient-to-tr from-green-400 to-cyan-500 flex items-center justify-center">
                             <svg class="w-4 h-4 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
                         </div>
-                        <span class="font-semibold text-gray-800 dark:text-gray-200">Bài tập</span>
+                        <span class="font-semibold text-gray-800 dark:text-gray-200">${data.title}</span>
                     </div>
                     <div class="message-content p-4 border dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-slate-800/50">
-                        <p class="font-bold mb-2">${data.title}</p>
                         <p class="mb-4">${data.question_text}</p>
-                        <form id="form-${data.exercise_id}">
-                            <div class="space-y-2">
-                                ${data.options.map(opt => `
-                                    <label class="flex items-center p-3 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors">
-                                        <input type="radio" name="answer" value="${opt.id}" class="mr-3 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
-                                        <span>${opt.text}</span>
-                                    </label>
-                                `).join('')}
-                            </div>
+                        <form id="form-${data.exercise_id}" data-type="${data.question_type}">
+                            ${exerciseBodyHtml}
                             <button type="submit" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">Nộp bài</button>
                         </form>
                     </div>`;
                 messageWrapper.innerHTML = exerciseHtml;
                 chatContainer.appendChild(messageWrapper);
+                
                 document.getElementById(`form-${data.exercise_id}`).addEventListener('submit', (e) => {
                     e.preventDefault();
-                    const userAnswerId = new FormData(e.target).get('answer');
-                    if (userAnswerId) {
-                        handleExerciseSubmission(data, userAnswerId);
-                    } else {
-                        showToast("Bạn chưa chọn đáp án!", "error");
-                    }
+                    handleExerciseSubmission(data, e.target);
                 });
+
+                if (data.question_type === 'ordering') {
+                    setupDragAndDrop(`ordering-list-${data.exercise_id}`);
+                }
+
                 chatHistory.push({ role: 'exercise', data: data });
+
             } else if (role === 'model' || role === 'ai') {
                 messageWrapper.className = 'w-full space-y-2';
                 messageWrapper.innerHTML = `<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full flex-shrink-0 bg-gradient-to-tr from-purple-400 to-indigo-500 flex items-center justify-center"><svg class="w-4 h-4 text-white" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor"><path d="M12 6c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6 2.69-6 6-6m0-2c-4.42 0-8 3.58-8 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8z"/><path d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg></div><span class="font-semibold text-gray-800 dark:text-gray-200">AI Học Tập</span></div><div class="ai-status text-xs text-gray-500"></div></div><div class="message-content text-gray-800 dark:text-gray-200"></div>`;
@@ -542,23 +612,48 @@
             }
         }
 
-        async function handleExerciseSubmission(exerciseData, userAnswerId) {
-            const form = document.getElementById(`form-${exerciseData.exercise_id}`);
-            form.querySelectorAll('input, button').forEach(el => el.disabled = true);
+        async function handleExerciseSubmission(exerciseData, formElement) {
+            formElement.querySelectorAll('input, button, textarea').forEach(el => el.disabled = true);
+            
+            let userAnswer, userMessage;
+            const questionType = formElement.dataset.type;
 
-            const userAnswerText = exerciseData.options.find(o => o.id === userAnswerId).text;
-            addMessage('user', `(Câu trả lời của tôi: ${userAnswerText})`);
+            switch (questionType) {
+                case 'mcq':
+                    const selectedRadio = formElement.querySelector('input[name="answer"]:checked');
+                    if (!selectedRadio) { showToast("Bạn chưa chọn đáp án!", "error"); formElement.querySelector('button').disabled = false; return; }
+                    userAnswer = selectedRadio.value;
+                    userMessage = `(Câu trả lời của tôi: ${exerciseData.options.find(o => o.id === userAnswer).text})`;
+                    break;
+                case 'fill_in_the_blank':
+                    userAnswer = Array.from(formElement.querySelectorAll('input[name="answer"]')).map(input => input.value.trim());
+                    if (userAnswer.some(ans => ans === '')) { showToast("Bạn chưa điền hết các ô trống!", "error"); formElement.querySelectorAll('input, button').forEach(el => el.disabled = false); return; }
+                    userMessage = `(Câu trả lời của tôi: ${userAnswer.join(', ')})`;
+                    break;
+                case 'ordering':
+                    const orderedItems = formElement.querySelectorAll('li');
+                    userAnswer = Array.from(orderedItems).map(item => item.dataset.id);
+                    userMessage = `(Thứ tự tôi đã sắp xếp)`;
+                    break;
+                case 'short_answer':
+                    userAnswer = formElement.querySelector('textarea[name="answer"]').value.trim();
+                    if (!userAnswer) { showToast("Bạn chưa nhập câu trả lời!", "error"); formElement.querySelectorAll('textarea, button').forEach(el => el.disabled = false); return; }
+                    userMessage = `(Câu trả lời của tôi: ${userAnswer})`;
+                    break;
+            }
+
+            addMessage('user', userMessage);
 
             const { contentElem, statusElem } = addMessage('model', '<span class="blinking-cursor"></span>');
             if (statusElem) statusElem.textContent = 'Đang chấm bài...';
 
             const evaluationPrompt = `EvaluateAnswer: ${JSON.stringify({
                 question_text: exerciseData.question_text,
-                options: exerciseData.options,
-                user_answer_id: userAnswerId,
+                question_type: exerciseData.question_type,
+                user_answer: userAnswer,
                 evaluation_criteria: exerciseData.evaluation_criteria
             })}`;
-
+            
             try {
                 const chatSession = model.startChat({ history: chatHistory.filter(msg => msg.role !== 'exercise').map(msg => ({ role: msg.role === 'ai' ? 'model' : msg.role, parts: msg.parts })) });
                 const result = await chatSession.sendMessage(evaluationPrompt);
@@ -594,6 +689,55 @@
             recordBtn.addEventListener('click', () => { isRecording ? recognition.stop() : recognition.start(); });
         } else { 
             recordBtn.classList.add('hidden');
+        }
+
+        function setupDragAndDrop(listId) {
+            const list = document.getElementById(listId);
+            if (!list) return;
+
+            list.addEventListener('dragstart', e => {
+                if (e.target.classList.contains('ordering-item')) {
+                    draggedItem = e.target;
+                    setTimeout(() => e.target.style.opacity = '0.5', 0);
+                }
+            });
+
+            list.addEventListener('dragend', e => {
+                if (e.target.classList.contains('ordering-item')) {
+                    setTimeout(() => {
+                        e.target.style.opacity = '1';
+                        draggedItem = null;
+                    }, 0);
+                }
+            });
+
+            list.addEventListener('dragover', e => {
+                e.preventDefault();
+                const afterElement = getDragAfterElement(list, e.clientY);
+                const currentItem = document.querySelector('.over');
+                if (currentItem) currentItem.classList.remove('over');
+                
+                if (afterElement == null) {
+                    if (draggedItem) list.appendChild(draggedItem);
+                } else {
+                    if (draggedItem) list.insertBefore(draggedItem, afterElement);
+                    afterElement.classList.add('over');
+                }
+            });
+        }
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.ordering-item:not([style*="opacity: 0.5"])')];
+
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
         }
         
         // --- LOGIC CANVAS (Konva.js) ---
