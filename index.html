@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Học Tập Tương Tác (v3 - Tích hợp Bài tập)</title>
+    <title>AI Học Tập Tương Tác (v3 - Tích hợp Bài tập Đa dạng)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
@@ -73,10 +73,10 @@
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 font-sans h-screen flex">
 
-    <!-- Container chính của ứng dụng -->
+    <!-- Main application container -->
     <div id="app-container" class="flex flex-1 overflow-hidden">
 
-        <!-- Phần Box Chat (Bên trái) -->
+        <!-- Chat Box Section (Left) -->
         <div id="chat-view-container" class="flex flex-col h-full bg-gray-50 dark:bg-slate-900 w-full lg:w-1/3 flex-shrink-0 border-r border-gray-200 dark:border-slate-700">
             <header id="main-header" class="flex-shrink-0 flex justify-between items-center p-3 sm:p-4 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
                 <div class="flex items-center gap-3">
@@ -84,23 +84,23 @@
                     <span class="text-lg font-bold text-gray-800 dark:text-gray-100">AI Học Tập</span>
                 </div>
                 <div class="flex items-center gap-1 sm:gap-2">
-                    <!-- NÚT MỚI: Tạo Bài tập -->
+                    <!-- NEW BUTTON: Create Exercise -->
                     <button id="create-exercise-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Tạo bài tập kiểm tra">
                         <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
                     </button>
-                    <!-- Nút Lưu Phiên -->
+                    <!-- Save Session Button -->
                     <button id="save-session-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Lưu phiên làm việc">
                         <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v12l-5-3-5 3V4z" /></svg>
                     </button>
-                    <!-- Nút Tải Phiên -->
+                    <!-- Load Session Button -->
                     <button id="load-session-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Tải phiên làm việc đã lưu">
                         <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 2.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
                     </button>
-                    <!-- Nút Phiên Mới -->
+                    <!-- New Session Button -->
                     <button id="new-session-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Bắt đầu phiên mới (xóa mọi thứ)">
                         <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-10.293a1 1 0 00-1.414-1.414L6 9.586 4.707 8.293a1 1 0 00-1.414 1.414L7.586 11l-2.293 2.293a1 1 0 001.414 1.414L10 12.414l2.293 2.293a1 1 0 001.414-1.414L11.414 11l2.293-2.293a1 1 0 000-1.414z" clip-rule="evenodd" /></svg>
                     </button>
-                    <!-- Nút chuyển đổi chế độ Sáng/Tối -->
+                    <!-- Theme Toggle Button -->
                     <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Chuyển chế độ Sáng/Tối">
                         <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
                         <svg id="theme-toggle-light-icon" class="hidden w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 14.95a1 1 0 010-1.414l.707-.707a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414 0zM3 11a1 1 0 100-2H2a1 1 0 100 2h1z" clip-rule="evenodd"></path></svg>
@@ -108,12 +108,12 @@
                 </div>
             </header>
 
-            <!-- Khu vực hiển thị tin nhắn chat -->
+            <!-- Chat message display area -->
             <div id="chat-container" class="flex-1 px-4 pt-4 space-y-4 overflow-y-auto relative">
-                 <!-- Tin nhắn sẽ được chèn vào đây -->
+                 <!-- Messages will be inserted here -->
             </div>
 
-            <!-- Vùng nhập liệu chat -->
+            <!-- Chat input area -->
             <div class="p-4 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700">
                 <div class="flex items-center gap-3 bg-gray-100 dark:bg-slate-700 rounded-full p-2">
                     <textarea id="prompt-input" rows="1" placeholder="Nhập câu hỏi hoặc yêu cầu học tập..." class="flex-1 bg-transparent px-3 py-2 resize-none focus:outline-none dark:text-gray-200 dark:placeholder-gray-400"></textarea>
@@ -127,7 +127,7 @@
             </div>
         </div>
 
-        <!-- Phần Canvas (Bên phải) -->
+        <!-- Canvas Section (Right) -->
         <div id="canvas-container" class="flex-1 h-full bg-white dark:bg-gray-800 overflow-auto relative">
             <div id="learning-canvas" class="w-full h-full">
                 <div id="canvas-placeholder" class="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-600 text-center p-4">
@@ -137,7 +137,7 @@
         </div>
     </div>
 
-    <!-- Container cho thông báo Toast -->
+    <!-- Toast notification container -->
     <div id="toast-container" class="fixed top-5 right-5 z-[100] space-y-2"></div>
 
     <!-- Custom Context Menu for Nodes -->
@@ -208,7 +208,7 @@
         QUY TẮC CHUNG:
         1.  **Phân tích & Chia nhỏ:** Chia chủ đề thành các phần logic, có cấu trúc phân cấp.
         2.  **Giải thích Chatbox:** Cung cấp giải thích chi tiết, rõ ràng bằng Markdown.
-        3.  **Dữ liệu JSON (QUAN TRỌNG):** Luôn tạo một đối tượng JSON để ứng dụng xử lý. JSON phải nằm trong khối code \`\`\`json.
+        3.  **Dữ liệu JSON (QUAN TRỌNG):** Luôn tạo một đối tượng JSON để ứng dụng xử lý. JSON phải nằm trong khối code \\\`\\\`\\\`json.
         
         QUY TẮC XỬ LÝ YÊU CẦU:
 
@@ -216,7 +216,7 @@
            - Hãy tạo một bài học hoàn chỉnh từ đầu.
            - JSON của bạn phải là loại "lesson_data", chứa đầy đủ các node và kết nối cho toàn bộ chủ đề.
            - Ví dụ JSON:
-             \`\`\`json
+             \\\`\\\`\\\`json
              {
                "type": "lesson_data",
                "title": "Chủ Đề Mới",
@@ -226,44 +226,77 @@
                ],
                "connections": [ { "from": "node1", "to": "node2" } ]
              }
-             \`\`\`
+             \\\`\\\`\\\`
 
         B. NẾU YÊU CẦU BẮT ĐẦU BẰNG "ExpandTopic:":
            - Đây là yêu cầu mở rộng một node ĐÃ CÓ trên canvas.
            - JSON của bạn phải là loại "lesson_expansion", CHỈ chứa các node và kết nối MỚI.
            - Ví dụ JSON:
-             \`\`\`json
+             \\\`\\\`\\\`json
              {
                "type": "lesson_expansion",
                "title": "Mở rộng: Chi tiết 1",
                "nodes": [ { "id": "node2_sub1", "type": "example", "text": "Ví dụ", "description": "...", "x": 450, "y": 100, "color": "#DDA0DD" } ],
                "connections": [ { "from": "node2", "to": "node2_sub1" } ]
              }
-             \`\`\`
+             \\\`\\\`\\\`
 
         C. NẾU YÊU CẦU LÀ TẠO BÀI TẬP (ví dụ: "tạo bài tập", "kiểm tra tôi"):
            - Phân tích chủ đề từ lịch sử trò chuyện hoặc yêu cầu.
            - Tạo một đối tượng JSON DUY NHẤT loại "exercise_data".
            - KHÔNG cung cấp lời giải thích hay đáp án trong phần văn bản chat. Chỉ đưa ra một lời dẫn ngắn gọn như "Hãy thử sức với bài tập này nhé!".
-           - Ví dụ JSON:
-             \`\`\`json
-             {
-               "type": "exercise_data",
-               "title": "Bài tập về [Chủ đề]",
-               "exercise_id": "ex_${Date.now()}",
-               "question_type": "mcq",
-               "question_text": "Câu hỏi chính ở đây là gì?",
-               "options": [
-                 { "id": "A", "text": "Lựa chọn A" },
-                 { "id": "B", "text": "Lựa chọn B" },
-                 { "id": "C", "text": "Lựa chọn C" }
-               ],
-               "evaluation_criteria": {
-                 "correct_answer_id": "B",
-                 "explanation": "Giải thích chi tiết tại sao đáp án này lại đúng, và tại sao các đáp án khác sai."
+           - Dưới đây là các loại bài tập bạn có thể tạo:
+
+           1.  **Trắc nghiệm (MCQ)**:
+               \\\`\\\`\\\`json
+               {
+                 "type": "exercise_data",
+                 "title": "Bài tập về [Chủ đề]",
+                 "exercise_id": "ex_${Date.now()}",
+                 "question_type": "mcq",
+                 "question_text": "Câu hỏi chính ở đây là gì?",
+                 "options": [
+                   { "id": "A", "text": "Lựa chọn A" },
+                   { "id": "B", "text": "Lựa chọn B" },
+                   { "id": "C", "text": "Lựa chọn C" }
+                 ],
+                 "evaluation_criteria": {
+                   "correct_answer_id": "B",
+                   "explanation": "Giải thích chi tiết tại sao đáp án này lại đúng, và tại sao các đáp án khác sai."
+                 }
                }
-             }
-             \`\`\`
+               \\\`\\\`\\\`
+
+           2.  **Điền vào chỗ trống (Fill-in-the-blank)**:
+               - Sử dụng \\\`[BLANK]\\\` trong \\\`question_text\\\` để chỉ vị trí cần điền.
+               \\\`\\\`\\\`json
+               {
+                 "type": "exercise_data",
+                 "title": "Bài tập về [Chủ đề]",
+                 "exercise_id": "ex_${Date.now()}",
+                 "question_type": "fill_in_the_blank",
+                 "question_text": "Quang hợp là quá trình cây xanh sử dụng năng lượng ánh sáng để tổng hợp chất hữu cơ từ nước và [BLANK].",
+                 "evaluation_criteria": {
+                   "correct_answer_text": "carbon dioxide",
+                   "explanation": "Carbon dioxide là khí mà cây xanh hấp thụ từ không khí để thực hiện quang hợp."
+                 }
+               }
+               \\\`\\\`\\\`
+
+           3.  **Câu hỏi tự luận ngắn (Short Answer)**:
+               \\\`\\\`\\\`json
+               {
+                 "type": "exercise_data",
+                 "title": "Bài tập về [Chủ đề]",
+                 "exercise_id": "ex_${Date.now()}",
+                 "question_type": "short_answer",
+                 "question_text": "Giải thích vai trò của diệp lục trong quá trình quang hợp.",
+                 "evaluation_criteria": {
+                   "expected_keywords": ["hấp thụ ánh sáng", "chuyển đổi năng lượng", "sắc tố xanh"],
+                   "explanation": "Diệp lục là sắc tố xanh có khả năng hấp thụ năng lượng ánh sáng mặt trời, chuyển đổi nó thành năng lượng hóa học để tổng hợp chất hữu cơ trong quá trình quang hợp."
+                 }
+               }
+               \\\`\\\`\\\`
 
         D. NẾU YÊU CẦU LÀ CHẤM ĐIỂM (định dạng "EvaluateAnswer: {...}"):
            - Dựa vào đối tượng JSON được cung cấp chứa câu hỏi, câu trả lời của người dùng và tiêu chí đánh giá.
@@ -430,7 +463,10 @@
                     <div class="message-content p-4 border dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-slate-800/50">
                         <p class="font-bold mb-2">${data.title}</p>
                         <p class="mb-4">${data.question_text}</p>
-                        <form id="form-${data.exercise_id}">
+                        <form id="form-${data.exercise_id}">`;
+
+                if (data.question_type === 'mcq') {
+                    exerciseHtml += `
                             <div class="space-y-2">
                                 ${data.options.map(opt => `
                                     <label class="flex items-center p-3 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors">
@@ -438,20 +474,45 @@
                                         <span>${opt.text}</span>
                                     </label>
                                 `).join('')}
-                            </div>
+                            </div>`;
+                } else if (data.question_type === 'fill_in_the_blank') {
+                    const questionParts = data.question_text.split('[BLANK]');
+                    exerciseHtml += `
+                            <div class="flex flex-wrap items-center gap-2 mb-4">
+                                <span>${questionParts[0]}</span>
+                                <input type="text" name="answer" class="flex-1 min-w-[150px] px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Điền vào đây">
+                                <span>${questionParts[1] || ''}</span>
+                            </div>`;
+                } else if (data.question_type === 'short_answer') {
+                    exerciseHtml += `
+                            <textarea name="answer" rows="4" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Viết câu trả lời của bạn ở đây..."></textarea>`;
+                }
+
+                exerciseHtml += `
                             <button type="submit" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">Nộp bài</button>
                         </form>
                     </div>`;
                 messageWrapper.innerHTML = exerciseHtml;
                 chatContainer.appendChild(messageWrapper);
-                document.getElementById(`form-${data.exercise_id}`).addEventListener('submit', (e) => {
+
+                const form = document.getElementById(`form-${data.exercise_id}`);
+                form.addEventListener('submit', (e) => {
                     e.preventDefault();
-                    const userAnswerId = new FormData(e.target).get('answer');
-                    if (userAnswerId) {
-                        handleExerciseSubmission(data, userAnswerId);
+                    let userAnswer;
+                    if (data.question_type === 'mcq') {
+                        userAnswer = new FormData(e.target).get('answer');
+                        if (!userAnswer) {
+                            showToast("Bạn chưa chọn đáp án!", "error");
+                            return;
+                        }
                     } else {
-                        showToast("Bạn chưa chọn đáp án!", "error");
+                        userAnswer = new FormData(e.target).get('answer');
+                        if (!userAnswer || userAnswer.trim() === '') {
+                            showToast("Bạn chưa nhập câu trả lời!", "error");
+                            return;
+                        }
                     }
+                    handleExerciseSubmission(data, userAnswer);
                 });
                 chatHistory.push({ role: 'exercise', data: data });
             } else if (role === 'model' || role === 'ai') {
@@ -505,19 +566,19 @@
 
                 for await (const chunk of result.stream) {
                     fullResponseText += chunk.text();
-                    const markdownPartForDisplay = fullResponseText.split('```json')[0];
+                    const markdownPartForDisplay = fullResponseText.split('\\\`\\\`\\\`json')[0];
                     contentElem.innerHTML = DOMPurify.sanitize(marked.parse(markdownPartForDisplay + '<span class="blinking-cursor"></span>'));
                     chatContainer.scrollTop = chatContainer.scrollHeight;
                 }
                 
                 if (statusElem) statusElem.classList.add('hidden');
                 
-                const finalMarkdownPart = fullResponseText.split('```json')[0].trim();
+                const finalMarkdownPart = fullResponseText.split('\\\`\\\`\\\`json')[0].trim();
                 contentElem.innerHTML = DOMPurify.sanitize(marked.parse(finalMarkdownPart));
 
                 chatHistory.push({ role: 'model', parts: [{ text: fullResponseText }] });
 
-                const jsonStringMatch = fullResponseText.match(/```json\n([\s\S]*?)\n```/);
+                const jsonStringMatch = fullResponseText.match(/\\\`\\\`\\\`json\n([\\s\\S]*?)\n\\\`\\\`\\\`/);
                 if (jsonStringMatch && jsonStringMatch[1]) {
                     try {
                         const parsedData = JSON.parse(jsonStringMatch[1]);
@@ -542,22 +603,32 @@
             }
         }
 
-        async function handleExerciseSubmission(exerciseData, userAnswerId) {
+        async function handleExerciseSubmission(exerciseData, userAnswer) {
             const form = document.getElementById(`form-${exerciseData.exercise_id}`);
-            form.querySelectorAll('input, button').forEach(el => el.disabled = true);
+            form.querySelectorAll('input, textarea, button').forEach(el => el.disabled = true);
 
-            const userAnswerText = exerciseData.options.find(o => o.id === userAnswerId).text;
-            addMessage('user', `(Câu trả lời của tôi: ${userAnswerText})`);
+            let userAnswerDisplay;
+            if (exerciseData.question_type === 'mcq') {
+                userAnswerDisplay = exerciseData.options.find(o => o.id === userAnswer).text;
+            } else {
+                userAnswerDisplay = userAnswer;
+            }
+            addMessage('user', `(Câu trả lời của tôi: ${userAnswerDisplay})`);
 
             const { contentElem, statusElem } = addMessage('model', '<span class="blinking-cursor"></span>');
             if (statusElem) statusElem.textContent = 'Đang chấm bài...';
 
-            const evaluationPrompt = `EvaluateAnswer: ${JSON.stringify({
+            const evaluationPayload = {
+                question_type: exerciseData.question_type,
                 question_text: exerciseData.question_text,
-                options: exerciseData.options,
-                user_answer_id: userAnswerId,
+                user_answer: userAnswer,
                 evaluation_criteria: exerciseData.evaluation_criteria
-            })}`;
+            };
+            if (exerciseData.question_type === 'mcq') {
+                evaluationPayload.options = exerciseData.options;
+            }
+
+            const evaluationPrompt = `EvaluateAnswer: ${JSON.stringify(evaluationPayload)}`;
 
             try {
                 const chatSession = model.startChat({ history: chatHistory.filter(msg => msg.role !== 'exercise').map(msg => ({ role: msg.role === 'ai' ? 'model' : msg.role, parts: msg.parts })) });
