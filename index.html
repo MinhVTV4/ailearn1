@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Học Tập Tương Tác (v3 - Tích hợp Bài tập)</title>
+    <title>AI Học Tập (v4 - Đa dạng bài tập)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
@@ -69,14 +69,27 @@
         #node-context-menu button {
             white-space: nowrap;
         }
+        .exercise-input {
+            background-color: #fff;
+            border: 1px solid #d1d5db;
+            color: #111827;
+            border-radius: 0.375rem;
+            padding: 0.5rem 0.75rem;
+            width: 100%;
+        }
+        .dark .exercise-input {
+            background-color: #374151;
+            border-color: #4b5563;
+            color: #f3f4f6;
+        }
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 font-sans h-screen flex">
 
-    <!-- Container chính của ứng dụng -->
+    <!-- App Container -->
     <div id="app-container" class="flex flex-1 overflow-hidden">
 
-        <!-- Phần Box Chat (Bên trái) -->
+        <!-- Chat Panel (Left) -->
         <div id="chat-view-container" class="flex flex-col h-full bg-gray-50 dark:bg-slate-900 w-full lg:w-1/3 flex-shrink-0 border-r border-gray-200 dark:border-slate-700">
             <header id="main-header" class="flex-shrink-0 flex justify-between items-center p-3 sm:p-4 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
                 <div class="flex items-center gap-3">
@@ -84,23 +97,18 @@
                     <span class="text-lg font-bold text-gray-800 dark:text-gray-100">AI Học Tập</span>
                 </div>
                 <div class="flex items-center gap-1 sm:gap-2">
-                    <!-- NÚT MỚI: Tạo Bài tập -->
-                    <button id="create-exercise-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Tạo bài tập kiểm tra">
+                    <button id="create-exercise-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Tạo bài tập ngẫu nhiên">
                         <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
                     </button>
-                    <!-- Nút Lưu Phiên -->
                     <button id="save-session-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Lưu phiên làm việc">
                         <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v12l-5-3-5 3V4z" /></svg>
                     </button>
-                    <!-- Nút Tải Phiên -->
                     <button id="load-session-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Tải phiên làm việc đã lưu">
                         <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 2.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
                     </button>
-                    <!-- Nút Phiên Mới -->
                     <button id="new-session-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Bắt đầu phiên mới (xóa mọi thứ)">
                         <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm.707-10.293a1 1 0 00-1.414-1.414L6 9.586 4.707 8.293a1 1 0 00-1.414 1.414L7.586 11l-2.293 2.293a1 1 0 001.414 1.414L10 12.414l2.293 2.293a1 1 0 001.414-1.414L11.414 11l2.293-2.293a1 1 0 000-1.414z" clip-rule="evenodd" /></svg>
                     </button>
-                    <!-- Nút chuyển đổi chế độ Sáng/Tối -->
                     <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors" title="Chuyển chế độ Sáng/Tối">
                         <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
                         <svg id="theme-toggle-light-icon" class="hidden w-5 h-5 text-gray-600 dark:text-gray-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 14.95a1 1 0 010-1.414l.707-.707a1 1 0 011.414 1.414l-.707.707a1 1 0 01-1.414 0zM3 11a1 1 0 100-2H2a1 1 0 100 2h1z" clip-rule="evenodd"></path></svg>
@@ -108,12 +116,10 @@
                 </div>
             </header>
 
-            <!-- Khu vực hiển thị tin nhắn chat -->
             <div id="chat-container" class="flex-1 px-4 pt-4 space-y-4 overflow-y-auto relative">
-                 <!-- Tin nhắn sẽ được chèn vào đây -->
+                 <!-- Messages will be inserted here -->
             </div>
 
-            <!-- Vùng nhập liệu chat -->
             <div class="p-4 bg-white dark:bg-slate-800 border-t border-gray-200 dark:border-slate-700">
                 <div class="flex items-center gap-3 bg-gray-100 dark:bg-slate-700 rounded-full p-2">
                     <textarea id="prompt-input" rows="1" placeholder="Nhập câu hỏi hoặc yêu cầu học tập..." class="flex-1 bg-transparent px-3 py-2 resize-none focus:outline-none dark:text-gray-200 dark:placeholder-gray-400"></textarea>
@@ -127,7 +133,7 @@
             </div>
         </div>
 
-        <!-- Phần Canvas (Bên phải) -->
+        <!-- Canvas Panel (Right) -->
         <div id="canvas-container" class="flex-1 h-full bg-white dark:bg-gray-800 overflow-auto relative">
             <div id="learning-canvas" class="w-full h-full">
                 <div id="canvas-placeholder" class="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-600 text-center p-4">
@@ -137,10 +143,10 @@
         </div>
     </div>
 
-    <!-- Container cho thông báo Toast -->
+    <!-- Toast Container -->
     <div id="toast-container" class="fixed top-5 right-5 z-[100] space-y-2"></div>
 
-    <!-- Custom Context Menu for Nodes -->
+    <!-- Node Context Menu -->
     <div id="node-context-menu" class="fixed z-[200] hidden bg-white dark:bg-gray-700 rounded-lg shadow-lg py-2">
         <button id="expand-topic-btn" class="block w-full text-left px-4 py-2 text-gray-800 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-600">
             Mở rộng vấn đề
@@ -170,16 +176,15 @@
         const ai = getAI(app);
         const model = getGenerativeModel(ai, { model: "gemini-2.5-flash" });
 
-        // Global state variables
+        // Global state
         let chatHistory = [];
         let sessionCanvasData = [];
         let isRecording = false;
-        let activeSpeech = null;
         let clickedNodeData = null;
         let isCanvasInitialized = false;
         let repulsionAnimation = null;
 
-        // Cached DOM elements
+        // DOM Elements
         const themeToggle = document.getElementById('theme-toggle');
         const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
         const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
@@ -195,15 +200,15 @@
         const newSessionBtn = document.getElementById('new-session-btn');
         const saveSessionBtn = document.getElementById('save-session-btn');
         const loadSessionBtn = document.getElementById('load-session-btn');
-        const createExerciseBtn = document.getElementById('create-exercise-btn'); // New button
+        const createExerciseBtn = document.getElementById('create-exercise-btn');
         const nodeContextMenu = document.getElementById('node-context-menu');
         const expandTopicBtn = document.getElementById('expand-topic-btn');
 
         let stage, layer, gridLayer;
 
-        // UPDATED SYSTEM PROMPT
+        // --- MAJOR UPDATE: EXPANDED SYSTEM PROMPT ---
         const LEARNING_SYSTEM_PROMPT = `
-        Bạn là một giáo viên AI chuyên nghiệp. Mục tiêu của bạn là giúp người học hiểu sâu về một chủ đề, tạo ra các thành phần trực quan và kiểm tra kiến thức của họ.
+        Bạn là một giáo viên AI chuyên nghiệp, đa năng. Mục tiêu của bạn là giúp người học hiểu sâu về một chủ đề, tạo ra các thành phần trực quan và kiểm tra kiến thức của họ qua nhiều dạng bài tập.
         
         QUY TẮC CHUNG:
         1.  **Phân tích & Chia nhỏ:** Chia chủ đề thành các phần logic, có cấu trúc phân cấp.
@@ -212,67 +217,46 @@
         
         QUY TẮC XỬ LÝ YÊU CẦU:
 
-        A. NẾU YÊU CẦU LÀ MỘT CHỦ ĐỀ MỚI (ví dụ: "giải thích quang hợp"):
-           - Hãy tạo một bài học hoàn chỉnh từ đầu.
-           - JSON của bạn phải là loại "lesson_data", chứa đầy đủ các node và kết nối cho toàn bộ chủ đề.
-           - Ví dụ JSON:
-             \`\`\`json
-             {
-               "type": "lesson_data",
-               "title": "Chủ Đề Mới",
-               "nodes": [
-                 { "id": "node1", "type": "concept", "text": "Khái niệm chính", "description": "...", "x": 100, "y": 100, "color": "#FFDDC1", "isMainTopic": true },
-                 { "id": "node2", "type": "detail", "text": "Chi tiết 1", "description": "...", "x": 300, "y": 150, "color": "#C1FFDD" }
-               ],
-               "connections": [ { "from": "node1", "to": "node2" } ]
-             }
-             \`\`\`
+        A. YÊU CẦU BÀI HỌC (ví dụ: "giải thích quang hợp", "ExpandTopic:..."):
+           - Tạo JSON loại "lesson_data" (cho chủ đề mới) hoặc "lesson_expansion" (để mở rộng).
+           - Cấu trúc JSON cho bài học không đổi.
 
-        B. NẾU YÊU CẦU BẮT ĐẦU BẰNG "ExpandTopic:":
-           - Đây là yêu cầu mở rộng một node ĐÃ CÓ trên canvas.
-           - JSON của bạn phải là loại "lesson_expansion", CHỈ chứa các node và kết nối MỚI.
-           - Ví dụ JSON:
-             \`\`\`json
-             {
-               "type": "lesson_expansion",
-               "title": "Mở rộng: Chi tiết 1",
-               "nodes": [ { "id": "node2_sub1", "type": "example", "text": "Ví dụ", "description": "...", "x": 450, "y": 100, "color": "#DDA0DD" } ],
-               "connections": [ { "from": "node2", "to": "node2_sub1" } ]
-             }
-             \`\`\`
-
-        C. NẾU YÊU CẦU LÀ TẠO BÀI TẬP (ví dụ: "tạo bài tập", "kiểm tra tôi"):
-           - Phân tích chủ đề từ lịch sử trò chuyện hoặc yêu cầu.
+        B. YÊU CẦU TẠO BÀI TẬP (ví dụ: "tạo bài tập", "kiểm tra tôi"):
+           - Phân tích chủ đề và tạo một bài tập với **loại ngẫu nhiên** nếu không được chỉ định.
            - Tạo một đối tượng JSON DUY NHẤT loại "exercise_data".
-           - KHÔNG cung cấp lời giải thích hay đáp án trong phần văn bản chat. Chỉ đưa ra một lời dẫn ngắn gọn như "Hãy thử sức với bài tập này nhé!".
-           - Ví dụ JSON:
+           - KHÔNG cung cấp lời giải thích hay đáp án trong phần văn bản chat. Chỉ đưa ra một lời dẫn ngắn gọn.
+           - Hỗ trợ các "question_type" sau:
+             1. "mcq": Trắc nghiệm.
+             2. "fill_in_the_blank": Điền vào chỗ trống.
+             3. "short_answer": Trả lời ngắn.
+             4. "error_correction": Sửa lỗi sai.
+           
+           - VÍ DỤ JSON CHO CÁC LOẠI BÀI TẬP:
              \`\`\`json
              {
                "type": "exercise_data",
                "title": "Bài tập về [Chủ đề]",
                "exercise_id": "ex_${Date.now()}",
-               "question_type": "mcq",
-               "question_text": "Câu hỏi chính ở đây là gì?",
-               "options": [
+               "question_type": "mcq", // HOẶC "fill_in_the_blank", "short_answer", "error_correction"
+               "question_text": "Câu hỏi chính?", // Đối với "fill_in_the_blank", dùng "___" cho chỗ trống. Ví dụ: "The cat sat ___ the mat."
+               "options": [ // Chỉ dùng cho "mcq"
                  { "id": "A", "text": "Lựa chọn A" },
-                 { "id": "B", "text": "Lựa chọn B" },
-                 { "id": "C", "text": "Lựa chọn C" }
+                 { "id": "B", "text": "Lựa chọn B" }
                ],
                "evaluation_criteria": {
-                 "correct_answer_id": "B",
-                 "explanation": "Giải thích chi tiết tại sao đáp án này lại đúng, và tại sao các đáp án khác sai."
+                 "correct_answer": "B", // ID cho mcq, hoặc text cho các loại khác.
+                 "explanation": "Giải thích chi tiết tại sao đáp án này lại đúng."
                }
              }
              \`\`\`
 
-        D. NẾU YÊU CẦU LÀ CHẤM ĐIỂM (định dạng "EvaluateAnswer: {...}"):
-           - Dựa vào đối tượng JSON được cung cấp chứa câu hỏi, câu trả lời của người dùng và tiêu chí đánh giá.
-           - So sánh câu trả lời của người dùng với đáp án đúng.
-           - Cung cấp một phản hồi thân thiện, mang tính xây dựng.
-           - Nếu sai, hãy giải thích rõ ràng dựa trên "explanation". Nếu đúng, hãy khen ngợi và củng cố kiến thức.
+        C. YÊU CẦU CHẤM ĐIỂM (định dạng "EvaluateAnswer: {...}"):
+           - Dựa vào đối tượng JSON được cung cấp.
+           - So sánh "user_answer" với "correct_answer" trong "evaluation_criteria".
+           - Cung cấp một phản hồi thân thiện, mang tính xây dựng. Nếu sai, hãy giải thích rõ ràng. Nếu đúng, hãy khen ngợi.
         `;
 
-        // --- HÀM TIỆN ÍCH ---
+        // --- Utility Functions ---
         function showToast(message, type = 'info') {
             const toast = document.createElement('div');
             let bgColor, textColor, icon;
@@ -303,17 +287,12 @@
             setTimeout(hideToast, 4000);
         }
 
-        // --- QUẢN LÝ PHIÊN ---
+        // --- Session Management ---
         function saveSession() {
             if (chatHistory.length === 0 && sessionCanvasData.length === 0) {
-                showToast("Không có gì để lưu.", "info");
-                return;
+                showToast("Không có gì để lưu.", "info"); return;
             }
-            const session = {
-                chatHistory: chatHistory,
-                canvasData: sessionCanvasData,
-                timestamp: new Date().toISOString()
-            };
+            const session = { chatHistory, canvasData: sessionCanvasData, timestamp: new Date().toISOString() };
             localStorage.setItem('aiLearningSession', JSON.stringify(session));
             showToast("Đã lưu phiên làm việc!", "success");
         }
@@ -321,29 +300,18 @@
         function loadSession() {
             const savedSessionJSON = localStorage.getItem('aiLearningSession');
             if (!savedSessionJSON) {
-                showToast("Không tìm thấy phiên đã lưu.", "info");
-                return;
+                showToast("Không tìm thấy phiên đã lưu.", "info"); return;
             }
             const savedSession = JSON.parse(savedSessionJSON);
-            
             newSession(false);
-
             chatHistory = savedSession.chatHistory || [];
             sessionCanvasData = savedSession.canvasData || [];
-
             chatHistory.forEach(msg => {
-                if (msg.role === 'exercise') {
-                    addMessage('exercise', msg.data, false);
-                } else {
-                    addMessage(msg.role, msg.parts[0].text, false);
-                }
+                if (msg.role === 'exercise') addMessage('exercise', msg.data, false);
+                else addMessage(msg.role, msg.parts[0].text, false);
             });
             chatContainer.scrollTop = chatContainer.scrollHeight;
-
-            if (isCanvasInitialized) {
-                renderFullCanvasFromSession();
-            }
-            
+            if (isCanvasInitialized) renderFullCanvasFromSession();
             showToast("Đã tải phiên làm việc!", "success");
         }
 
@@ -356,41 +324,28 @@
                 layer.batchDraw();
             }
             canvasPlaceholder.classList.remove('hidden');
-            if (showToastMsg) {
-                showToast("Bắt đầu phiên làm việc mới.", "info");
-            }
+            if (showToastMsg) showToast("Bắt đầu phiên làm việc mới.", "info");
         }
 
-        // --- XÁC THỰC & KHỞI TẠO ---
+        // --- Auth & Init ---
         onAuthStateChanged(auth, async user => {
             if (user) {
                 const resizeObserver = new ResizeObserver(entries => {
                     for (let entry of entries) {
                         const { width, height } = entry.contentRect;
-                        if (width > 0 && height > 0) {
-                            initOrUpdateCanvas(width, height);
-                        }
+                        if (width > 0 && height > 0) initOrUpdateCanvas(width, height);
                     }
                 });
                 resizeObserver.observe(canvasContainer);
-
-                const savedSessionJSON = localStorage.getItem('aiLearningSession');
-                if (savedSessionJSON) {
-                    loadSession();
-                } else {
-                    addMessage('model', 'Chào mừng! Hãy bắt đầu bằng cách hỏi một chủ đề.');
-                }
+                if (localStorage.getItem('aiLearningSession')) loadSession();
+                else addMessage('model', 'Chào mừng! Hãy bắt đầu bằng cách hỏi một chủ đề.');
             } else {
-                try {
-                    await signInAnonymously(auth);
-                } catch (error) {
-                    console.error("Lỗi đăng nhập ẩn danh:", error);
-                    showToast("Lỗi kết nối. Vui lòng tải lại trang.", "error");
-                }
+                try { await signInAnonymously(auth); }
+                catch (error) { console.error("Lỗi đăng nhập ẩn danh:", error); showToast("Lỗi kết nối. Vui lòng tải lại trang.", "error"); }
             }
         });
 
-        // --- CHẾ ĐỘ SÁNG/TỐI ---
+        // --- Theme Toggle ---
         const updateThemeIcon = () => {
             if (document.documentElement.classList.contains('dark')) {
                 themeToggleDarkIcon.classList.add('hidden');
@@ -413,24 +368,17 @@
         }
         updateThemeIcon();
 
-        // --- LOGIC CHAT ---
+        // --- MAJOR UPDATE: Chat & Exercise Logic ---
         function addMessage(role, data, shouldScroll = true) {
             const messageWrapper = document.createElement('div');
             let contentElem, statusElem;
 
             if (role === 'exercise') {
                 messageWrapper.className = 'w-full space-y-2';
-                let exerciseHtml = `
-                    <div class="flex items-center gap-2">
-                        <div class="w-7 h-7 rounded-full flex-shrink-0 bg-gradient-to-tr from-green-400 to-cyan-500 flex items-center justify-center">
-                            <svg class="w-4 h-4 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
-                        </div>
-                        <span class="font-semibold text-gray-800 dark:text-gray-200">Bài tập</span>
-                    </div>
-                    <div class="message-content p-4 border dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-slate-800/50">
-                        <p class="font-bold mb-2">${data.title}</p>
-                        <p class="mb-4">${data.question_text}</p>
-                        <form id="form-${data.exercise_id}">
+                let formContent = '';
+                switch (data.question_type) {
+                    case 'mcq':
+                        formContent = `
                             <div class="space-y-2">
                                 ${data.options.map(opt => `
                                     <label class="flex items-center p-3 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer transition-colors">
@@ -438,7 +386,29 @@
                                         <span>${opt.text}</span>
                                     </label>
                                 `).join('')}
-                            </div>
+                            </div>`;
+                        break;
+                    case 'fill_in_the_blank':
+                        const questionWithInput = data.question_text.replace('___', `<input type="text" name="answer" class="exercise-input inline-block w-48 mx-2" placeholder="Điền vào đây">`);
+                        formContent = `<p>${questionWithInput}</p>`;
+                        break;
+                    case 'short_answer':
+                        formContent = `<textarea name="answer" class="exercise-input" rows="3" placeholder="Nhập câu trả lời của bạn..."></textarea>`;
+                        break;
+                    case 'error_correction':
+                        formContent = `<input type="text" name="answer" class="exercise-input" placeholder="Viết lại câu đúng...">`;
+                        break;
+                }
+
+                let exerciseHtml = `
+                    <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-full flex-shrink-0 bg-gradient-to-tr from-green-400 to-cyan-500 flex items-center justify-center"><svg class="w-4 h-4 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg></div>
+                        <span class="font-semibold text-gray-800 dark:text-gray-200">Bài tập: ${data.title}</span>
+                    </div>
+                    <div class="message-content p-4 border dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-slate-800/50">
+                        <form id="form-${data.exercise_id}">
+                            ${data.question_type !== 'fill_in_the_blank' ? `<p class="mb-4">${data.question_text}</p>` : ''}
+                            ${formContent}
                             <button type="submit" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">Nộp bài</button>
                         </form>
                     </div>`;
@@ -446,14 +416,10 @@
                 chatContainer.appendChild(messageWrapper);
                 document.getElementById(`form-${data.exercise_id}`).addEventListener('submit', (e) => {
                     e.preventDefault();
-                    const userAnswerId = new FormData(e.target).get('answer');
-                    if (userAnswerId) {
-                        handleExerciseSubmission(data, userAnswerId);
-                    } else {
-                        showToast("Bạn chưa chọn đáp án!", "error");
-                    }
+                    handleExerciseSubmission(data, new FormData(e.target));
                 });
                 chatHistory.push({ role: 'exercise', data: data });
+
             } else if (role === 'model' || role === 'ai') {
                 messageWrapper.className = 'w-full space-y-2';
                 messageWrapper.innerHTML = `<div class="flex items-center justify-between"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-full flex-shrink-0 bg-gradient-to-tr from-purple-400 to-indigo-500 flex items-center justify-center"><svg class="w-4 h-4 text-white" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="currentColor"><path d="M12 6c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6 2.69-6 6-6m0-2c-4.42 0-8 3.58-8 8s3.58 8 8 8 8-3.58 8-8-3.58-8-8-8z"/><path d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg></div><span class="font-semibold text-gray-800 dark:text-gray-200">AI Học Tập</span></div><div class="ai-status text-xs text-gray-500"></div></div><div class="message-content text-gray-800 dark:text-gray-200"></div>`;
@@ -477,14 +443,7 @@
             const promptText = promptInput.value.trim();
             if (!promptText) return;
 
-            const isExpansion = promptText.startsWith("ExpandTopic:");
-            if (isExpansion) {
-                const topicName = promptText.split(" - ")[1] || "chủ đề";
-                addMessage('user', `(Mở rộng về: ${topicName})`);
-            } else {
-                addMessage('user', promptText);
-            }
-
+            addMessage('user', promptText);
             promptInput.value = '';
             adjustInputHeight();
             sendBtn.disabled = true;
@@ -528,7 +487,7 @@
                             addMessage('exercise', parsedData);
                         }
                     } catch (e) {
-                        console.error("JSON Parse Error:", e);
+                        console.error("JSON Parse Error:", e, jsonStringMatch[1]);
                         showToast("AI trả về dữ liệu không hợp lệ.", "error");
                     }
                 }
@@ -542,11 +501,21 @@
             }
         }
 
-        async function handleExerciseSubmission(exerciseData, userAnswerId) {
+        async function handleExerciseSubmission(exerciseData, formData) {
             const form = document.getElementById(`form-${exerciseData.exercise_id}`);
-            form.querySelectorAll('input, button').forEach(el => el.disabled = true);
+            form.querySelectorAll('input, button, textarea').forEach(el => el.disabled = true);
 
-            const userAnswerText = exerciseData.options.find(o => o.id === userAnswerId).text;
+            const userAnswer = formData.get('answer');
+            if (!userAnswer) {
+                showToast("Bạn chưa hoàn thành bài tập!", "error");
+                form.querySelectorAll('input, button, textarea').forEach(el => el.disabled = false);
+                return;
+            }
+
+            let userAnswerText = userAnswer;
+            if (exerciseData.question_type === 'mcq') {
+                 userAnswerText = exerciseData.options.find(o => o.id === userAnswer).text;
+            }
             addMessage('user', `(Câu trả lời của tôi: ${userAnswerText})`);
 
             const { contentElem, statusElem } = addMessage('model', '<span class="blinking-cursor"></span>');
@@ -554,8 +523,7 @@
 
             const evaluationPrompt = `EvaluateAnswer: ${JSON.stringify({
                 question_text: exerciseData.question_text,
-                options: exerciseData.options,
-                user_answer_id: userAnswerId,
+                user_answer: userAnswer,
                 evaluation_criteria: exerciseData.evaluation_criteria
             })}`;
 
@@ -596,35 +564,29 @@
             recordBtn.classList.add('hidden');
         }
         
-        // --- LOGIC CANVAS (Konva.js) ---
-        // (Không thay đổi các hàm của Konva.js)
+        // --- Konva.js Canvas Logic (Unchanged) ---
         function initOrUpdateCanvas(width, height) {
             if (!stage) {
-                stage = new Konva.Stage({ container: 'learning-canvas', width: width, height: height });
+                stage = new Konva.Stage({ container: 'learning-canvas', width: width, height: height, draggable: true });
                 gridLayer = new Konva.Layer();
                 layer = new Konva.Layer();
                 stage.add(gridLayer, layer);
-                
                 stage.content.oncontextmenu = (e) => e.preventDefault();
-                stage.on('click', (e) => { if (e.target === stage || e.target === gridLayer) hideNodeContextMenu(); });
+                stage.on('click', (e) => { if (e.target === stage || e.target.hasName('grid-line')) hideNodeContextMenu(); });
                 window.addEventListener('scroll', hideNodeContextMenu, true);
                 const scaleBy = 1.1;
                 stage.on('wheel', (e) => {
                     e.evt.preventDefault();
                     const oldScale = stage.scaleX();
                     const pointer = stage.getPointerPosition();
-                    const mousePointTo = { x: (pointer.x - stage.x()) / oldScale, y: (pointer.y - stage.y()) / oldScale, };
+                    const mousePointTo = { x: (pointer.x - stage.x()) / oldScale, y: (pointer.y - stage.y()) / oldScale };
                     const newScale = e.evt.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy;
                     stage.scale({ x: newScale, y: newScale });
-                    const newPos = { x: pointer.x - mousePointTo.x * newScale, y: pointer.y - mousePointTo.y * newScale, };
+                    const newPos = { x: pointer.x - mousePointTo.x * newScale, y: pointer.y - mousePointTo.y * newScale };
                     stage.position(newPos);
                 });
-                stage.draggable(true);
-                
                 isCanvasInitialized = true;
-                if (sessionCanvasData.length > 0) {
-                    renderFullCanvasFromSession();
-                }
+                if (sessionCanvasData.length > 0) renderFullCanvasFromSession();
             } else {
                 stage.width(width);
                 stage.height(height);
@@ -640,10 +602,10 @@
             const stageHeight = stage.height() / stage.scaleY() + 100;
             const strokeColor = document.documentElement.classList.contains('dark') ? '#4a5568' : '#e2e8f0';
             for (let i = 0; i * gridSize < stageWidth; i++) {
-                gridLayer.add(new Konva.Line({ points: [i * gridSize, 0, i * gridSize, stageHeight], stroke: strokeColor, strokeWidth: 0.5, listening: false }));
+                gridLayer.add(new Konva.Line({ points: [i * gridSize, 0, i * gridSize, stageHeight], stroke: strokeColor, strokeWidth: 0.5, listening: false, name: 'grid-line' }));
             }
             for (let i = 0; i * gridSize < stageHeight; i++) {
-                gridLayer.add(new Konva.Line({ points: [0, i * gridSize, stageWidth, i * gridSize], stroke: strokeColor, strokeWidth: 0.5, listening: false }));
+                gridLayer.add(new Konva.Line({ points: [0, i * gridSize, stageWidth, i * gridSize], stroke: strokeColor, strokeWidth: 0.5, listening: false, name: 'grid-line' }));
             }
         }
 
@@ -652,9 +614,7 @@
             const min = { x: x, y: y };
             const max = { x: x + width, y: y + height };
             const d = { x: p2.x - p1.x, y: p2.y - p1.y };
-            let tmin = 0.0;
-            let tmax = 1.0;
-
+            let tmin = 0.0, tmax = 1.0;
             for (const axis of ['x', 'y']) {
                 if (Math.abs(d[axis]) < 1e-6) {
                     if (p1[axis] < min[axis] || p1[axis] > max[axis]) return null;
@@ -680,73 +640,49 @@
                     const sourceNodeGroup = layer.findOne(`#${sourceId}`);
                     const targetNodeGroup = layer.findOne(`#${targetId}`);
                     if (!sourceNodeGroup || !targetNodeGroup) return;
-
                     const sourceRect = sourceNodeGroup.getClientRect();
                     const targetRect = targetNodeGroup.getClientRect();
-
                     const p1 = { x: sourceRect.x + sourceRect.width / 2, y: sourceRect.y + sourceRect.height / 2 };
                     const p2 = { x: targetRect.x + targetRect.width / 2, y: targetRect.y + targetRect.height / 2 };
-                    
                     const start = getLineRectIntersection(p2, p1, sourceRect);
                     const end = getLineRectIntersection(p1, p2, targetRect);
-                    
-                    if (start && end) {
-                        arrow.points([start.x, start.y, end.x, end.y]);
-                    }
+                    if (start && end) arrow.points([start.x, start.y, end.x, end.y]);
                 }
             });
         }
         
         function startRepulsionAnimation() {
-            if (repulsionAnimation) {
-                repulsionAnimation.stop();
-            }
-            
+            if (repulsionAnimation) repulsionAnimation.stop();
             repulsionAnimation = new Konva.Animation((frame) => {
                 let overlapping = false;
                 const nodes = layer.find('Group');
-                const PADDING = 10;
-
+                const PADDING = 15;
                 for (let i = 0; i < nodes.length; i++) {
                     for (let j = i + 1; j < nodes.length; j++) {
                         const node1 = nodes[i];
                         const node2 = nodes[j];
-                        
                         const rect1 = node1.getClientRect();
                         const rect2 = node2.getClientRect();
-
-                        if (Konva.Util.haveIntersection(
-                           {x: rect1.x - PADDING, y: rect1.y - PADDING, width: rect1.width + 2 * PADDING, height: rect1.height + 2 * PADDING}, 
-                           rect2
-                        )) {
+                        if (Konva.Util.haveIntersection({x: rect1.x - PADDING, y: rect1.y - PADDING, width: rect1.width + 2 * PADDING, height: rect1.height + 2 * PADDING}, rect2)) {
                             overlapping = true;
-                            
                             const dx = rect2.x - rect1.x;
                             const dy = rect2.y - rect1.y;
                             const distance = Math.sqrt(dx * dx + dy * dy);
-                            
-                            const moveX = (dx / distance) * 1;
-                            const moveY = (dy / distance) * 1;
-
+                            const moveX = (dx / distance) * 1.5;
+                            const moveY = (dy / distance) * 1.5;
                             node1.x(node1.x() - moveX);
                             node1.y(node1.y() - moveY);
                             node2.x(node2.x() + moveX);
                             node2.y(node2.y() + moveY);
-
                             updateLinksForNode(node1);
                             updateLinksForNode(node2);
                         }
                     }
                 }
-
-                if (!overlapping) {
-                    repulsionAnimation.stop();
-                }
+                if (!overlapping) repulsionAnimation.stop();
             }, layer);
-
             repulsionAnimation.start();
         }
-
 
         function showNodeContextMenu(x, y) {
             nodeContextMenu.style.left = `${x}px`;
@@ -763,7 +699,6 @@
             if (!isCanvasInitialized) return;
             layer.destroyChildren();
             canvasPlaceholder.classList.add('hidden');
-
             const masterData = { nodes: [], connections: [] };
             const nodeIds = new Set();
             sessionCanvasData.forEach(dataPart => {
@@ -775,18 +710,13 @@
                         }
                     });
                 }
-                if (dataPart.connections) {
-                    masterData.connections.push(...dataPart.connections);
-                }
+                if (dataPart.connections) masterData.connections.push(...dataPart.connections);
             });
-
             if (masterData.nodes.length === 0) {
                 canvasPlaceholder.classList.remove('hidden');
                 return;
             }
-
             const PADDING = 20;
-
             masterData.nodes.forEach(nodeData => {
                 const group = new Konva.Group({ x: nodeData.x, y: nodeData.y, draggable: true, id: nodeData.id, nodeId: nodeData.id });
                 const text = new Konva.Text({ text: nodeData.text, fontSize: 16, fontFamily: 'Inter, sans-serif', fill: '#333', padding: PADDING / 2, wrap: 'word' });
@@ -798,10 +728,8 @@
                 text.position({ x: 0, y: (rectHeight - textMetrics.height) / 2 });
                 text.width(rectWidth);
                 text.align('center');
-
                 group.add(rect, text);
                 layer.add(group);
-
                 group.on('click', (e) => {
                     if (e.evt.button === 0) {
                         e.cancelBubble = true; 
@@ -816,7 +744,6 @@
                 group.on('dragmove', () => updateLinksForNode(group));
                 group.on('dragend', () => startRepulsionAnimation());
             });
-
             masterData.connections.forEach(conn => {
                 const sourceNode = layer.findOne(`#${conn.from}`);
                 const targetNode = layer.findOne(`#${conn.to}`);
@@ -825,27 +752,23 @@
                     layer.add(arrow);
                 }
             });
-
             layer.find('Group').forEach(group => updateLinksForNode(group));
             layer.batchDraw();
             startRepulsionAnimation();
         }
 
-        // --- GLOBAL EVENT LISTENERS ---
+        // --- Global Event Listeners ---
         sendBtn.addEventListener('click', sendMessage);
         promptInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
         promptInput.addEventListener('input', adjustInputHeight);
-        
         newSessionBtn.addEventListener('click', () => newSession());
         saveSessionBtn.addEventListener('click', saveSession);
         loadSessionBtn.addEventListener('click', loadSession);
         loadFromPlaceholderBtn.addEventListener('click', loadSession);
-
         createExerciseBtn.addEventListener('click', () => {
-            promptInput.value = "Tạo một bài tập về chủ đề chúng ta đang thảo luận";
+            promptInput.value = "Tạo một bài tập ngẫu nhiên về chủ đề chúng ta đang thảo luận";
             sendMessage();
         });
-
         expandTopicBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             hideNodeContextMenu();
